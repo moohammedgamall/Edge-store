@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { Section, Product, BannerSettings } from './types';
 import { MOCK_PRODUCTS, DEFAULT_BANNER } from './constants';
@@ -41,6 +42,18 @@ const App: React.FC = () => {
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const bannerFileInputRef = useRef<HTMLInputElement>(null);
 
+  // استخدام useMemo لتحسين أداء الفلترة وضمان استجابة واجهة الطلب بسرعة
+  const productsInCategory = useMemo(() => {
+    return products.filter(p => p.category === selectedCategory);
+  }, [products, selectedCategory]);
+
+  // تحديد المنتج المختار بدقة أو اختيار أول منتج متاح فوراً
+  const selectedProduct = useMemo(() => {
+    const found = products.find(p => p.id === selectedProductId);
+    if (found && found.category === selectedCategory) return found;
+    return productsInCategory.length > 0 ? productsInCategory[0] : null;
+  }, [products, selectedProductId, selectedCategory, productsInCategory]);
+
   useEffect(() => {
     const checkRoute = () => {
       const hash = window.location.hash;
@@ -68,7 +81,7 @@ const App: React.FC = () => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const { data: settingsData, error: settingsError } = await supabase
+        const { data: settingsData } = await supabase
           .from('settings')
           .select('value')
           .eq('key', 'admin_password')
@@ -104,11 +117,9 @@ const App: React.FC = () => {
           setProducts(MOCK_PRODUCTS);
         }
       } catch (error) {
-        console.error("Fetch Error:", error);
         setProducts(MOCK_PRODUCTS);
       } finally {
-        // Minimum loading time for brand visibility
-        setTimeout(() => setIsLoading(false), 1200);
+        setTimeout(() => setIsLoading(false), 800);
       }
     };
     fetchData();
@@ -125,7 +136,7 @@ const App: React.FC = () => {
       setIsAuthModalOpen(false);
       setPasswordInput('');
       window.location.hash = '#/admin';
-      showNotification("Welcome Back, Admin", "success");
+      showNotification("Welcome Back, Admin");
     } else {
       showNotification("Invalid Security Key", "info");
       setPasswordInput('');
@@ -156,7 +167,7 @@ const App: React.FC = () => {
       setNewPasswordData({ current: '', next: '', confirm: '' });
       showNotification("Security Key Updated Successfully!");
     } catch (err: any) {
-      showNotification("Update Failed: " + err.message, "info");
+      showNotification("Update Failed", "info");
     }
   };
 
@@ -175,7 +186,6 @@ const App: React.FC = () => {
       try {
         const base64 = await fileToBase64(file);
         setEditProduct({ ...editProduct, image: base64 });
-        showNotification("Cover image loaded");
       } catch (err) {
         showNotification("Upload failed", "info");
       }
@@ -188,7 +198,6 @@ const App: React.FC = () => {
       try {
         const base64 = await fileToBase64(file);
         setBanner({ ...banner, imageUrl: base64 });
-        showNotification("Hero image loaded");
       } catch (err) {
         showNotification("Banner upload failed", "info");
       }
@@ -202,7 +211,6 @@ const App: React.FC = () => {
     try {
       const newImages = await Promise.all(files.map(file => fileToBase64(file)));
       setEditProduct({ ...editProduct, gallery: [...currentGallery, ...newImages].slice(0, 15) });
-      showNotification(`${files.length} screenshots added`);
     } catch (err) {
       showNotification("Gallery failed", "info");
     }
@@ -234,8 +242,6 @@ const App: React.FC = () => {
       });
       setIsEditing(false);
       showNotification("Asset published");
-    } else {
-      showNotification("Save Error: " + error.message, "info");
     }
   };
 
@@ -250,8 +256,6 @@ const App: React.FC = () => {
     if (!error) {
       setIsEditingBanner(false);
       showNotification("Store Banner Updated");
-    } else {
-      showNotification("Banner save failed", "info");
     }
   };
 
@@ -269,9 +273,8 @@ const App: React.FC = () => {
   };
 
   const handleOrderViaTelegram = () => {
-    const product = products.find(p => p.id === selectedProductId);
-    if (!product) return;
-    const message = `👋 *New Order from Edge Store*\n\n📱 Device: ${selectedPhone}\n📦 Item: ${product.title}\n📂 Category: ${product.category}\n💰 Price: ${product.price === 0 ? 'FREE' : product.price + ' EGP'}`;
+    if (!selectedProduct) return;
+    const message = `👋 *New Order from Edge Store*\n\n📱 Device: ${selectedPhone}\n📦 Item: ${selectedProduct.title}\n📂 Category: ${selectedProduct.category}\n💰 Price: ${selectedProduct.price === 0 ? 'FREE' : selectedProduct.price + ' EGP'}`;
     window.open(`https://t.me/Mohamed_edge?text=${encodeURIComponent(message)}`, '_blank');
   };
 
@@ -438,9 +441,6 @@ const App: React.FC = () => {
   };
 
   const renderOrderPage = () => {
-    const selectedProduct = products.find(p => p.id === selectedProductId);
-    const productsInCategory = products.filter(p => p.category === selectedCategory);
-
     return (
       <div className="max-w-6xl mx-auto space-y-10 pb-32 animate-in fade-in px-2">
         <header className="flex flex-col items-center text-center gap-5">
@@ -468,7 +468,7 @@ const App: React.FC = () => {
                 </div>
                 <div>
                    <label className="text-[10px] font-black uppercase text-zinc-400 tracking-[0.2em] ml-2 block mb-3">Pick Your Asset</label>
-                   <select value={selectedProductId} onChange={e => setSelectedProductId(e.target.value)} className="w-full p-5 rounded-2xl bg-zinc-50 font-black text-base appearance-none outline-none border-2 border-transparent focus:border-[#007AFF] transition-all">
+                   <select value={selectedProduct?.id || ''} onChange={e => setSelectedProductId(e.target.value)} className="w-full p-5 rounded-2xl bg-zinc-50 font-black text-base appearance-none outline-none border-2 border-transparent focus:border-[#007AFF] transition-all">
                       {productsInCategory.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
                       {productsInCategory.length === 0 && <option disabled>Stock Currently Empty</option>}
                    </select>
@@ -478,37 +478,39 @@ const App: React.FC = () => {
 
           <div className="lg:col-span-5 lg:sticky lg:top-28">
              <div className="glass-panel p-8 rounded-[3rem] border-white shadow-2xl space-y-6">
-                <div className="aspect-[4/3] rounded-[2rem] overflow-hidden border shadow-inner">
-                   {selectedProduct ? <img src={selectedProduct.image} className="w-full h-full object-cover" alt="" /> : <div className="w-full h-full bg-zinc-100 flex items-center justify-center"><i className="fa-solid fa-spinner animate-spin text-zinc-300"></i></div>}
+                <div className="aspect-[4/3] rounded-[2rem] overflow-hidden border shadow-inner bg-zinc-50">
+                   {selectedProduct ? <img src={selectedProduct.image} className="w-full h-full object-cover animate-in fade-in duration-500" alt="" /> : <div className="w-full h-full flex items-center justify-center text-zinc-300 font-black text-xs uppercase">No Preview</div>}
                 </div>
-                {selectedProduct && (
-                  <div className="space-y-6">
-                    <div className="flex items-center justify-between p-5 bg-zinc-50 rounded-2xl border text-center">
-                       <div className="w-full">
-                          <p className="text-[9px] font-black text-zinc-400 uppercase mb-1 tracking-widest">Order Total</p>
-                          <p className="text-3xl font-black">{selectedProduct.price} EGP</p>
-                       </div>
-                    </div>
-                    {selectedProduct.price > 0 && (
-                      <div className="p-4 bg-amber-50 rounded-2xl border border-amber-100 flex gap-4 items-center">
-                         <div className="w-12 h-12 bg-amber-500 rounded-full flex items-center justify-center text-white"><i className="fa-solid fa-wallet text-xl"></i></div>
-                         <div className="flex-1">
-                            <p className="text-[10px] font-black text-amber-900 uppercase tracking-widest mb-1">Transfer Via Vodafone Cash</p>
-                            <p className="text-xl font-black text-amber-900">01091931466</p>
-                         </div>
+                
+                {/* قسم السعر وزر التليجرام يظهر دائماً طالما هناك منتج متاح */}
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between p-5 bg-zinc-50 rounded-2xl border text-center">
+                      <div className="w-full">
+                        <p className="text-[9px] font-black text-zinc-400 uppercase mb-1 tracking-widest">Order Total</p>
+                        <p className="text-3xl font-black">{selectedProduct?.price || 0} EGP</p>
                       </div>
-                    )}
-                    <div className="space-y-3">
-                      {selectedProduct.price === 0 ? (
-                        <button onClick={() => handleDownload(selectedProduct)} className="w-full py-5 bg-[#007AFF] text-white font-black text-lg rounded-2xl shadow-xl shadow-blue-500/20 active:scale-95 transition-all">Download Asset</button>
-                      ) : (
-                        <button onClick={handleOrderViaTelegram} className="w-full py-5 bg-[#24A1DE] text-white font-black text-lg rounded-2xl shadow-xl shadow-sky-500/20 active:scale-95 transition-all flex items-center justify-center gap-3">
-                          <i className="fa-brands fa-telegram text-2xl"></i><span>Order via Telegram</span>
-                        </button>
-                      )}
-                    </div>
                   </div>
-                )}
+                  
+                  {selectedProduct && selectedProduct.price > 0 && (
+                    <div className="p-4 bg-amber-50 rounded-2xl border border-amber-100 flex gap-4 items-center animate-in slide-in-from-bottom-2">
+                        <div className="w-12 h-12 bg-amber-500 rounded-full flex items-center justify-center text-white"><i className="fa-solid fa-wallet text-xl"></i></div>
+                        <div className="flex-1">
+                          <p className="text-[10px] font-black text-amber-900 uppercase tracking-widest mb-1">Transfer Via Vodafone Cash</p>
+                          <p className="text-xl font-black text-amber-900">01091931466</p>
+                        </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-3">
+                    {selectedProduct?.price === 0 ? (
+                      <button onClick={() => handleDownload(selectedProduct)} className="w-full py-5 bg-[#007AFF] text-white font-black text-lg rounded-2xl shadow-xl active:scale-95 transition-all">Download Asset</button>
+                    ) : (
+                      <button onClick={handleOrderViaTelegram} disabled={!selectedProduct} className="w-full py-5 bg-[#24A1DE] text-white font-black text-lg rounded-2xl shadow-xl shadow-sky-500/20 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50">
+                        <i className="fa-brands fa-telegram text-2xl"></i><span>Order via Telegram</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
              </div>
           </div>
         </div>
@@ -518,19 +520,13 @@ const App: React.FC = () => {
 
   if (isLoading) return (
     <div className="h-screen w-full flex flex-col items-center justify-center bg-[#F2F2F7] relative overflow-hidden">
-      {/* Dynamic Background Glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-blue-500/10 blur-[100px] rounded-full animate-pulse"></div>
-      
-      {/* Brand Logo Animation */}
       <div className="relative mb-8">
         <div className="w-24 h-24 rounded-[2rem] bg-gradient-to-br from-[#007AFF] to-[#0051FF] flex items-center justify-center shadow-2xl shadow-blue-500/40 relative z-10 animate-bounce duration-[2s]">
           <span className="text-white font-black text-5xl">E</span>
         </div>
-        {/* Ring Animation */}
         <div className="absolute inset-0 w-24 h-24 border-4 border-[#007AFF] rounded-[2rem] animate-ping opacity-20"></div>
       </div>
-      
-      {/* Loading Text UI */}
       <div className="text-center space-y-2 relative z-10">
         <h3 className="text-xl font-black tracking-tighter text-zinc-900">Edge Store</h3>
         <div className="flex flex-col items-center">
@@ -540,7 +536,6 @@ const App: React.FC = () => {
           <p className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-400">Initializing Experience</p>
         </div>
       </div>
-
       <style>{`
         @keyframes loading {
           0% { transform: translateX(-100%); }
