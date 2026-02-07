@@ -632,9 +632,25 @@ const App: React.FC = () => {
                        )}
                     </div>
                     <div className="space-y-4">
-                      <button onClick={selectedProduct.price === 0 ? () => handleDownload(selectedProduct) : handleOrderViaTelegram} className="w-full py-6 rounded-2xl bg-[#007AFF] text-white font-black text-xl shadow-2xl shadow-blue-500/30 hover:bg-blue-600 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-4 group">
-                        <i className={`${selectedProduct.price === 0 ? 'fa-solid fa-cloud-arrow-down' : 'fa-brands fa-telegram'} text-2xl group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform`}></i>{selectedProduct.price === 0 ? 'Download Now' : 'Order via Telegram'}
-                      </button>
+                      {selectedProduct.price === 0 ? (
+                        <button 
+                          onClick={() => handleDownload(selectedProduct)} 
+                          className="w-full py-6 rounded-2xl bg-[#007AFF] text-white font-black text-xl shadow-2xl shadow-blue-500/30 hover:bg-blue-600 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-4 group"
+                        >
+                          <i className="fa-solid fa-cloud-arrow-down text-2xl group-hover:translate-y-1 transition-transform"></i>
+                          Download Now
+                        </button>
+                      ) : (
+                        <button 
+                          onClick={handleOrderViaTelegram} 
+                          className="relative overflow-hidden w-full py-6 rounded-2xl bg-[#24A1DE] text-white font-black text-xl shadow-2xl shadow-sky-500/30 hover:bg-[#229ED9] hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-4 group"
+                        >
+                          {/* Shimmer Effect */}
+                          <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></div>
+                          <i className="fa-brands fa-telegram text-3xl group-hover:rotate-12 transition-transform duration-300"></i>
+                          <span>Order via Telegram</span>
+                        </button>
+                      )}
                       <p className="text-center text-[9px] font-black text-zinc-400 uppercase tracking-[0.2em] opacity-50">Instant delivery after order confirmation</p>
                     </div>
                   </div>
