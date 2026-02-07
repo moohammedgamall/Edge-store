@@ -33,11 +33,12 @@ const App: React.FC = () => {
 
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [editProduct, setEditProduct] = useState<Partial<Product>>({});
-  const [galleryUrlInput, setGalleryUrlInput] = useState('');
   const [isEditingBanner, setIsEditingBanner] = useState<boolean>(false);
 
   const [currentSlide, setCurrentSlide] = useState(0);
   const sliderRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const checkRoute = () => {
@@ -133,18 +134,49 @@ const App: React.FC = () => {
     }
   };
 
-  const handleAddGalleryImage = () => {
-    if (!galleryUrlInput) return;
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = error => reject(error);
+    });
+  };
+
+  const handleMainImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      try {
+        const base64 = await fileToBase64(file);
+        setEditProduct({ ...editProduct, image: base64 });
+        showNotification("Main image uploaded");
+      } catch (err) {
+        showNotification("Upload failed", "info");
+      }
+    }
+  };
+
+  const handleGalleryImagesUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []) as File[];
+    if (files.length === 0) return;
+
     const currentGallery = editProduct.gallery || [];
-    if (currentGallery.length >= 20) {
-      showNotification("Maximum 20 images allowed", "info");
+    if (currentGallery.length + files.length > 20) {
+      showNotification("Limit exceeded (Max 20)", "info");
       return;
     }
-    setEditProduct({
-      ...editProduct,
-      gallery: [...currentGallery, galleryUrlInput]
-    });
-    setGalleryUrlInput('');
+
+    try {
+      const newImages = await Promise.all(files.map(file => fileToBase64(file)));
+      setEditProduct({
+        ...editProduct,
+        gallery: [...currentGallery, ...newImages]
+      });
+      showNotification(`${files.length} images added to gallery`);
+    } catch (err) {
+      showNotification("Gallery upload failed", "info");
+    }
+    if (galleryInputRef.current) galleryInputRef.current.value = '';
   };
 
   const handleRemoveGalleryImage = (index: number) => {
@@ -156,7 +188,10 @@ const App: React.FC = () => {
   };
 
   const handleSaveProduct = async () => {
-    if (!editProduct.title || !editProduct.image) return;
+    if (!editProduct.title || !editProduct.image) {
+      showNotification("Missing title or image", "info");
+      return;
+    }
     const productToSave = { 
       id: editProduct.id || Date.now().toString(),
       title: editProduct.title,
@@ -266,17 +301,43 @@ const App: React.FC = () => {
             <button onClick={() => setIsEditing(false)} className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-500"><i className="fa-solid fa-xmark"></i></button>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div className="space-y-4">
               <input placeholder="Product Title" className="w-full p-4 rounded-xl border-2 border-zinc-100 focus:border-[#007AFF] outline-none font-bold text-sm transition-all" value={editProduct.title || ''} onChange={e => setEditProduct({...editProduct, title: e.target.value})} />
-              <input placeholder="Price ($)" type="number" className="w-full p-4 rounded-xl border-2 border-zinc-100 focus:border-[#007AFF] outline-none font-bold text-sm transition-all" value={editProduct.price || 0} onChange={e => setEditProduct({...editProduct, price: parseFloat(e.target.value)})} />
-              <input placeholder="Main Thumbnail URL" className="w-full p-4 rounded-xl border-2 border-zinc-100 focus:border-[#007AFF] outline-none font-bold text-sm transition-all" value={editProduct.image || ''} onChange={e => setEditProduct({...editProduct, image: e.target.value})} />
+              
               <div className="flex gap-2">
-                <select className="flex-1 p-4 rounded-xl border-2 border-zinc-100 font-bold text-sm outline-none" value={editProduct.category} onChange={e => setEditProduct({...editProduct, category: e.target.value as Section})}>
-                  <option value="Themes">Themes</option><option value="Widgets">Widgets</option><option value="Walls">Walls</option>
-                </select>
+                <input placeholder="Price ($)" type="number" className="flex-1 p-4 rounded-xl border-2 border-zinc-100 focus:border-[#007AFF] outline-none font-bold text-sm transition-all" value={editProduct.price || 0} onChange={e => setEditProduct({...editProduct, price: parseFloat(e.target.value)})} />
                 <input placeholder="OS Version" className="flex-1 p-4 rounded-xl border-2 border-zinc-100 focus:border-[#007AFF] outline-none font-bold text-sm" value={editProduct.compatibility || ''} onChange={e => setEditProduct({...editProduct, compatibility: e.target.value})} />
               </div>
+
+              <select className="w-full p-4 rounded-xl border-2 border-zinc-100 font-bold text-sm outline-none" value={editProduct.category} onChange={e => setEditProduct({...editProduct, category: e.target.value as Section})}>
+                <option value="Themes">Themes</option><option value="Widgets">Widgets</option><option value="Walls">Walls</option>
+              </select>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase text-zinc-400 px-1">Main Cover</label>
+                <div 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full h-32 rounded-xl border-2 border-dashed border-zinc-200 flex flex-col items-center justify-center cursor-pointer hover:border-[#007AFF] transition-all bg-white overflow-hidden relative"
+                >
+                  {editProduct.image ? (
+                    <>
+                      <img src={editProduct.image} className="w-full h-full object-cover" alt="" />
+                      <div className="absolute inset-0 bg-black/20 flex items-center justify-center text-white opacity-0 hover:opacity-100 transition-opacity">
+                         <i className="fa-solid fa-cloud-arrow-up text-xl"></i>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <i className="fa-solid fa-image text-zinc-300 text-2xl mb-1"></i>
+                      <span className="text-[10px] font-black text-zinc-400">Click to Upload Cover</span>
+                    </>
+                  )}
+                </div>
+                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleMainImageUpload} />
+              </div>
+
+              <input placeholder="Download URL (Drive/Mega/etc)" className="w-full p-4 rounded-xl border-2 border-zinc-100 focus:border-[#007AFF] outline-none font-bold text-sm transition-all" value={editProduct.downloadUrl || ''} onChange={e => setEditProduct({...editProduct, downloadUrl: e.target.value})} />
             </div>
 
             <div className="p-5 bg-zinc-50 rounded-2xl border-2 border-dashed border-zinc-200 space-y-4">
@@ -285,27 +346,25 @@ const App: React.FC = () => {
                 <span className="text-[10px] font-black px-2 py-0.5 bg-zinc-200 rounded-full">{editProduct.gallery?.length || 0}/20</span>
               </div>
               
-              <div className="flex gap-2">
-                <input 
-                  placeholder="Paste Image URL..." 
-                  className="flex-1 p-3 rounded-xl border bg-white text-xs outline-none focus:border-[#007AFF]" 
-                  value={galleryUrlInput} 
-                  onChange={e => setGalleryUrlInput(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && handleAddGalleryImage()}
-                />
-                <button onClick={handleAddGalleryImage} className="w-12 h-12 bg-[#007AFF] text-white rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20 active:scale-90 transition-all"><i className="fa-solid fa-plus"></i></button>
-              </div>
+              <button 
+                onClick={() => galleryInputRef.current?.click()}
+                className="w-full py-4 bg-white border-2 border-zinc-200 text-zinc-600 rounded-xl flex items-center justify-center gap-3 font-black text-xs hover:border-[#007AFF] hover:text-[#007AFF] transition-all shadow-sm active:scale-95"
+              >
+                <i className="fa-solid fa-images"></i>
+                <span>Upload From Device</span>
+              </button>
+              <input ref={galleryInputRef} type="file" multiple accept="image/*" className="hidden" onChange={handleGalleryImagesUpload} />
 
-              <div className="grid grid-cols-4 gap-2 max-h-40 overflow-y-auto no-scrollbar p-1">
+              <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto no-scrollbar p-1">
                 {editProduct.gallery?.map((url, idx) => (
-                  <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border group">
+                  <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border group shadow-sm bg-white">
                     <img src={url} className="w-full h-full object-cover" alt="" />
                     <button onClick={() => handleRemoveGalleryImage(idx)} className="absolute inset-0 bg-red-500/80 text-white opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"><i className="fa-solid fa-trash-can text-xs"></i></button>
                   </div>
                 ))}
                 {(editProduct.gallery?.length || 0) === 0 && (
                   <div className="col-span-full h-24 flex flex-col items-center justify-center text-zinc-300">
-                    <i className="fa-solid fa-images text-xl mb-1"></i>
+                    <i className="fa-solid fa-photo-film text-xl mb-1"></i>
                     <p className="text-[10px] font-black">Empty Gallery</p>
                   </div>
                 )}
