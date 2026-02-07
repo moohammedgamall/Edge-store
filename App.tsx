@@ -118,36 +118,45 @@ const App: React.FC = () => {
   };
 
   const handleUpdatePassword = async () => {
-    const current = newPasswordData.current.trim();
-    const next = newPasswordData.next.trim();
-    const confirm = newPasswordData.confirm.trim();
+    const currentInput = newPasswordData.current.trim();
+    const nextInput = newPasswordData.next.trim();
+    const confirmInput = newPasswordData.confirm.trim();
 
-    if (current !== adminPassword) {
-      showNotification("Wrong current key", "info");
+    // 1. Validation Checks
+    if (currentInput !== adminPassword) {
+      showNotification("Current key is incorrect", "info");
       return;
     }
-    if (!next) {
+    if (!nextInput) {
       showNotification("New key cannot be empty", "info");
       return;
     }
-    if (next !== confirm) {
-      showNotification("Keys mismatch", "info");
+    if (nextInput !== confirmInput) {
+      showNotification("New keys do not match", "info");
       return;
     }
 
-    // Explicitly target the key for update using onConflict
-    const { error } = await supabase
-      .from('settings')
-      .upsert({ key: 'admin_password', value: next }, { onConflict: 'key' });
+    // 2. Database Update Logic
+    try {
+      // Using direct update which is more reliable than upsert for a single known row
+      const { error } = await supabase
+        .from('settings')
+        .update({ value: nextInput })
+        .eq('key', 'admin_password');
 
-    if (error) {
-      console.error("Update Error:", error);
-      showNotification("Update failed: " + error.message, "info");
-    } else {
-      setAdminPassword(next);
-      setIsChangingPassword(false);
-      setNewPasswordData({ current: '', next: '', confirm: '' });
-      showNotification("Security key updated successfully");
+      if (error) {
+        console.error("Supabase Error:", error);
+        showNotification("DB Error: " + error.message, "info");
+      } else {
+        // Update local state immediately upon success
+        setAdminPassword(nextInput);
+        setIsChangingPassword(false);
+        setNewPasswordData({ current: '', next: '', confirm: '' });
+        showNotification("Security key updated successfully", "success");
+      }
+    } catch (err) {
+      console.error("Unexpected Error:", err);
+      showNotification("An unexpected error occurred", "info");
     }
   };
 
