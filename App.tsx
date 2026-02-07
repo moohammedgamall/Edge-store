@@ -82,15 +82,29 @@ const App: React.FC = () => {
       }
 
       try {
+        // Fetch Admin Password
         const { data: settingsData } = await supabase.from('settings').select('*').eq('key', 'admin_password').single();
         if (settingsData) setAdminPassword(settingsData.value);
 
-        const { data: bannerData } = await supabase.from('banner').select('*').single();
-        if (bannerData) setBanner({ ...bannerData, isVisible: true });
+        // Fetch Banner
+        const { data: bannerData } = await supabase.from('banner').select('*').eq('id', 1).single();
+        if (bannerData) {
+          setBanner({
+            title: bannerData.title,
+            highlight: bannerData.highlight,
+            imageUrl: bannerData.imageUrl,
+            buttonText: bannerData.buttonText || 'Explore Shop',
+            isVisible: true
+          });
+        }
 
-        const { data: productsData } = await supabase.from('products').select('*');
-        if (productsData && productsData.length > 0) setProducts(productsData);
-        else setProducts(MOCK_PRODUCTS);
+        // Fetch Products
+        const { data: productsData, error: pError } = await supabase.from('products').select('*').order('created_at', { ascending: false });
+        if (productsData && productsData.length > 0) {
+          setProducts(productsData);
+        } else {
+          setProducts(MOCK_PRODUCTS);
+        }
       } catch (error) {
         console.error("Fetch error:", error);
         setProducts(MOCK_PRODUCTS);
@@ -180,26 +194,45 @@ const App: React.FC = () => {
 
   const handleSaveProduct = async () => {
     if (!supabase || !editProduct.title || !editProduct.image) return;
+    
     const productToSave = { 
-      ...editProduct, 
-      id: editProduct.id || Date.now().toString(), 
+      id: editProduct.id || Date.now().toString(),
+      title: editProduct.title,
+      description: editProduct.description || '',
+      category: editProduct.category || 'Themes',
       price: editProduct.price || 0,
-      gallery: editProduct.gallery || [] 
+      image: editProduct.image,
+      gallery: editProduct.gallery || [],
+      rating: editProduct.rating || 5.0,
+      downloads: editProduct.downloads || '0',
+      isPremium: editProduct.isPremium || false,
+      compatibility: editProduct.compatibility || '',
+      downloadUrl: editProduct.downloadUrl || ''
     };
+
     const { error } = await supabase.from('products').upsert(productToSave);
     if (!error) {
       setProducts(prev => {
         const exists = prev.find(p => p.id === productToSave.id);
-        return exists ? prev.map(p => p.id === productToSave.id ? productToSave as Product : p) : [...prev, productToSave as Product];
+        return exists ? prev.map(p => p.id === productToSave.id ? (productToSave as Product) : p) : [productToSave as Product, ...prev];
       });
       setIsEditing(false);
       showNotification("Product saved successfully");
+    } else {
+      showNotification("Error saving product", "info");
+      console.error(error);
     }
   };
 
   const handleSaveBanner = async () => {
     if (!supabase) return;
-    const { error } = await supabase.from('banner').upsert({ id: 1, ...banner });
+    const { error } = await supabase.from('banner').upsert({ 
+      id: 1, 
+      title: banner.title,
+      highlight: banner.highlight,
+      imageUrl: banner.imageUrl,
+      buttonText: banner.buttonText
+    });
     if (!error) {
       setIsEditingBanner(false);
       showNotification("Banner updated");
@@ -294,11 +327,15 @@ const App: React.FC = () => {
                </div>
                <div className="space-y-1.5">
                   <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-2">Price ($)</label>
-                  <input placeholder="0.00" type="number" className="w-full p-4 rounded-xl border bg-white font-bold text-sm" value={editProduct.price} onChange={e => setEditProduct({...editProduct, price: parseFloat(e.target.value)})} />
+                  <input placeholder="0.00" type="number" className="w-full p-4 rounded-xl border bg-white font-bold text-sm" value={editProduct.price || 0} onChange={e => setEditProduct({...editProduct, price: parseFloat(e.target.value)})} />
                </div>
                <div className="space-y-1.5 col-span-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-2">Primary Thumbnail URL</label>
                   <input placeholder="https://..." className="w-full p-4 rounded-xl border bg-white text-sm" value={editProduct.image || ''} onChange={e => setEditProduct({...editProduct, image: e.target.value})} />
+               </div>
+               <div className="space-y-1.5 col-span-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-2">Download URL (Direct link)</label>
+                  <input placeholder="https://..." className="w-full p-4 rounded-xl border bg-white text-sm" value={editProduct.downloadUrl || ''} onChange={e => setEditProduct({...editProduct, downloadUrl: e.target.value})} />
                </div>
                <div className="space-y-1.5">
                   <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-2">Category</label>
@@ -314,6 +351,14 @@ const App: React.FC = () => {
                     <input type="checkbox" className="w-5 h-5 accent-[#007AFF]" checked={editProduct.isPremium} onChange={e => setEditProduct({...editProduct, isPremium: e.target.checked})} />
                     <span className="font-bold text-zinc-600 text-sm">Mark as Premium Asset</span>
                   </div>
+               </div>
+               <div className="space-y-1.5 col-span-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-2">Description</label>
+                  <textarea placeholder="Tell more about this item..." className="w-full p-4 rounded-xl border bg-white text-sm min-h-[100px]" value={editProduct.description || ''} onChange={e => setEditProduct({...editProduct, description: e.target.value})} />
+               </div>
+               <div className="space-y-1.5 col-span-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-2">Compatibility (e.g. ColorOS 15)</label>
+                  <input placeholder="ColorOS 14/15" className="w-full p-4 rounded-xl border bg-white text-sm" value={editProduct.compatibility || ''} onChange={e => setEditProduct({...editProduct, compatibility: e.target.value})} />
                </div>
             </div>
             <div className="space-y-4 pt-4 border-t border-zinc-100">
@@ -365,7 +410,7 @@ const App: React.FC = () => {
             </div>
             <div className="flex gap-1.5 sm:gap-2">
               <button onClick={() => { setEditProduct(p); setIsEditing(true); setIsEditingBanner(false); setIsChangingPassword(false); }} className="p-2.5 sm:p-3 bg-blue-50 text-[#007AFF] rounded-xl"><i className="fa-solid fa-pen text-sm sm:text-base"></i></button>
-              <button onClick={async () => { if(!supabase) return; await supabase.from('products').delete().eq('id', p.id); setProducts(pr => pr.filter(x => x.id !== p.id)); }} className="p-2.5 sm:p-3 bg-red-50 text-red-500 rounded-xl"><i className="fa-solid fa-trash text-sm sm:text-base"></i></button>
+              <button onClick={async () => { if(!supabase) return; const {error} = await supabase.from('products').delete().eq('id', p.id); if(!error) setProducts(pr => pr.filter(x => x.id !== p.id)); }} className="p-2.5 sm:p-3 bg-red-50 text-red-500 rounded-xl"><i className="fa-solid fa-trash text-sm sm:text-base"></i></button>
             </div>
           </div>
         ))}
