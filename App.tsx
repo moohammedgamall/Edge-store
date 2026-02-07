@@ -305,14 +305,23 @@ const App: React.FC = () => {
             <div className="space-y-4">
               <input placeholder="Product Title" className="w-full p-4 rounded-xl border-2 border-zinc-100 focus:border-[#007AFF] outline-none font-bold text-sm transition-all" value={editProduct.title || ''} onChange={e => setEditProduct({...editProduct, title: e.target.value})} />
               
-              <div className="flex gap-2">
-                <input placeholder="Price ($)" type="number" className="flex-1 p-4 rounded-xl border-2 border-zinc-100 focus:border-[#007AFF] outline-none font-bold text-sm transition-all" value={editProduct.price || 0} onChange={e => setEditProduct({...editProduct, price: parseFloat(e.target.value)})} />
-                <input placeholder="OS Version" className="flex-1 p-4 rounded-xl border-2 border-zinc-100 focus:border-[#007AFF] outline-none font-bold text-sm" value={editProduct.compatibility || ''} onChange={e => setEditProduct({...editProduct, compatibility: e.target.value})} />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black uppercase text-zinc-400 px-1">Price ($)</label>
+                  <input placeholder="0.00" type="number" className="w-full p-4 rounded-xl border-2 border-zinc-100 focus:border-[#007AFF] outline-none font-bold text-sm transition-all" value={editProduct.price || 0} onChange={e => setEditProduct({...editProduct, price: parseFloat(e.target.value)})} />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black uppercase text-zinc-400 px-1">OS Version</label>
+                  <input placeholder="e.g. ColorOS 15" className="w-full p-4 rounded-xl border-2 border-zinc-100 focus:border-[#007AFF] outline-none font-bold text-sm transition-all" value={editProduct.compatibility || ''} onChange={e => setEditProduct({...editProduct, compatibility: e.target.value})} />
+                </div>
               </div>
 
-              <select className="w-full p-4 rounded-xl border-2 border-zinc-100 font-bold text-sm outline-none" value={editProduct.category} onChange={e => setEditProduct({...editProduct, category: e.target.value as Section})}>
-                <option value="Themes">Themes</option><option value="Widgets">Widgets</option><option value="Walls">Walls</option>
-              </select>
+              <div className="space-y-1">
+                <label className="text-[9px] font-black uppercase text-zinc-400 px-1">Category</label>
+                <select className="w-full p-4 rounded-xl border-2 border-zinc-100 font-bold text-sm outline-none bg-white" value={editProduct.category} onChange={e => setEditProduct({...editProduct, category: e.target.value as Section})}>
+                  <option value="Themes">Themes</option><option value="Widgets">Widgets</option><option value="Walls">Walls</option>
+                </select>
+              </div>
 
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase text-zinc-400 px-1">Main Cover</label>
@@ -431,8 +440,16 @@ const App: React.FC = () => {
                  </div>
                  <div className="space-y-2 pt-2 border-t"><h4 className="font-black text-[10px] uppercase text-zinc-400">Description</h4><p className="text-zinc-500 text-sm leading-relaxed">{p.description || "Premium digital asset for Realme UI."}</p></div>
                  <div className="grid grid-cols-2 gap-3">
-                    <div className="p-3 bg-zinc-50 rounded-2xl border text-center"><i className="fa-solid fa-mobile-screen text-[#007AFF] mb-1"></i><p className="text-[8px] font-black text-zinc-400 uppercase">OS</p><p className="text-[10px] font-bold text-zinc-900 line-clamp-1">{p.compatibility}</p></div>
-                    <div className="p-3 bg-zinc-50 rounded-2xl border text-center"><i className="fa-solid fa-shield-check text-[#007AFF] mb-1"></i><p className="text-[8px] font-black text-zinc-400 uppercase">Status</p><p className="text-[10px] font-bold text-zinc-900">Verified</p></div>
+                    <div className="p-3 bg-zinc-50 rounded-2xl border text-center flex flex-col items-center justify-center overflow-hidden">
+                      <i className="fa-solid fa-mobile-screen text-[#007AFF] mb-1"></i>
+                      <p className="text-[8px] font-black text-zinc-400 uppercase">OS</p>
+                      <p className="text-[10px] font-bold text-zinc-900 truncate w-full px-1">{p.compatibility}</p>
+                    </div>
+                    <div className="p-3 bg-zinc-50 rounded-2xl border text-center flex flex-col items-center justify-center">
+                      <i className="fa-solid fa-shield-check text-[#007AFF] mb-1"></i>
+                      <p className="text-[8px] font-black text-zinc-400 uppercase">Status</p>
+                      <p className="text-[10px] font-bold text-zinc-900">Verified</p>
+                    </div>
                  </div>
                  <button onClick={() => { setSelectedCategory(p.category === 'Apps' ? 'Themes' : p.category as Section); setSelectedProductId(p.id); setActiveSection('Order'); window.location.hash = '#/order'; }} className="w-full py-3.5 rounded-xl bg-[#007AFF] text-white font-black text-base shadow-xl shadow-blue-500/10 active:scale-95 transition-all">Checkout</button>
               </div>
