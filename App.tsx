@@ -67,11 +67,9 @@ const App: React.FC = () => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // Fetch Settings
         const { data: settingsData } = await supabase.from('settings').select('*').eq('key', 'admin_password').single();
         if (settingsData) setAdminPassword(settingsData.value);
 
-        // Fetch Banner
         const { data: bannerData } = await supabase.from('banner').select('*').eq('id', 1).single();
         if (bannerData) {
           setBanner({
@@ -83,7 +81,6 @@ const App: React.FC = () => {
           });
         }
 
-        // Fetch Products
         const { data: productsData } = await supabase.from('products').select('*').order('created_at', { ascending: false });
         if (productsData && productsData.length > 0) {
           setProducts(productsData);
@@ -99,18 +96,6 @@ const App: React.FC = () => {
     };
     fetchData();
   }, []);
-
-  useEffect(() => {
-    if (activeSection === 'Order') {
-      const productsInCategory = products.filter(p => p.category === selectedCategory);
-      if (productsInCategory.length > 0) {
-        const alreadySelected = productsInCategory.find(p => p.id === selectedProductId);
-        if (!alreadySelected) setSelectedProductId(productsInCategory[0].id);
-      } else {
-        setSelectedProductId('');
-      }
-    }
-  }, [selectedCategory, activeSection, products, selectedProductId]);
 
   const showNotification = (message: string, type: 'success' | 'info' = 'success') => {
     setNotification({ message, type });
@@ -146,6 +131,28 @@ const App: React.FC = () => {
       setNewPasswordData({ current: '', next: '', confirm: '' });
       showNotification("Security key updated");
     }
+  };
+
+  const handleAddGalleryImage = () => {
+    if (!galleryUrlInput) return;
+    const currentGallery = editProduct.gallery || [];
+    if (currentGallery.length >= 20) {
+      showNotification("Maximum 20 images allowed", "info");
+      return;
+    }
+    setEditProduct({
+      ...editProduct,
+      gallery: [...currentGallery, galleryUrlInput]
+    });
+    setGalleryUrlInput('');
+  };
+
+  const handleRemoveGalleryImage = (index: number) => {
+    const currentGallery = editProduct.gallery || [];
+    setEditProduct({
+      ...editProduct,
+      gallery: currentGallery.filter((_, i) => i !== index)
+    });
   };
 
   const handleSaveProduct = async () => {
@@ -197,7 +204,6 @@ const App: React.FC = () => {
     }
   };
 
-  // Fixed error: Added handleOpenPreview function to navigate to product preview page
   const handleOpenPreview = (id: string) => {
     window.location.hash = `#/preview/${id}`;
   };
@@ -254,19 +260,62 @@ const App: React.FC = () => {
       )}
 
       {isEditing && (
-        <div className="glass-panel p-6 rounded-[1.5rem] space-y-6 animate-in zoom-in-95">
-          <h3 className="text-lg font-black flex justify-between">Asset Config <button onClick={() => setIsEditing(false)}><i className="fa-solid fa-xmark"></i></button></h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <input placeholder="Title" className="p-3.5 rounded-xl border text-sm" value={editProduct.title || ''} onChange={e => setEditProduct({...editProduct, title: e.target.value})} />
-            <input placeholder="Price" type="number" className="p-3.5 rounded-xl border text-sm" value={editProduct.price || 0} onChange={e => setEditProduct({...editProduct, price: parseFloat(e.target.value)})} />
-            <input placeholder="Thumbnail" className="p-3.5 rounded-xl border text-sm col-span-full" value={editProduct.image || ''} onChange={e => setEditProduct({...editProduct, image: e.target.value})} />
-            <input placeholder="Download URL" className="p-3.5 rounded-xl border text-sm col-span-full" value={editProduct.downloadUrl || ''} onChange={e => setEditProduct({...editProduct, downloadUrl: e.target.value})} />
-            <select className="p-3.5 rounded-xl border text-sm font-bold" value={editProduct.category} onChange={e => setEditProduct({...editProduct, category: e.target.value as Section})}>
-              <option value="Themes">Themes</option><option value="Widgets">Widgets</option><option value="Walls">Walls</option>
-            </select>
-            <input placeholder="OS Version" className="p-3.5 rounded-xl border text-sm" value={editProduct.compatibility || ''} onChange={e => setEditProduct({...editProduct, compatibility: e.target.value})} />
+        <div className="glass-panel p-6 rounded-[2rem] space-y-6 animate-in zoom-in-95">
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-black">Configure Asset</h3>
+            <button onClick={() => setIsEditing(false)} className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-500"><i className="fa-solid fa-xmark"></i></button>
           </div>
-          <button onClick={handleSaveProduct} className="w-full py-3.5 bg-[#007AFF] text-white rounded-xl font-black text-sm shadow-lg shadow-blue-500/10">Push to Database</button>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-4">
+              <input placeholder="Product Title" className="w-full p-4 rounded-xl border-2 border-zinc-100 focus:border-[#007AFF] outline-none font-bold text-sm transition-all" value={editProduct.title || ''} onChange={e => setEditProduct({...editProduct, title: e.target.value})} />
+              <input placeholder="Price ($)" type="number" className="w-full p-4 rounded-xl border-2 border-zinc-100 focus:border-[#007AFF] outline-none font-bold text-sm transition-all" value={editProduct.price || 0} onChange={e => setEditProduct({...editProduct, price: parseFloat(e.target.value)})} />
+              <input placeholder="Main Thumbnail URL" className="w-full p-4 rounded-xl border-2 border-zinc-100 focus:border-[#007AFF] outline-none font-bold text-sm transition-all" value={editProduct.image || ''} onChange={e => setEditProduct({...editProduct, image: e.target.value})} />
+              <div className="flex gap-2">
+                <select className="flex-1 p-4 rounded-xl border-2 border-zinc-100 font-bold text-sm outline-none" value={editProduct.category} onChange={e => setEditProduct({...editProduct, category: e.target.value as Section})}>
+                  <option value="Themes">Themes</option><option value="Widgets">Widgets</option><option value="Walls">Walls</option>
+                </select>
+                <input placeholder="OS Version" className="flex-1 p-4 rounded-xl border-2 border-zinc-100 focus:border-[#007AFF] outline-none font-bold text-sm" value={editProduct.compatibility || ''} onChange={e => setEditProduct({...editProduct, compatibility: e.target.value})} />
+              </div>
+            </div>
+
+            <div className="p-5 bg-zinc-50 rounded-2xl border-2 border-dashed border-zinc-200 space-y-4">
+              <div className="flex justify-between items-center">
+                <h4 className="text-[11px] font-black uppercase tracking-widest text-zinc-400">Gallery (Max 20)</h4>
+                <span className="text-[10px] font-black px-2 py-0.5 bg-zinc-200 rounded-full">{editProduct.gallery?.length || 0}/20</span>
+              </div>
+              
+              <div className="flex gap-2">
+                <input 
+                  placeholder="Paste Image URL..." 
+                  className="flex-1 p-3 rounded-xl border bg-white text-xs outline-none focus:border-[#007AFF]" 
+                  value={galleryUrlInput} 
+                  onChange={e => setGalleryUrlInput(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleAddGalleryImage()}
+                />
+                <button onClick={handleAddGalleryImage} className="w-12 h-12 bg-[#007AFF] text-white rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20 active:scale-90 transition-all"><i className="fa-solid fa-plus"></i></button>
+              </div>
+
+              <div className="grid grid-cols-4 gap-2 max-h-40 overflow-y-auto no-scrollbar p-1">
+                {editProduct.gallery?.map((url, idx) => (
+                  <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border group">
+                    <img src={url} className="w-full h-full object-cover" alt="" />
+                    <button onClick={() => handleRemoveGalleryImage(idx)} className="absolute inset-0 bg-red-500/80 text-white opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"><i className="fa-solid fa-trash-can text-xs"></i></button>
+                  </div>
+                ))}
+                {(editProduct.gallery?.length || 0) === 0 && (
+                  <div className="col-span-full h-24 flex flex-col items-center justify-center text-zinc-300">
+                    <i className="fa-solid fa-images text-xl mb-1"></i>
+                    <p className="text-[10px] font-black">Empty Gallery</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <textarea placeholder="Product Description..." className="w-full p-4 rounded-xl border-2 border-zinc-100 focus:border-[#007AFF] outline-none font-medium text-sm h-24 transition-all" value={editProduct.description || ''} onChange={e => setEditProduct({...editProduct, description: e.target.value})} />
+
+          <button onClick={handleSaveProduct} className="w-full py-4 bg-[#007AFF] text-white rounded-xl font-black text-base shadow-xl shadow-blue-500/10 active:scale-95 transition-all">Publish to Edge Store</button>
         </div>
       )}
 
@@ -275,11 +324,11 @@ const App: React.FC = () => {
           <div key={p.id} className="glass-panel p-3 rounded-2xl flex items-center justify-between border-white">
             <div className="flex items-center gap-3">
               <img src={p.image} className="w-12 h-12 rounded-xl object-cover" alt="" />
-              <div><h4 className="font-bold text-sm">{p.title}</h4><p className="text-[10px] text-zinc-400 font-black uppercase tracking-wider">{p.category} • ${p.price}</p></div>
+              <div><h4 className="font-bold text-sm">{p.title}</h4><p className="text-[10px] text-zinc-400 font-black uppercase tracking-wider">{p.category} • {p.gallery?.length || 0} pics</p></div>
             </div>
             <div className="flex gap-2">
               <button onClick={() => { setEditProduct(p); setIsEditing(true); setIsEditingBanner(false); setIsChangingPassword(false); }} className="w-9 h-9 bg-blue-50 text-[#007AFF] rounded-lg flex items-center justify-center text-xs"><i className="fa-solid fa-pen"></i></button>
-              <button onClick={async () => { const {error} = await supabase.from('products').delete().eq('id', p.id); if(!error) setProducts(pr => pr.filter(x => x.id !== p.id)); }} className="w-9 h-9 bg-red-50 text-red-500 rounded-lg flex items-center justify-center text-xs"><i className="fa-solid fa-trash"></i></button>
+              <button onClick={async () => { if(confirm('Delete this item?')) { const {error} = await supabase.from('products').delete().eq('id', p.id); if(!error) setProducts(pr => pr.filter(x => x.id !== p.id)); } }} className="w-9 h-9 bg-red-50 text-red-500 rounded-lg flex items-center justify-center text-xs"><i className="fa-solid fa-trash"></i></button>
             </div>
           </div>
         ))}
@@ -306,8 +355,8 @@ const App: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 px-2">
            <div className="lg:col-span-7 space-y-4">
               <div className="relative group">
-                 <div ref={sliderRef} className="flex overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar rounded-[2rem] shadow-2xl bg-white border-2 border-white">
-                    {fullGallery.map((url, idx) => <div key={idx} className="min-w-full snap-center p-3" onScroll={handleSliderScroll}><img src={url} className="w-full h-auto rounded-[1.5rem] object-contain" alt="" /></div>)}
+                 <div ref={sliderRef} onScroll={handleSliderScroll} className="flex overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar rounded-[2rem] shadow-2xl bg-white border-2 border-white">
+                    {fullGallery.map((url, idx) => <div key={idx} className="min-w-full snap-center p-3"><img src={url} className="w-full h-auto rounded-[1.5rem] object-contain" alt="" /></div>)}
                  </div>
                  <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-1.5 px-3 py-1 bg-black/5 backdrop-blur-xl rounded-full">
                     {fullGallery.map((_, idx) => <div key={idx} className={`h-1 rounded-full transition-all ${currentSlide === idx ? 'w-4 bg-[#007AFF]' : 'w-1 bg-zinc-300'}`} />)}
