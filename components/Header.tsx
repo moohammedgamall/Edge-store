@@ -1,16 +1,37 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface HeaderProps {
-  onAdminClick: () => void;
+  onAdminTrigger: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ onAdminClick }) => {
+const Header: React.FC<HeaderProps> = ({ onAdminTrigger }) => {
+  const [clickCount, setClickCount] = useState(0);
   const isAdminPath = window.location.hash === '#/admin';
+
+  // Detect triple click on the title
+  const handleTitleClick = () => {
+    setClickCount(prev => prev + 1);
+  };
+
+  useEffect(() => {
+    if (clickCount === 3) {
+      onAdminTrigger();
+      setClickCount(0);
+    }
+    const timer = setTimeout(() => {
+      if (clickCount > 0) setClickCount(0);
+    }, 1000); // Reset clicks if more than 1s passes
+
+    return () => clearTimeout(timer);
+  }, [clickCount, onAdminTrigger]);
 
   return (
     <header className="sticky top-0 z-40 w-full flex justify-center bg-white/80 backdrop-blur-3xl border-b border-zinc-200/50">
       <div className="w-full max-w-7xl px-8 py-5 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+        <div 
+          onClick={handleTitleClick}
+          className="flex items-center gap-3 cursor-pointer select-none active:scale-95 transition-transform"
+        >
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#007AFF] to-[#0051FF] flex items-center justify-center shadow-lg shadow-blue-500/30">
             <span className="text-white font-black text-xl">E</span>
           </div>
@@ -18,7 +39,7 @@ const Header: React.FC<HeaderProps> = ({ onAdminClick }) => {
         </div>
 
         {isAdminPath && (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-4">
             <span className="bg-red-500/10 text-red-600 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest border border-red-500/20">
               Admin Mode
             </span>
