@@ -8,7 +8,7 @@ import ProductCard from './components/ProductCard';
 
 // Supabase Configuration using provided credentials
 const SUPABASE_URL = 'https://nlqnbfvsghlomuugixlk.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5scW5iZnZzZ2hsb211dWdpeGxrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA0Mjk4NzUsImV4cCI6MjA4NjAwNTg3NX0.KXLd6ISgf31DBNaU33fp0ZYLlxyrr62RfrxwYPIMk34';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5scW5iZnZzZ2hsb211dWdixlkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA0Mjk4NzUsImV4cCI6MjA4NjAwNTg3NX0.KXLd6ISgf31DBNaU33fp0ZYLlxyrr62RfrxwYPIMk34';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -39,6 +39,7 @@ const App: React.FC = () => {
   const sliderRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
+  const bannerFileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const checkRoute = () => {
@@ -152,6 +153,19 @@ const App: React.FC = () => {
         showNotification("Main image uploaded");
       } catch (err) {
         showNotification("Upload failed", "info");
+      }
+    }
+  };
+
+  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      try {
+        const base64 = await fileToBase64(file);
+        setBanner({ ...banner, imageUrl: base64 });
+        showNotification("Banner image uploaded");
+      } catch (err) {
+        showNotification("Banner upload failed", "info");
       }
     }
   };
@@ -285,12 +299,40 @@ const App: React.FC = () => {
 
       {isEditingBanner && (
         <div className="glass-panel p-6 rounded-[1.5rem] space-y-4 animate-in slide-in-from-top-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <input placeholder="Headline" className="p-3.5 rounded-xl border text-sm" value={banner.title} onChange={e => setBanner({...banner, title: e.target.value})} />
-            <input placeholder="Highlight" className="p-3.5 rounded-xl border text-sm" value={banner.highlight} onChange={e => setBanner({...banner, highlight: e.target.value})} />
-            <input placeholder="Image URL" className="p-3.5 rounded-xl border text-sm col-span-full" value={banner.imageUrl} onChange={e => setBanner({...banner, imageUrl: e.target.value})} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-3">
+              <input placeholder="Headline" className="w-full p-3.5 rounded-xl border text-sm font-bold" value={banner.title} onChange={e => setBanner({...banner, title: e.target.value})} />
+              <input placeholder="Highlight" className="w-full p-3.5 rounded-xl border text-sm font-bold" value={banner.highlight} onChange={e => setBanner({...banner, highlight: e.target.value})} />
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-black uppercase text-zinc-400 px-1">Or use image URL</label>
+                <input placeholder="Image URL" className="w-full p-3.5 rounded-xl border text-sm" value={banner.imageUrl} onChange={e => setBanner({...banner, imageUrl: e.target.value})} />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase text-zinc-400 px-1">Banner Image</label>
+              <div 
+                onClick={() => bannerFileInputRef.current?.click()}
+                className="w-full h-32 rounded-xl border-2 border-dashed border-zinc-200 flex flex-col items-center justify-center cursor-pointer hover:border-[#007AFF] transition-all bg-zinc-50 overflow-hidden relative"
+              >
+                {banner.imageUrl ? (
+                  <>
+                    <img src={banner.imageUrl} className="w-full h-full object-cover" alt="" />
+                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center text-white opacity-0 hover:opacity-100 transition-opacity">
+                       <i className="fa-solid fa-cloud-arrow-up text-xl"></i>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <i className="fa-solid fa-image text-zinc-300 text-2xl mb-1"></i>
+                    <span className="text-[10px] font-black text-zinc-400">Upload Banner</span>
+                  </>
+                )}
+              </div>
+              <input ref={bannerFileInputRef} type="file" accept="image/*" className="hidden" onChange={handleBannerUpload} />
+            </div>
           </div>
-          <button onClick={handleSaveBanner} className="w-full py-3 bg-zinc-900 text-white rounded-xl font-black text-sm">Update Hero</button>
+          <button onClick={handleSaveBanner} className="w-full py-3.5 bg-zinc-900 text-white rounded-xl font-black text-sm shadow-lg active:scale-95 transition-all">Update Hero Section</button>
         </div>
       )}
 
