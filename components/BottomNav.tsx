@@ -9,46 +9,55 @@ interface BottomNavProps {
 }
 
 const BottomNav: React.FC<BottomNavProps> = ({ activeSection, onSectionChange }) => {
-  // Combine all items including Order for uniform rendering
+  // دمج العناصر الأساسية مع عنصر الطلب (Order)
   const ALL_ITEMS = [
     ...NAV_ITEMS,
     { id: 'Order' as Section, label: 'Order', icon: 'fa-solid fa-bag-shopping' }
   ];
 
-  const getIconColor = (isActive: boolean) => {
-    if (isActive) return 'text-[#007AFF]';
-    return 'text-zinc-500';
-  };
-
-  const getBgStyle = (isActive: boolean) => {
-    if (isActive) return 'bg-[#E5E5EA]';
-    return 'hover:bg-zinc-100/30';
-  };
-
   return (
     <div className="fixed bottom-6 left-0 right-0 z-50 pointer-events-none px-4 flex justify-center">
-      <div className="w-full max-w-lg flex items-center justify-center pointer-events-auto">
-        <div className="w-full flex items-center bg-white/90 backdrop-blur-3xl p-1.5 rounded-full shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)] border border-white/40 transition-all duration-300">
-          <nav className="flex-1 flex items-center justify-between w-full">
+      {/* تقليل العرض الأقصى للحاوية قليلاً */}
+      <div className="w-full max-w-[360px] flex items-center justify-center pointer-events-auto">
+        {/* تقليل الحشو الداخلي (Padding) لتقليل الارتفاع العام */}
+        <div className="w-full flex items-center bg-white/95 backdrop-blur-3xl p-1.5 rounded-full shadow-[0_15px_40px_-10px_rgba(0,0,0,0.12)] border border-white/50">
+          <nav className="flex items-center justify-around w-full">
             {ALL_ITEMS.map((item) => {
               const isActive = activeSection === item.id;
+              
               return (
                 <button
                   key={item.id}
                   onClick={() => onSectionChange(item.id)}
-                  className={`relative flex-1 flex flex-col items-center justify-center transition-all duration-300 py-2.5 rounded-full
-                    ${getBgStyle(isActive)}
-                  `}
+                  className="relative flex-1 flex items-center justify-center transition-all duration-300 group outline-none"
                 >
-                  <div className={`transition-all duration-300 ${getIconColor(isActive)} ${isActive ? 'scale-110' : 'scale-100'}`}>
-                    <i className={`${item.icon} text-lg`}></i>
-                  </div>
-                  <span className={`
-                    text-[10px] font-bold mt-0.5 transition-colors duration-300 whitespace-nowrap tracking-tight
-                    ${isActive ? 'text-[#007AFF]' : 'text-zinc-600'}
+                  {/* خلفية الكبسولة (Pill) - تم تصغيرها قليلاً وضبط الحشو لمنع الخروج عن الإطار */}
+                  <div className={`
+                    relative flex flex-col items-center justify-center px-3 py-1.5 rounded-full transition-all duration-400 ease-out min-w-[60px]
+                    ${isActive ? 'bg-[#007AFF]/10' : 'bg-transparent group-hover:bg-zinc-100/50'}
                   `}>
-                    {item.label}
-                  </span>
+                    <div className={`
+                      transition-all duration-300 text-base mb-0.5
+                      ${isActive ? 'text-[#007AFF] scale-105' : 'text-zinc-400 group-hover:text-zinc-600'}
+                    `}>
+                      <i className={item.icon}></i>
+                    </div>
+                    
+                    {/* نص التبويب - تصغير الخط قليلاً لضمان الاحتواء */}
+                    <span className={`
+                      text-[8px] font-black tracking-tight transition-colors duration-300 uppercase
+                      ${isActive ? 'text-[#007AFF]' : 'text-zinc-500'}
+                    `}>
+                      {item.label}
+                    </span>
+
+                    {/* شارة التنبيه النشطة - تحسين موقعها لمنع الخروج عن الإطار */}
+                    {item.id === 'Order' && isActive && (
+                      <span className="absolute top-0 right-1 bg-[#007AFF] text-white text-[6px] font-black px-1 py-0.5 rounded-full border border-white shadow-sm scale-90">
+                        NEW
+                      </span>
+                    )}
+                  </div>
                 </button>
               );
             })}
