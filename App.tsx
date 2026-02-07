@@ -106,7 +106,8 @@ const App: React.FC = () => {
         console.error("Fetch Error:", error);
         setProducts(MOCK_PRODUCTS);
       } finally {
-        setIsLoading(false);
+        // Minimum loading time for brand visibility
+        setTimeout(() => setIsLoading(false), 1200);
       }
     };
     fetchData();
@@ -510,7 +511,39 @@ const App: React.FC = () => {
     );
   };
 
-  if (isLoading) return <div className="h-screen w-full flex flex-col items-center justify-center bg-[#F2F2F7] gap-4"><div className="w-12 h-12 border-[5px] border-[#007AFF]/10 border-t-[#007AFF] rounded-full animate-spin"></div><p className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 animate-pulse">Syncing Database...</p></div>;
+  if (isLoading) return (
+    <div className="h-screen w-full flex flex-col items-center justify-center bg-[#F2F2F7] relative overflow-hidden">
+      {/* Dynamic Background Glow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-blue-500/10 blur-[100px] rounded-full animate-pulse"></div>
+      
+      {/* Brand Logo Animation */}
+      <div className="relative mb-8">
+        <div className="w-24 h-24 rounded-[2rem] bg-gradient-to-br from-[#007AFF] to-[#0051FF] flex items-center justify-center shadow-2xl shadow-blue-500/40 relative z-10 animate-bounce duration-[2s]">
+          <span className="text-white font-black text-5xl">E</span>
+        </div>
+        {/* Ring Animation */}
+        <div className="absolute inset-0 w-24 h-24 border-4 border-[#007AFF] rounded-[2rem] animate-ping opacity-20"></div>
+      </div>
+      
+      {/* Loading Text UI */}
+      <div className="text-center space-y-2 relative z-10">
+        <h3 className="text-xl font-black tracking-tighter text-zinc-900">Edge Store</h3>
+        <div className="flex flex-col items-center">
+          <div className="w-48 h-1 bg-zinc-200 rounded-full overflow-hidden mb-3">
+            <div className="h-full bg-gradient-to-r from-[#007AFF] to-blue-400 w-1/3 animate-[loading_1.5s_infinite_ease-in-out]"></div>
+          </div>
+          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-400">Initializing Experience</p>
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes loading {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(200%); }
+        }
+      `}</style>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-[#F2F2F7]">
