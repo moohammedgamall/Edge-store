@@ -122,7 +122,6 @@ const App: React.FC = () => {
     const nextInput = newPasswordData.next.trim();
     const confirmInput = newPasswordData.confirm.trim();
 
-    // 1. Validation Checks
     if (currentInput !== adminPassword) {
       showNotification("Current key is incorrect", "info");
       return;
@@ -136,27 +135,27 @@ const App: React.FC = () => {
       return;
     }
 
-    // 2. Database Update Logic
     try {
-      // Using direct update which is more reliable than upsert for a single known row
+      // Use upsert with onConflict for total reliability
       const { error } = await supabase
         .from('settings')
-        .update({ value: nextInput })
-        .eq('key', 'admin_password');
+        .upsert(
+          { key: 'admin_password', value: nextInput },
+          { onConflict: 'key' }
+        );
 
       if (error) {
         console.error("Supabase Error:", error);
-        showNotification("DB Error: " + error.message, "info");
+        showNotification("Failed to update: " + error.message, "info");
       } else {
-        // Update local state immediately upon success
         setAdminPassword(nextInput);
         setIsChangingPassword(false);
         setNewPasswordData({ current: '', next: '', confirm: '' });
         showNotification("Security key updated successfully", "success");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Unexpected Error:", err);
-      showNotification("An unexpected error occurred", "info");
+      showNotification("Error: " + (err.message || "Unknown error"), "info");
     }
   };
 
