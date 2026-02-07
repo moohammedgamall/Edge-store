@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 
 interface HeaderProps {
   onAdminTrigger: () => void;
+  onLogout: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ onAdminTrigger }) => {
+const Header: React.FC<HeaderProps> = ({ onAdminTrigger, onLogout }) => {
   const [clickCount, setClickCount] = useState(0);
   const isAdminPath = window.location.hash === '#/admin';
 
@@ -44,7 +45,7 @@ const Header: React.FC<HeaderProps> = ({ onAdminTrigger }) => {
               Admin Mode
             </span>
             <button 
-              onClick={() => window.location.hash = '#/'}
+              onClick={onLogout}
               className="text-zinc-400 font-bold text-sm hover:text-zinc-900 transition-colors"
             >
               Logout

@@ -136,6 +136,13 @@ const App: React.FC = () => {
     }
   };
 
+  const handleLogout = () => {
+    setIsAdminMode(false);
+    setActiveSection('Home');
+    window.location.hash = '#/';
+    showNotification("Logged out successfully", "info");
+  };
+
   const handleUpdatePassword = async () => {
     const { current, next, confirm } = newPasswordData;
     if (current.trim() !== adminPassword) return showNotification("Old key is incorrect", "info");
@@ -476,9 +483,11 @@ const App: React.FC = () => {
                 </div>
                 {selectedProduct && (
                   <div className="space-y-6">
-                    <div className="flex items-center justify-between p-5 bg-zinc-50 rounded-2xl border">
-                       <div><p className="text-[9px] font-black text-zinc-400 uppercase mb-1 tracking-widest">Order Total</p><p className="text-3xl font-black">{selectedProduct.price} EGP</p></div>
-                       <div className="text-right"><p className="text-[9px] font-black text-zinc-400 uppercase mb-1 tracking-widest">Order ID</p><p className="text-xs font-bold text-zinc-900">#E-{selectedProduct.id.slice(-4)}</p></div>
+                    <div className="flex items-center justify-between p-5 bg-zinc-50 rounded-2xl border text-center">
+                       <div className="w-full">
+                          <p className="text-[9px] font-black text-zinc-400 uppercase mb-1 tracking-widest">Order Total</p>
+                          <p className="text-3xl font-black">{selectedProduct.price} EGP</p>
+                       </div>
                     </div>
                     {selectedProduct.price > 0 && (
                       <div className="p-4 bg-amber-50 rounded-2xl border border-amber-100 flex gap-4 items-center">
@@ -511,7 +520,7 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#F2F2F7]">
-      <Header onAdminTrigger={() => setIsAuthModalOpen(true)} />
+      <Header onAdminTrigger={() => setIsAuthModalOpen(true)} onLogout={handleLogout} />
       {isAuthModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/30 backdrop-blur-xl animate-in fade-in duration-300">
            <div className="w-full max-w-[320px] glass-panel p-8 rounded-[3rem] space-y-6 border-white shadow-2xl animate-in zoom-in-95">
@@ -544,7 +553,15 @@ const App: React.FC = () => {
                       <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#007AFF] to-blue-400 drop-shadow-sm">{banner.highlight}</span>
                     </h2>
                     <p className="text-white/60 text-sm sm:text-lg font-medium max-w-md line-clamp-2">Elevate your device experience with high-fidelity assets designed for performance and aesthetics.</p>
-                    <button onClick={() => setActiveSection('Themes')} className="px-10 py-4 bg-[#007AFF] text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-2xl shadow-blue-500/40 active:scale-95 transition-all">Start Browsing</button>
+                    <div className="flex flex-wrap gap-4 pt-4">
+                      <button onClick={() => setActiveSection('Themes')} className="px-10 py-4 bg-[#007AFF] text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-2xl shadow-blue-500/40 active:scale-95 transition-all flex items-center gap-3 group/btn">
+                        <span>Browse Collection</span>
+                        <i className="fa-solid fa-arrow-right text-[10px] transition-transform group-hover/btn:translate-x-1"></i>
+                      </button>
+                      <button onClick={() => setActiveSection('Walls')} className="px-8 py-4 bg-white/10 backdrop-blur-xl border border-white/20 text-white rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 transition-all hover:bg-white/20">
+                        Top Rated
+                      </button>
+                    </div>
                   </div>
                 </div>
               </section>
