@@ -105,7 +105,7 @@ const App: React.FC = () => {
   };
 
   const handleAdminAuth = () => {
-    if (passwordInput === adminPassword) {
+    if (passwordInput.trim() === adminPassword) {
       setIsAdminMode(true);
       setIsAuthModalOpen(false);
       setPasswordInput('');
@@ -118,20 +118,36 @@ const App: React.FC = () => {
   };
 
   const handleUpdatePassword = async () => {
-    if (newPasswordData.current !== adminPassword) {
+    const current = newPasswordData.current.trim();
+    const next = newPasswordData.next.trim();
+    const confirm = newPasswordData.confirm.trim();
+
+    if (current !== adminPassword) {
       showNotification("Wrong current key", "info");
       return;
     }
-    if (newPasswordData.next !== newPasswordData.confirm) {
+    if (!next) {
+      showNotification("New key cannot be empty", "info");
+      return;
+    }
+    if (next !== confirm) {
       showNotification("Keys mismatch", "info");
       return;
     }
-    const { error } = await supabase.from('settings').upsert({ key: 'admin_password', value: newPasswordData.next });
-    if (!error) {
-      setAdminPassword(newPasswordData.next);
+
+    // Explicitly target the key for update using onConflict
+    const { error } = await supabase
+      .from('settings')
+      .upsert({ key: 'admin_password', value: next }, { onConflict: 'key' });
+
+    if (error) {
+      console.error("Update Error:", error);
+      showNotification("Update failed: " + error.message, "info");
+    } else {
+      setAdminPassword(next);
       setIsChangingPassword(false);
       setNewPasswordData({ current: '', next: '', confirm: '' });
-      showNotification("Security key updated");
+      showNotification("Security key updated successfully");
     }
   };
 
@@ -288,12 +304,16 @@ const App: React.FC = () => {
 
       {isChangingPassword && (
         <div className="glass-panel p-6 rounded-[1.5rem] space-y-4 animate-in slide-in-from-top-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <input type="password" placeholder="Current" className="p-3.5 rounded-xl border text-sm" value={newPasswordData.current} onChange={e => setNewPasswordData({...newPasswordData, current: e.target.value})} />
-            <input type="password" placeholder="New" className="p-3.5 rounded-xl border text-sm" value={newPasswordData.next} onChange={e => setNewPasswordData({...newPasswordData, next: e.target.value})} />
-            <input type="password" placeholder="Confirm" className="p-3.5 rounded-xl border text-sm" value={newPasswordData.confirm} onChange={e => setNewPasswordData({...newPasswordData, confirm: e.target.value})} />
+          <div className="text-center sm:text-left mb-2">
+            <h3 className="font-black text-zinc-900">Change Admin Access Key</h3>
+            <p className="text-zinc-400 text-[10px] font-bold">Manage your dashboard security</p>
           </div>
-          <button onClick={handleUpdatePassword} className="w-full py-3 bg-zinc-900 text-white rounded-xl font-black text-sm">Save Key</button>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <input type="password" placeholder="Current Key" className="p-3.5 rounded-xl border text-sm focus:border-[#007AFF] outline-none" value={newPasswordData.current} onChange={e => setNewPasswordData({...newPasswordData, current: e.target.value})} />
+            <input type="password" placeholder="New Key" className="p-3.5 rounded-xl border text-sm focus:border-[#007AFF] outline-none" value={newPasswordData.next} onChange={e => setNewPasswordData({...newPasswordData, next: e.target.value})} />
+            <input type="password" placeholder="Confirm New Key" className="p-3.5 rounded-xl border text-sm focus:border-[#007AFF] outline-none" value={newPasswordData.confirm} onChange={e => setNewPasswordData({...newPasswordData, confirm: e.target.value})} />
+          </div>
+          <button onClick={handleUpdatePassword} className="w-full py-3 bg-zinc-900 text-white rounded-xl font-black text-sm active:scale-[0.98] transition-all">Update Security Key</button>
         </div>
       )}
 
