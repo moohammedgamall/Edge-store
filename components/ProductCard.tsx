@@ -48,7 +48,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onBuy, onPreview }) 
         <div className="mt-2 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="text-2xl font-black text-[#1C1C1E]">
-              {product.price === 0 ? 'FREE' : `$${product.price.toFixed(2)}`}
+              {product.price === 0 ? 'FREE' : `${product.price.toFixed(2)} EGP`}
             </span>
             {product.isPremium && (
               <div className="p-1.5 bg-blue-50 rounded-full">

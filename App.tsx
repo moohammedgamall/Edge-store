@@ -246,7 +246,7 @@ const App: React.FC = () => {
   const handleOrderViaTelegram = () => {
     const product = products.find(p => p.id === selectedProductId);
     if (!product) return;
-    const message = `👋 Edge Store Order\n\nDevice: ${selectedPhone}\nProduct: ${product.title}\nCategory: ${product.category}\nPrice: ${product.price === 0 ? 'FREE' : '$' + product.price}`;
+    const message = `👋 Edge Store Order\n\nDevice: ${selectedPhone}\nProduct: ${product.title}\nCategory: ${product.category}\nPrice: ${product.price === 0 ? 'FREE' : product.price + ' EGP'}`;
     window.open(`https://t.me/Mohamed_edge?text=${encodeURIComponent(message)}`, '_blank');
   };
 
@@ -307,7 +307,7 @@ const App: React.FC = () => {
               
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-[9px] font-black uppercase text-zinc-400 px-1">Price ($)</label>
+                  <label className="text-[9px] font-black uppercase text-zinc-400 px-1">Price (EGP)</label>
                   <input placeholder="0.00" type="number" className="w-full p-4 rounded-xl border-2 border-zinc-100 focus:border-[#007AFF] outline-none font-bold text-sm transition-all" value={editProduct.price || 0} onChange={e => setEditProduct({...editProduct, price: parseFloat(e.target.value)})} />
                 </div>
                 <div className="space-y-1">
@@ -435,7 +435,7 @@ const App: React.FC = () => {
            <div className="lg:col-span-5 space-y-4">
               <div className="glass-panel p-6 rounded-[2rem] border-white shadow-2xl space-y-6">
                  <div className="flex justify-between items-center">
-                    <div><p className="text-[9px] font-black uppercase text-zinc-400 tracking-widest mb-1">Price</p><p className="text-3xl font-black text-zinc-900">{p.price === 0 ? 'FREE' : `$${p.price}`}</p></div>
+                    <div><p className="text-[9px] font-black uppercase text-zinc-400 tracking-widest mb-1">Price</p><p className="text-3xl font-black text-zinc-900">{p.price === 0 ? 'FREE' : `${p.price} EGP`}</p></div>
                     <div className="text-amber-500 font-black flex items-center gap-1.5 text-sm"><i className="fa-solid fa-star"></i> {p.rating}</div>
                  </div>
                  <div className="space-y-2 pt-2 border-t"><h4 className="font-black text-[10px] uppercase text-zinc-400">Description</h4><p className="text-zinc-500 text-sm leading-relaxed">{p.description || "Premium digital asset for Realme UI."}</p></div>
@@ -499,7 +499,7 @@ const App: React.FC = () => {
                 {selectedProduct && (
                   <div className="space-y-4">
                     <div className="flex items-center justify-between p-4 bg-zinc-50 rounded-2xl border">
-                       <div><p className="text-[8px] font-black text-zinc-400 uppercase mb-0.5">Summary</p><p className="text-2xl font-black">${selectedProduct.price}</p></div>
+                       <div><p className="text-[8px] font-black text-zinc-400 uppercase mb-0.5">Summary</p><p className="text-2xl font-black">{selectedProduct.price} EGP</p></div>
                        <span className="text-[8px] font-black bg-blue-50 text-blue-600 px-2 py-1 rounded-full">SECURE</span>
                     </div>
                     {selectedProduct.price > 0 && (
