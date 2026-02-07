@@ -13,6 +13,7 @@ NAV_ITEMS[2].icon = 'fa-solid fa-table-cells-large';
 export const DEFAULT_BANNER: BannerSettings = {
   title: "Liquid Glass for",
   highlight: "ColorOS 15",
+  description: "Elevate your device experience with high-fidelity assets designed for performance and aesthetics.",
   imageUrl: "https://images.unsplash.com/photo-1616440802336-31f0bc333754?auto=format&fit=crop&q=80&w=1200",
   buttonText: "Explore Shop"
 };

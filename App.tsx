@@ -86,6 +86,7 @@ const App: React.FC = () => {
           setBanner({
             title: bannerData.title,
             highlight: bannerData.highlight,
+            description: bannerData.description || DEFAULT_BANNER.description,
             imageUrl: bannerData.imageUrl,
             buttonText: bannerData.buttonText || 'Explore Shop',
             isVisible: true
@@ -243,6 +244,7 @@ const App: React.FC = () => {
       id: 1, 
       title: banner.title, 
       highlight: banner.highlight, 
+      description: banner.description,
       imageUrl: banner.imageUrl 
     });
     if (!error) {
@@ -308,10 +310,13 @@ const App: React.FC = () => {
 
       {isEditingBanner && (
         <div className="glass-panel p-6 rounded-[2rem] space-y-4 animate-in slide-in-from-top-4 border-white shadow-xl">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div className="space-y-3">
-              <input placeholder="Headline" className="w-full p-4 rounded-xl border font-bold text-sm" value={banner.title} onChange={e => setBanner({...banner, title: e.target.value})} />
-              <input placeholder="Highlight (Blue Color)" className="w-full p-4 rounded-xl border font-bold text-sm" value={banner.highlight} onChange={e => setBanner({...banner, highlight: e.target.value})} />
+          <div className="grid grid-cols-1 gap-6">
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <input placeholder="Headline" className="w-full p-4 rounded-xl border font-bold text-sm" value={banner.title} onChange={e => setBanner({...banner, title: e.target.value})} />
+                <input placeholder="Highlight (Blue Color)" className="w-full p-4 rounded-xl border font-bold text-sm" value={banner.highlight} onChange={e => setBanner({...banner, highlight: e.target.value})} />
+              </div>
+              <textarea placeholder="Banner Description (Empty to hide)" className="w-full p-4 rounded-xl border font-bold text-sm h-24" value={banner.description} onChange={e => setBanner({...banner, description: e.target.value})} />
               <div onClick={() => bannerFileInputRef.current?.click()} className="w-full h-32 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer bg-zinc-50 overflow-hidden group">
                 {banner.imageUrl ? <img src={banner.imageUrl} className="w-full h-full object-cover" alt="" /> : <div className="text-center"><i className="fa-solid fa-cloud-arrow-up text-zinc-300 text-2xl mb-1"></i><p className="text-[10px] font-black text-zinc-400 uppercase">Hero Image</p></div>}
               </div>
@@ -579,7 +584,11 @@ const App: React.FC = () => {
                       {banner.title} <br/>
                       <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#007AFF] to-blue-400 drop-shadow-md">{banner.highlight}</span>
                     </h2>
-                    <p className="text-white/70 text-xs sm:text-sm md:text-lg font-medium max-w-sm sm:max-w-md line-clamp-2 sm:line-clamp-3">Elevate your device experience with high-fidelity assets designed for performance and aesthetics.</p>
+                    {banner.description && (
+                      <p className="text-white/70 text-xs sm:text-sm md:text-lg font-medium max-w-sm sm:max-w-md line-clamp-2 sm:line-clamp-3">
+                        {banner.description}
+                      </p>
+                    )}
                     <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4 w-full sm:w-auto">
                       <button onClick={() => setActiveSection('Themes')} className="w-full sm:w-auto px-10 py-4 bg-[#007AFF] text-white rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-2xl shadow-blue-500/40 active:scale-95 transition-all flex items-center justify-center gap-3 group/btn">
                         <span>Browse collection</span>

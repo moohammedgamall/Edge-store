@@ -6,6 +6,7 @@ export type Section = 'Home' | 'Themes' | 'Widgets' | 'Walls' | 'Order' | 'Admin
 export interface BannerSettings {
   title: string;
   highlight: string;
+  description: string;
   imageUrl: string;
   buttonText: string;
 }
