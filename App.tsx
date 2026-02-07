@@ -68,19 +68,14 @@ const App: React.FC = () => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // Fetch Admin Password
         const { data: settingsData, error: settingsError } = await supabase
           .from('settings')
           .select('value')
           .eq('key', 'admin_password')
           .maybeSingle();
         
-        if (settingsError) {
-          console.error("Supabase Error:", settingsError.message);
-        }
         if (settingsData) setAdminPassword(settingsData.value);
 
-        // Fetch Banner
         const { data: bannerData } = await supabase
           .from('banner')
           .select('*')
@@ -97,7 +92,6 @@ const App: React.FC = () => {
           });
         }
 
-        // Fetch Products
         const { data: productsData } = await supabase
           .from('products')
           .select('*')
@@ -541,25 +535,22 @@ const App: React.FC = () => {
         {activeSection === 'Home' && (
           <div className="space-y-12 pb-32">
             {banner.isVisible && (
-              <section className="relative w-full aspect-[16/10] sm:aspect-video rounded-[2.5rem] overflow-hidden shadow-2xl group border-4 border-white">
-                <img src={banner.imageUrl} className="absolute inset-0 w-full h-full object-cover transition-transform duration-[3s] group-hover:scale-110" alt="" />
-                <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/20 to-transparent flex flex-col justify-center px-8 sm:px-24">
-                  <div className="max-w-2xl space-y-6">
-                    <div className="inline-block px-4 py-1.5 bg-[#007AFF]/20 backdrop-blur-xl border border-[#007AFF]/30 rounded-full mb-2">
-                       <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#007AFF]">New Release</span>
+              <section className="relative w-full aspect-[4/5] sm:aspect-video rounded-[2rem] sm:rounded-[3rem] overflow-hidden shadow-2xl group border-[3px] sm:border-[5px] border-white">
+                <img src={banner.imageUrl} className="absolute inset-0 w-full h-full object-cover transition-transform duration-[3s] group-hover:scale-105" alt="" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent sm:bg-gradient-to-r sm:from-black/90 sm:via-black/30 sm:to-transparent flex flex-col justify-end sm:justify-center p-6 sm:px-16 md:px-24">
+                  <div className="max-w-2xl space-y-4 sm:space-y-6 text-center sm:text-left items-center sm:items-start flex flex-col">
+                    <div className="inline-block px-3 py-1 bg-[#007AFF]/20 backdrop-blur-xl border border-[#007AFF]/30 rounded-full">
+                       <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.15em] text-[#007AFF]">New Release</span>
                     </div>
-                    <h2 className="text-4xl sm:text-7xl font-black text-white leading-[1.1] tracking-tighter">
+                    <h2 className="text-3xl sm:text-5xl md:text-7xl font-black text-white leading-tight tracking-tighter">
                       {banner.title} <br/>
-                      <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#007AFF] to-blue-400 drop-shadow-sm">{banner.highlight}</span>
+                      <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#007AFF] to-blue-400 drop-shadow-md">{banner.highlight}</span>
                     </h2>
-                    <p className="text-white/60 text-sm sm:text-lg font-medium max-w-md line-clamp-2">Elevate your device experience with high-fidelity assets designed for performance and aesthetics.</p>
-                    <div className="flex flex-wrap gap-4 pt-4">
-                      <button onClick={() => setActiveSection('Themes')} className="px-10 py-4 bg-[#007AFF] text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-2xl shadow-blue-500/40 active:scale-95 transition-all flex items-center gap-3 group/btn">
-                        <span>Browse Collection</span>
+                    <p className="text-white/70 text-xs sm:text-sm md:text-lg font-medium max-w-sm sm:max-w-md line-clamp-2 sm:line-clamp-3">Elevate your device experience with high-fidelity assets designed for performance and aesthetics.</p>
+                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4 w-full sm:w-auto">
+                      <button onClick={() => setActiveSection('Themes')} className="w-full sm:w-auto px-10 py-4 bg-[#007AFF] text-white rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-2xl shadow-blue-500/40 active:scale-95 transition-all flex items-center justify-center gap-3 group/btn">
+                        <span>Browse collection</span>
                         <i className="fa-solid fa-arrow-right text-[10px] transition-transform group-hover/btn:translate-x-1"></i>
-                      </button>
-                      <button onClick={() => setActiveSection('Walls')} className="px-8 py-4 bg-white/10 backdrop-blur-xl border border-white/20 text-white rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 transition-all hover:bg-white/20">
-                        Top Rated
                       </button>
                     </div>
                   </div>
