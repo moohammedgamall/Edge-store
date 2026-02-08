@@ -18,6 +18,8 @@ const App: React.FC = () => {
   const [activeSection, setActiveSection] = useState<Section>('Home');
   const [notification, setNotification] = useState<{message: string, type: 'success' | 'info'} | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [imgLoadError, setImgLoadError] = useState(false);
   
   const [banner, setBanner] = useState<BannerSettings & { isVisible?: boolean }>(DEFAULT_BANNER);
   const [products, setProducts] = useState<Product[]>([]);
@@ -117,7 +119,7 @@ const App: React.FC = () => {
       } catch (error) {
         setProducts(MOCK_PRODUCTS);
       } finally {
-        setTimeout(() => setIsLoading(false), 800);
+        setTimeout(() => setIsLoading(false), 1200);
       }
     };
     fetchData();
@@ -171,6 +173,12 @@ const App: React.FC = () => {
 
   const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
+      // التحقق من حجم الملف (الحد الأقصى 2 ميجابايت لتجنب فشل السوبابيس)
+      if (file.size > 2 * 1024 * 1024) {
+        showNotification("Image too large (>2MB)", "info");
+        reject("File too large");
+        return;
+      }
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onload = () => resolve(reader.result as string);
@@ -185,7 +193,7 @@ const App: React.FC = () => {
         const base64 = await fileToBase64(file);
         setEditProduct({ ...editProduct, image: base64 });
       } catch (err) {
-        showNotification("Upload failed", "info");
+        console.error("Upload failed", err);
       }
     }
   };
@@ -197,7 +205,7 @@ const App: React.FC = () => {
         const base64 = await fileToBase64(file);
         setBanner({ ...banner, imageUrl: base64 });
       } catch (err) {
-        showNotification("Banner upload failed", "info");
+        console.error("Banner upload failed", err);
       }
     }
   };
@@ -210,13 +218,16 @@ const App: React.FC = () => {
       const newImages = await Promise.all(files.map(file => fileToBase64(file)));
       setEditProduct({ ...editProduct, gallery: [...currentGallery, ...newImages].slice(0, 15) });
     } catch (err) {
-      showNotification("Gallery failed", "info");
+      console.error("Gallery upload failed", err);
     }
   };
 
   const handleSaveProduct = async () => {
-    if (!editProduct.title || !editProduct.image) return showNotification("Missing title/image", "info");
+    if (!editProduct.title || !editProduct.image) {
+      return showNotification("Missing title or main image", "info");
+    }
     
+    setIsPublishing(true);
     const productToSave = { 
       id: editProduct.id || Date.now().toString(),
       title: editProduct.title,
@@ -232,28 +243,47 @@ const App: React.FC = () => {
       downloadUrl: editProduct.downloadUrl || ''
     };
 
-    const { error } = await supabase.from('products').upsert(productToSave);
-    if (!error) {
-      setProducts(prev => {
-        const exists = prev.find(p => p.id === productToSave.id);
-        return exists ? prev.map(p => p.id === productToSave.id ? (productToSave as Product) : p) : [productToSave as Product, ...prev];
-      });
-      setIsEditing(false);
-      showNotification("Asset published");
+    try {
+      const { error } = await supabase.from('products').upsert(productToSave);
+      
+      if (error) {
+        console.error("Supabase Error:", error);
+        showNotification("Failed to save: " + error.message, "info");
+      } else {
+        setProducts(prev => {
+          const exists = prev.find(p => p.id === productToSave.id);
+          if (exists) {
+            return prev.map(p => p.id === productToSave.id ? (productToSave as Product) : p);
+          }
+          return [productToSave as Product, ...prev];
+        });
+        setIsEditing(false);
+        showNotification("Asset published successfully!");
+      }
+    } catch (err: any) {
+      showNotification("Error: Check your connection", "info");
+    } finally {
+      setIsPublishing(false);
     }
   };
 
   const handleSaveBanner = async () => {
-    const { error } = await supabase.from('banner').upsert({ 
-      id: 1, 
-      title: banner.title, 
-      highlight: banner.highlight, 
-      description: banner.description,
-      imageUrl: banner.imageUrl 
-    });
-    if (!error) {
+    setIsPublishing(true);
+    try {
+      const { error } = await supabase.from('banner').upsert({ 
+        id: 1, 
+        title: banner.title, 
+        highlight: banner.highlight, 
+        description: banner.description,
+        imageUrl: banner.imageUrl 
+      });
+      if (error) throw error;
       setIsEditingBanner(false);
       showNotification("Store Banner Updated");
+    } catch (err: any) {
+      showNotification("Update Failed", "info");
+    } finally {
+      setIsPublishing(false);
     }
   };
 
@@ -324,7 +354,13 @@ const App: React.FC = () => {
               <input ref={bannerFileInputRef} type="file" accept="image/*" className="hidden" onChange={handleBannerUpload} />
             </div>
           </div>
-          <button onClick={handleSaveBanner} className="w-full py-4 bg-[#007AFF] text-white rounded-2xl font-black text-sm shadow-xl">Update Store Hero</button>
+          <button 
+            disabled={isPublishing}
+            onClick={handleSaveBanner} 
+            className="w-full py-4 bg-[#007AFF] text-white rounded-2xl font-black text-sm shadow-xl disabled:opacity-50"
+          >
+            {isPublishing ? "Updating..." : "Update Store Hero"}
+          </button>
         </div>
       )}
 
@@ -362,7 +398,13 @@ const App: React.FC = () => {
             </div>
           </div>
           <textarea placeholder="Description" className="w-full p-5 rounded-2xl border-2 border-zinc-100 outline-none font-medium text-sm h-32" value={editProduct.description || ''} onChange={e => setEditProduct({...editProduct, description: e.target.value})} />
-          <button onClick={handleSaveProduct} className="w-full py-5 bg-[#007AFF] text-white rounded-[1.5rem] font-black text-lg shadow-2xl active:scale-95 transition-all">Publish Live Asset</button>
+          <button 
+            disabled={isPublishing}
+            onClick={handleSaveProduct} 
+            className="w-full py-5 bg-[#007AFF] text-white rounded-[1.5rem] font-black text-lg shadow-2xl disabled:opacity-50 active:scale-95 transition-all"
+          >
+            {isPublishing ? "Publishing..." : "Publish Live Asset"}
+          </button>
         </div>
       )}
 
@@ -518,27 +560,38 @@ const App: React.FC = () => {
   if (isLoading) return (
     <div className="h-screen w-full flex flex-col items-center justify-center bg-[#F2F2F7] relative overflow-hidden">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-blue-500/10 blur-[100px] rounded-full animate-pulse"></div>
-      <div className="relative mb-8">
-        {/* استبدال شعار الحرف في شاشة التحميل بصورة logo.jpg */}
-        <div className="w-24 h-24 rounded-[2rem] overflow-hidden bg-white shadow-2xl shadow-blue-500/40 relative z-10 animate-bounce duration-[2s] flex items-center justify-center">
-          <img 
-            src="images/logo.jpg" 
-            alt="Logo" 
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = 'https://ui-avatars.com/api/?name=E&background=007AFF&color=fff';
-            }}
-          />
+      <div className="relative mb-12">
+        <div className="w-40 h-40 relative z-10 animate-pulse flex items-center justify-center">
+          {!imgLoadError ? (
+            <img 
+              src="images/logo.jpg" 
+              alt="Logo" 
+              className="w-full h-full object-contain"
+              onError={() => {
+                // محاولة المسار البديل في حال كان الملف في الجذر
+                const target = event?.target as HTMLImageElement;
+                if (target && !target.src.includes('logo.jpg')) {
+                    target.src = 'logo.jpg';
+                } else {
+                    setImgLoadError(true);
+                }
+              }}
+            />
+          ) : (
+            <div className="w-32 h-32 bg-zinc-900 rounded-3xl flex items-center justify-center shadow-2xl">
+              <span className="text-white font-black text-4xl tracking-tighter">ME</span>
+            </div>
+          )}
         </div>
-        <div className="absolute inset-0 w-24 h-24 border-4 border-[#007AFF] rounded-[2rem] animate-ping opacity-20"></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 border-4 border-[#007AFF] rounded-full animate-ping opacity-10"></div>
       </div>
-      <div className="text-center space-y-2 relative z-10">
-        <h3 className="text-xl font-black tracking-tighter text-zinc-900">Edge Store</h3>
+      <div className="text-center space-y-4 relative z-10">
+        <h3 className="text-3xl font-black tracking-tighter text-zinc-900">Edge Store</h3>
         <div className="flex flex-col items-center">
-          <div className="w-48 h-1 bg-zinc-200 rounded-full overflow-hidden mb-3">
-            <div className="h-full bg-gradient-to-r from-[#007AFF] to-blue-400 w-1/3 animate-[loading_1.5s_infinite_ease-in-out]"></div>
+          <div className="w-56 h-1.5 bg-zinc-200 rounded-full overflow-hidden mb-4 shadow-inner">
+            <div className="h-full bg-gradient-to-r from-[#007AFF] to-blue-400 w-1/3 animate-[loading_1.8s_infinite_ease-in-out]"></div>
           </div>
-          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-400">Initializing Experience</p>
+          <p className="text-[11px] font-black uppercase tracking-[0.5em] text-zinc-400">Loading Premium Experience</p>
         </div>
       </div>
       <style>{`
@@ -629,7 +682,7 @@ const App: React.FC = () => {
           </div>
         )}
       </main>
-      {notification && <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[200] animate-in slide-in-from-top-4 w-[90%] max-w-sm"><div className="px-6 py-4 rounded-3xl shadow-2xl font-black flex items-center justify-center gap-3 border bg-[#007AFF] text-white border-blue-600/20 text-xs uppercase tracking-widest"><i className="fa-solid fa-circle-check text-base"></i> {notification.message}</div></div>}
+      {notification && <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[200] animate-in slide-in-from-top-4 w-[90%] max-sm"><div className="px-6 py-4 rounded-3xl shadow-2xl font-black flex items-center justify-center gap-3 border bg-[#007AFF] text-white border-blue-600/20 text-xs uppercase tracking-widest"><i className="fa-solid fa-circle-check text-base"></i> {notification.message}</div></div>}
       {!isAdminMode && activeSection !== 'Preview' && <BottomNav activeSection={activeSection} onSectionChange={setActiveSection} />}
     </div>
   );

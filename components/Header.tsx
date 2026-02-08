@@ -8,9 +8,9 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ onAdminTrigger, onLogout }) => {
   const [clickCount, setClickCount] = useState(0);
+  const [imgError, setImgError] = useState(false);
   const isAdminPath = window.location.hash === '#/admin';
 
-  // Detect triple click on the title
   const handleTitleClick = () => {
     setClickCount(prev => prev + 1);
   };
@@ -22,7 +22,7 @@ const Header: React.FC<HeaderProps> = ({ onAdminTrigger, onLogout }) => {
     }
     const timer = setTimeout(() => {
       if (clickCount > 0) setClickCount(0);
-    }, 1000); // Reset clicks if more than 1s passes
+    }, 1000);
 
     return () => clearTimeout(timer);
   }, [clickCount, onAdminTrigger]);
@@ -32,21 +32,28 @@ const Header: React.FC<HeaderProps> = ({ onAdminTrigger, onLogout }) => {
       <div className="w-full max-w-7xl px-8 py-5 flex items-center justify-between">
         <div 
           onClick={handleTitleClick}
-          className="flex items-center gap-3 cursor-pointer select-none active:scale-95 transition-transform"
+          className="flex items-center gap-4 cursor-pointer select-none active:scale-95 transition-transform"
         >
-          {/* استبدال شعار الحرف بصورة logo.jpg */}
-          <div className="w-10 h-10 rounded-xl overflow-hidden shadow-lg shadow-blue-500/20 bg-zinc-100">
-            <img 
-              src="images/logo.jpg" 
-              alt="Edge Store Logo" 
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                // Fallback in case image doesn't exist yet
-                (e.target as HTMLImageElement).src = 'https://ui-avatars.com/api/?name=E&background=007AFF&color=fff';
-              }}
-            />
+          {/* حاوية الشعار */}
+          <div className="w-12 h-12 flex items-center justify-center bg-white rounded-xl overflow-hidden shadow-sm border border-zinc-100 p-1 relative">
+            {!imgError ? (
+              <img 
+                src="images/logo.jpg" 
+                alt="Edge Store" 
+                className="w-full h-full object-contain block"
+                onError={() => setImgError(true)}
+              />
+            ) : (
+              // تصميم بديل احترافي في حال لم تظهر الصورة
+              <div className="w-full h-full bg-zinc-900 flex items-center justify-center rounded-lg">
+                <span className="text-white font-black text-[10px] tracking-tighter">ME</span>
+              </div>
+            )}
           </div>
-          <h1 className="text-2xl font-black tracking-tighter text-zinc-900">Edge Store</h1>
+          <div className="flex flex-col">
+            <h1 className="text-2xl font-black tracking-tighter text-zinc-900 leading-none">Edge Store</h1>
+            <span className="text-[9px] font-bold text-[#007AFF] uppercase tracking-[0.2em]">Digital Assets</span>
+          </div>
         </div>
 
         {isAdminPath && (
