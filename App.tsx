@@ -173,12 +173,7 @@ const App: React.FC = () => {
 
   const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
-      // التحقق من حجم الملف (الحد الأقصى 2 ميجابايت لتجنب فشل السوبابيس)
-      if (file.size > 2 * 1024 * 1024) {
-        showNotification("Image too large (>2MB)", "info");
-        reject("File too large");
-        return;
-      }
+      // تم إزالة القيد الخاص بحجم 2 ميجابايت للسماح برفع أي حجم
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onload = () => resolve(reader.result as string);
