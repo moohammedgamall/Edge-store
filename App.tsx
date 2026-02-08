@@ -173,7 +173,6 @@ const App: React.FC = () => {
 
   const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
-      // تم إزالة القيد الخاص بحجم 2 ميجابايت للسماح برفع أي حجم
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onload = () => resolve(reader.result as string);
@@ -223,6 +222,7 @@ const App: React.FC = () => {
     }
     
     setIsPublishing(true);
+    // تم تغيير المسمى هنا إلى download_url ليتوافق مع قاعدة البيانات
     const productToSave = { 
       id: editProduct.id || Date.now().toString(),
       title: editProduct.title,
@@ -235,7 +235,7 @@ const App: React.FC = () => {
       downloads: editProduct.downloads || '0',
       isPremium: editProduct.isPremium || false,
       compatibility: editProduct.compatibility || 'ColorOS 15',
-      downloadUrl: editProduct.downloadUrl || ''
+      download_url: editProduct.download_url || ''
     };
 
     try {
@@ -243,7 +243,12 @@ const App: React.FC = () => {
       
       if (error) {
         console.error("Supabase Error:", error);
-        showNotification("Failed to save: " + error.message, "info");
+        // رسالة تنبيه مخصصة في حال لم يجد العمود
+        if (error.message?.includes('column')) {
+            showNotification("Database Error: Column 'download_url' missing in Supabase", "info");
+        } else {
+            showNotification("Failed to save: " + error.message, "info");
+        }
       } else {
         setProducts(prev => {
           const exists = prev.find(p => p.id === productToSave.id);
@@ -283,8 +288,8 @@ const App: React.FC = () => {
   };
 
   const handleDownload = (product: Product) => {
-    if (product.downloadUrl) {
-      window.open(product.downloadUrl, '_blank');
+    if (product.download_url) {
+      window.open(product.download_url, '_blank');
       showNotification("Download started...");
     } else {
       showNotification("Link not available", "info");
@@ -376,7 +381,7 @@ const App: React.FC = () => {
                 {editProduct.image ? <img src={editProduct.image} className="w-full h-full object-cover" alt="" /> : <div className="text-center"><i className="fa-solid fa-image text-zinc-300 text-3xl mb-1"></i><p className="text-[10px] font-black text-zinc-400 uppercase">Main Cover</p></div>}
               </div>
               <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleMainImageUpload} />
-              <input placeholder="Download URL" className="w-full p-4 rounded-xl border-2 border-zinc-100 font-bold text-sm" value={editProduct.downloadUrl || ''} onChange={e => setEditProduct({...editProduct, downloadUrl: e.target.value})} />
+              <input placeholder="Download URL" className="w-full p-4 rounded-xl border-2 border-zinc-100 font-bold text-sm" value={editProduct.download_url || ''} onChange={e => setEditProduct({...editProduct, download_url: e.target.value})} />
             </div>
             <div className="p-6 bg-zinc-50 rounded-3xl border-2 border-dashed border-zinc-200 space-y-4">
               <h4 className="text-xs font-black uppercase text-zinc-400">Screenshots (Max 15)</h4>
@@ -563,7 +568,6 @@ const App: React.FC = () => {
               alt="Logo" 
               className="w-full h-full object-contain"
               onError={() => {
-                // محاولة المسار البديل في حال كان الملف في الجذر
                 const target = event?.target as HTMLImageElement;
                 if (target && !target.src.includes('logo.jpg')) {
                     target.src = 'logo.jpg';

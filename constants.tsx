@@ -42,6 +42,6 @@ export const MOCK_PRODUCTS: Product[] = [
     downloads: '10k',
     isPremium: false,
     compatibility: 'Realme UI 5.0',
-    downloadUrl: 'https://github.com/google/material-design-icons/archive/master.zip'
+    download_url: 'https://github.com/google/material-design-icons/archive/master.zip'
   }
 ];

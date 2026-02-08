@@ -18,12 +18,12 @@ export interface Product {
   category: Section | 'Apps'; 
   price: number;
   image: string;
-  gallery?: string[]; // Added to support multiple images
+  gallery?: string[];
   rating: number;
   downloads: string;
   isPremium: boolean;
   compatibility: string;
-  downloadUrl?: string; 
+  download_url?: string; 
 }
 
 export interface NavItem {
