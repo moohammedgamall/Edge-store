@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 
 interface HeaderProps {
@@ -33,8 +34,17 @@ const Header: React.FC<HeaderProps> = ({ onAdminTrigger, onLogout }) => {
           onClick={handleTitleClick}
           className="flex items-center gap-3 cursor-pointer select-none active:scale-95 transition-transform"
         >
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#007AFF] to-[#0051FF] flex items-center justify-center shadow-lg shadow-blue-500/30">
-            <span className="text-white font-black text-xl">E</span>
+          {/* استبدال شعار الحرف بصورة logo.jpg */}
+          <div className="w-10 h-10 rounded-xl overflow-hidden shadow-lg shadow-blue-500/20 bg-zinc-100">
+            <img 
+              src="images/logo.jpg" 
+              alt="Edge Store Logo" 
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                // Fallback in case image doesn't exist yet
+                (e.target as HTMLImageElement).src = 'https://ui-avatars.com/api/?name=E&background=007AFF&color=fff';
+              }}
+            />
           </div>
           <h1 className="text-2xl font-black tracking-tighter text-zinc-900">Edge Store</h1>
         </div>

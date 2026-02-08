@@ -42,12 +42,10 @@ const App: React.FC = () => {
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const bannerFileInputRef = useRef<HTMLInputElement>(null);
 
-  // استخدام useMemo لتحسين أداء الفلترة وضمان استجابة واجهة الطلب بسرعة
   const productsInCategory = useMemo(() => {
     return products.filter(p => p.category === selectedCategory);
   }, [products, selectedCategory]);
 
-  // تحديد المنتج المختار بدقة أو اختيار أول منتج متاح فوراً
   const selectedProduct = useMemo(() => {
     const found = products.find(p => p.id === selectedProductId);
     if (found && found.category === selectedCategory) return found;
@@ -482,7 +480,6 @@ const App: React.FC = () => {
                    {selectedProduct ? <img src={selectedProduct.image} className="w-full h-full object-cover animate-in fade-in duration-500" alt="" /> : <div className="w-full h-full flex items-center justify-center text-zinc-300 font-black text-xs uppercase">No Preview</div>}
                 </div>
                 
-                {/* قسم السعر وزر التليجرام يظهر دائماً طالما هناك منتج متاح */}
                 <div className="space-y-6">
                   <div className="flex items-center justify-between p-5 bg-zinc-50 rounded-2xl border text-center">
                       <div className="w-full">
@@ -522,8 +519,16 @@ const App: React.FC = () => {
     <div className="h-screen w-full flex flex-col items-center justify-center bg-[#F2F2F7] relative overflow-hidden">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-blue-500/10 blur-[100px] rounded-full animate-pulse"></div>
       <div className="relative mb-8">
-        <div className="w-24 h-24 rounded-[2rem] bg-gradient-to-br from-[#007AFF] to-[#0051FF] flex items-center justify-center shadow-2xl shadow-blue-500/40 relative z-10 animate-bounce duration-[2s]">
-          <span className="text-white font-black text-5xl">E</span>
+        {/* استبدال شعار الحرف في شاشة التحميل بصورة logo.jpg */}
+        <div className="w-24 h-24 rounded-[2rem] overflow-hidden bg-white shadow-2xl shadow-blue-500/40 relative z-10 animate-bounce duration-[2s] flex items-center justify-center">
+          <img 
+            src="images/logo.jpg" 
+            alt="Logo" 
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = 'https://ui-avatars.com/api/?name=E&background=007AFF&color=fff';
+            }}
+          />
         </div>
         <div className="absolute inset-0 w-24 h-24 border-4 border-[#007AFF] rounded-[2rem] animate-ping opacity-20"></div>
       </div>
