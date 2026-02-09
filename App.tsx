@@ -108,7 +108,8 @@ const App: React.FC = () => {
       } catch (e) {
         console.error("DB Fetch Error", e);
       } finally {
-        setTimeout(() => setIsLoading(false), 1200);
+        // Reduced timeout for a faster "instant" feel
+        setTimeout(() => setIsLoading(false), 400);
       }
     };
     fetchData();
@@ -228,12 +229,12 @@ const App: React.FC = () => {
   if (isLoading) return (
     <div className="h-screen w-full flex flex-col items-center justify-center bg-[#F2F2F7] dark:bg-[#2C2C2E]">
       <div className="relative">
-        <div className="w-24 h-24 animate-pulse rounded-full overflow-hidden shadow-2xl border-4 border-white dark:border-zinc-800">
-          <img src={loadingLogo} className="w-full h-full object-cover" alt="Loading" />
+        <div className="w-24 h-24 rounded-full overflow-hidden shadow-2xl border-4 border-white dark:border-zinc-800 animate-in fade-in duration-300">
+          <img src={loadingLogo} className="w-full h-full object-cover" alt="Loading" loading="eager" />
         </div>
         <div className="absolute -inset-2 rounded-full border-2 border-dashed border-[#007AFF] animate-[spin_10s_linear_infinite]"></div>
       </div>
-      <h3 className="mt-8 text-lg font-black tracking-widest text-zinc-900 dark:text-zinc-100 uppercase animate-bounce">Edge Marketplace</h3>
+      <h3 className="mt-8 text-lg font-black tracking-widest text-zinc-900 dark:text-zinc-100 uppercase animate-in slide-in-from-bottom-2 duration-500">Edge Marketplace</h3>
     </div>
   );
 
