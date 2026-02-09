@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
 <head>
@@ -5,6 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mohamed Edge - Realme & Oppo Store</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+      }
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <!-- Font Awesome CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -12,7 +18,7 @@
         body {
             font-family: 'Inter', sans-serif;
             -webkit-tap-highlight-color: transparent;
-            background-color: #F2F2F7;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
         .glass-panel {
             background: rgba(255, 255, 255, 0.75);
@@ -20,6 +26,11 @@
             -webkit-backdrop-filter: blur(25px) saturate(200%);
             border: 1px solid rgba(255, 255, 255, 0.6);
             box-shadow: 0 12px 35px -5px rgba(0, 0, 0, 0.04);
+        }
+        .dark .glass-panel {
+            background: rgba(24, 24, 27, 0.75);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 12px 35px -5px rgba(0, 0, 0, 0.4);
         }
         
         /* Hide scrollbar globally */
@@ -51,7 +62,7 @@
 }
 </script>
 </head>
-<body class="text-zinc-900 selection:bg-blue-500/30">
+<body class="bg-[#F2F2F7] dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 selection:bg-blue-500/30">
     <div id="root"></div>
     <script type="module" src="index.tsx"></script>
 </body>

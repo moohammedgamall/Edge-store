@@ -1,12 +1,15 @@
+
 import React, { useState, useEffect } from 'react';
 
 interface HeaderProps {
   onAdminTrigger: () => void;
   onLogout: () => void;
+  onThemeToggle: () => void;
+  isDarkMode: boolean;
   logoUrl?: string;
 }
 
-const Header: React.FC<HeaderProps> = ({ onAdminTrigger, onLogout, logoUrl }) => {
+const Header: React.FC<HeaderProps> = ({ onAdminTrigger, onLogout, onThemeToggle, isDarkMode, logoUrl }) => {
   const [clickCount, setClickCount] = useState(0);
   const [imgError, setImgError] = useState(false);
   const isAdminPath = window.location.hash === '#/admin';
@@ -31,14 +34,13 @@ const Header: React.FC<HeaderProps> = ({ onAdminTrigger, onLogout, logoUrl }) =>
   const finalLogo = logoUrl || defaultLogo;
 
   return (
-    <header className="sticky top-0 z-40 w-full flex justify-center bg-white/80 backdrop-blur-3xl border-b border-zinc-200/50">
+    <header className="sticky top-0 z-40 w-full flex justify-center bg-white/80 dark:bg-zinc-950/80 backdrop-blur-3xl border-b border-zinc-200/50 dark:border-zinc-800/50">
       <div className="w-full max-w-7xl px-8 py-4 flex items-center justify-between">
         <div 
           onClick={handleTitleClick}
           className="flex items-center gap-4 cursor-pointer select-none active:scale-95 transition-transform"
         >
-          {/* Logo container - Circular with shadow, no white border */}
-          <div className="w-14 h-14 flex items-center justify-center rounded-full overflow-hidden relative shadow-md">
+          <div className="w-14 h-14 flex items-center justify-center rounded-full overflow-hidden relative shadow-md bg-zinc-100 dark:bg-zinc-800">
             {!imgError ? (
               <img 
                 src={finalLogo}
@@ -53,24 +55,33 @@ const Header: React.FC<HeaderProps> = ({ onAdminTrigger, onLogout, logoUrl }) =>
             )}
           </div>
           <div className="flex flex-col">
-            <h1 className="text-2xl font-black tracking-tighter text-zinc-900 leading-none">Mohamed Edge</h1>
+            <h1 className="text-2xl font-black tracking-tighter text-zinc-900 dark:text-zinc-100 leading-none">Mohamed Edge</h1>
             <span className="text-[9px] font-bold text-[#007AFF] uppercase tracking-[0.2em] mt-1">Solo Entrepreneur</span>
           </div>
         </div>
 
-        {isAdminPath && (
-          <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-4">
-            <span className="bg-red-500/10 text-red-600 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest border border-red-500/20">
-              Admin Mode
-            </span>
-            <button 
-              onClick={onLogout}
-              className="text-zinc-400 font-bold text-sm hover:text-zinc-900 transition-colors"
-            >
-              Logout
-            </button>
-          </div>
-        )}
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={onThemeToggle}
+            className="w-10 h-10 rounded-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-[#007AFF] transition-all"
+          >
+            <i className={`fa-solid ${isDarkMode ? 'fa-sun' : 'fa-moon'}`}></i>
+          </button>
+
+          {isAdminPath && (
+            <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-4">
+              <span className="bg-red-500/10 text-red-600 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest border border-red-500/20">
+                Admin Mode
+              </span>
+              <button 
+                onClick={onLogout}
+                className="text-zinc-400 font-bold text-sm hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+              >
+                Logout
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );
