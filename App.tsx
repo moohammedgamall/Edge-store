@@ -29,7 +29,6 @@ const App: React.FC = () => {
   const [loadingLogo, setLoadingLogo] = useState<string>(() => localStorage.getItem('cached_loading_logo') || "https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
   const [adminPassword, setAdminPassword] = useState('1234');
 
-  // Logic: Only show what is in the database. No more hardcoded fallbacks that can't be deleted.
   const products = useMemo(() => dbProducts, [dbProducts]);
   const videos = useMemo(() => dbVideos, [dbVideos]);
 
@@ -161,22 +160,44 @@ const App: React.FC = () => {
     }
   };
 
+  const extractYoutubeId = (url: string): string | null => {
+    if (!url) return null;
+    // Handle raw ID (11 chars)
+    if (url.trim().length === 11 && !url.includes('/')) return url.trim();
+
+    const regExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    if (match && match[2].length === 11) {
+      return match[2];
+    }
+    
+    // Fallback for Shorts
+    if (url.includes('/shorts/')) {
+        const parts = url.split('/');
+        const lastPart = parts[parts.length - 1].split('?')[0];
+        if (lastPart.length === 11) return lastPart;
+    }
+
+    // Fallback for live/embed patterns if regex fails
+    const parts = url.split('/');
+    const lastPart = parts[parts.length - 1].split('?')[0];
+    if (lastPart.length === 11) return lastPart;
+
+    return null;
+  };
+
   const saveVideo = async () => {
     if (!editVideo.title || !editVideo.url) return showNotify("Title and URL are required", "error");
+    
+    const vidId = extractYoutubeId(editVideo.url);
+    if (!vidId) return showNotify("Invalid YouTube URL or Video ID", "error");
+
     setIsPublishing(true);
     try {
-      let vidId = editVideo.id;
-      if (!vidId) {
-          const url = new URL(editVideo.url);
-          if (url.hostname === 'youtu.be') vidId = url.pathname.slice(1);
-          else vidId = url.searchParams.get('v') || '';
-          if (!vidId) vidId = editVideo.url.split('/').pop() || Date.now().toString();
-      }
-
       const { error } = await supabase.from('videos').upsert({
         id: vidId,
         title: editVideo.title,
-        url: editVideo.url
+        url: editVideo.url.startsWith('http') ? editVideo.url : `https://www.youtube.com/watch?v=${vidId}`
       });
       
       if (error) throw error;
@@ -185,7 +206,7 @@ const App: React.FC = () => {
       setEditVideo({ title: '', url: '' });
       showNotify("Tutorial video saved");
     } catch (err) { 
-      showNotify("Invalid YouTube Link", "error"); 
+      showNotify("Error saving video", "error"); 
     } finally { setIsPublishing(false); }
   };
 
@@ -437,7 +458,7 @@ const App: React.FC = () => {
                     <div className="space-y-4">
                       <label className="text-[10px] font-black uppercase text-zinc-400">Video Details</label>
                       <input className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none border-2 border-transparent focus:border-red-500" value={editVideo.title || ''} onChange={e => setEditVideo({...editVideo, title: e.target.value})} placeholder="Tutorial Title" />
-                      <input className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none border-2 border-transparent focus:border-red-500" value={editVideo.url || ''} onChange={e => setEditVideo({...editVideo, url: e.target.value})} placeholder="YouTube Link (e.g., https://youtube.com/watch?v=...)" />
+                      <input className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none border-2 border-transparent focus:border-red-500" value={editVideo.url || ''} onChange={e => setEditVideo({...editVideo, url: e.target.value})} placeholder="YouTube Link or Video ID" />
                     </div>
                     <div className="flex gap-4">
                       <button onClick={() => setIsEditingVideo(false)} className="flex-1 py-5 bg-zinc-100 dark:bg-zinc-800 font-black text-[10px] uppercase rounded-2xl">Cancel</button>
