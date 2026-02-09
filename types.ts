@@ -3,6 +3,12 @@ import React from 'react';
 
 export type Section = 'Home' | 'Themes' | 'Widgets' | 'Walls' | 'Order' | 'Admin' | 'Preview';
 
+export interface YoutubeVideo {
+  id: string;
+  title: string;
+  url: string;
+}
+
 export interface BannerSettings {
   title: string;
   highlight: string;
