@@ -242,9 +242,8 @@ const App: React.FC = () => {
         <div className="absolute -inset-4 sm:-inset-5 border-2 border-dashed border-[#007AFF] rounded-full animate-[spin_8s_linear_infinite]"></div>
         <div className="absolute -inset-1 bg-[#007AFF]/10 rounded-full blur-2xl animate-pulse"></div>
       </div>
-      <div className="mt-12 text-center space-y-2 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+      <div className="mt-8 text-center animate-in fade-in slide-in-from-bottom-4 duration-1000">
          <h3 className="text-xl font-black uppercase tracking-tighter text-zinc-900 dark:text-zinc-100">Mohamed Edge</h3>
-         <p className="text-[10px] font-bold text-[#007AFF] uppercase tracking-[0.3em] animate-pulse">Initializing Assets...</p>
       </div>
     </div>
   );
