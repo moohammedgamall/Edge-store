@@ -50,7 +50,7 @@ const App: React.FC = () => {
 
   const selectedProduct = useMemo(() => {
     const found = products.find(p => p.id === selectedProductId);
-    if (found && found.category === selectedCategory) return found;
+    if (found && (found.category === selectedCategory || selectedCategory === 'Themes' || selectedCategory === 'Home')) return found;
     return productsInCategory.length > 0 ? productsInCategory[0] : null;
   }, [products, selectedProductId, selectedCategory, productsInCategory]);
 
@@ -231,7 +231,7 @@ const App: React.FC = () => {
       price: editProduct.price || 0,
       image: editProduct.image,
       gallery: editProduct.gallery || [],
-      rating: 5.0, // تقييم ثابت
+      rating: 5.0, 
       downloads: editProduct.downloads || '0',
       is_premium: editProduct.is_premium || false,
       compatibility: editProduct.compatibility || 'ColorOS 15'
@@ -296,6 +296,15 @@ const App: React.FC = () => {
       const scrollLeft = sliderRef.current.scrollLeft;
       const width = sliderRef.current.offsetWidth;
       setCurrentSlide(Math.round(scrollLeft / width));
+    }
+  };
+
+  const scrollToIndex = (index: number) => {
+    if (sliderRef.current) {
+      sliderRef.current.scrollTo({
+        left: index * sliderRef.current.offsetWidth,
+        behavior: 'smooth'
+      });
     }
   };
 
@@ -433,12 +442,18 @@ const App: React.FC = () => {
     return (
       <div className="max-w-5xl mx-auto space-y-6 pb-32 animate-in fade-in slide-in-from-bottom-8">
         <header className="flex items-center justify-between px-2">
-           <button onClick={() => { window.location.hash = '#/'; setActiveSection('Home'); }} className="w-12 h-12 glass-panel rounded-full flex items-center justify-center text-zinc-900 border-white shadow-xl active:scale-90 transition-all"><i className="fa-solid fa-chevron-left"></i></button>
+           <button 
+             onClick={() => { window.location.hash = '#/'; setActiveSection('Home'); }} 
+             className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-zinc-900 border border-zinc-200 shadow-lg active:scale-90 transition-all hover:bg-zinc-50"
+             aria-label="Back"
+           >
+             <i className="fa-solid fa-chevron-left"></i>
+           </button>
            <div className="text-center px-4">
               <span className="text-[10px] font-black uppercase tracking-[0.4em] text-[#007AFF] mb-1">{p.category}</span>
               <h2 className="text-2xl font-black tracking-tighter text-zinc-900 line-clamp-1">{p.title}</h2>
            </div>
-           <div className="w-12 opacity-0"></div>
+           <div className="w-12"></div>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 px-2">
@@ -447,6 +462,25 @@ const App: React.FC = () => {
                  <div ref={sliderRef} onScroll={handleSliderScroll} className="flex overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar rounded-[2.5rem] shadow-2xl bg-white border-4 border-white">
                     {fullGallery.map((url, idx) => <div key={idx} className="min-w-full snap-center p-4"><img src={url} className="w-full h-auto rounded-[2rem] object-contain" alt="" /></div>)}
                  </div>
+
+                 {/* Navigation Arrows */}
+                 <div className="absolute inset-y-0 left-6 flex items-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button 
+                      onClick={() => scrollToIndex((currentSlide - 1 + fullGallery.length) % fullGallery.length)} 
+                      className="w-10 h-10 rounded-full bg-white/40 backdrop-blur-xl border border-white/30 text-zinc-900 flex items-center justify-center shadow-xl pointer-events-auto active:scale-90 transition-all hover:bg-white/60"
+                    >
+                      <i className="fa-solid fa-chevron-left text-sm"></i>
+                    </button>
+                 </div>
+                 <div className="absolute inset-y-0 right-6 flex items-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button 
+                      onClick={() => scrollToIndex((currentSlide + 1) % fullGallery.length)} 
+                      className="w-10 h-10 rounded-full bg-white/40 backdrop-blur-xl border border-white/30 text-zinc-900 flex items-center justify-center shadow-xl pointer-events-auto active:scale-90 transition-all hover:bg-white/60"
+                    >
+                      <i className="fa-solid fa-chevron-right text-sm"></i>
+                    </button>
+                 </div>
+
                  <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-2 px-4 py-2 bg-white/10 backdrop-blur-3xl rounded-full border border-white/20">
                     {fullGallery.map((_, idx) => <div key={idx} className={`h-1 rounded-full transition-all duration-500 ${currentSlide === idx ? 'w-6 bg-[#007AFF]' : 'w-1.5 bg-zinc-300'}`} />)}
                  </div>
