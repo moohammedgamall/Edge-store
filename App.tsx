@@ -40,6 +40,9 @@ const App: React.FC = () => {
   const [isPublishing, setIsPublishing] = useState(false);
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [editProduct, setEditProduct] = useState<Partial<Product>>({ is_premium: false });
+  
+  // Admin Tabs
+  const [adminTab, setAdminTab] = useState<'Inventory' | 'Settings' | 'Banner'>('Inventory');
 
   useEffect(() => {
     if (isDarkMode) document.documentElement.classList.add('dark');
@@ -81,7 +84,12 @@ const App: React.FC = () => {
 
         const { data: bannerData } = await supabase.from('banner').select('*').eq('id', 1).maybeSingle();
         if (bannerData) {
-          setBanner(prev => ({ ...prev, title: bannerData.title, highlight: bannerData.highlight, imageUrl: bannerData.imageUrl }));
+          setBanner(prev => ({ 
+            ...prev, 
+            title: bannerData.title || prev.title, 
+            highlight: bannerData.highlight || prev.highlight, 
+            imageUrl: bannerData.imageUrl || prev.imageUrl 
+          }));
         }
       } catch (e) {
         console.error("DB Fetch Error", e);
@@ -139,6 +147,22 @@ const App: React.FC = () => {
       showNotification("Cloud Synced!");
     } catch (err) { console.error(err); }
     finally { setIsPublishing(false); }
+  };
+
+  const handleUpdateSettings = async (key: string, value: string) => {
+    try {
+      await supabase.from('settings').upsert({ key, value });
+      if (key === 'admin_password') setAdminPassword(value);
+      if (key === 'site_logo') setSiteLogo(value);
+      showNotification("Setting Updated");
+    } catch (e) { console.error(e); }
+  };
+
+  const handleUpdateBanner = async () => {
+    try {
+      await supabase.from('banner').upsert({ id: 1, ...banner });
+      showNotification("Banner Synced");
+    } catch (e) { console.error(e); }
   };
 
   if (isLoading) return (
@@ -255,7 +279,6 @@ const App: React.FC = () => {
             </div>
 
             <div className="glass-panel p-10 rounded-[3rem] space-y-10 border-white dark:border-zinc-800 shadow-2xl relative overflow-hidden">
-              {/* Device Selection */}
               <div className="space-y-5">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 flex items-center justify-center font-black text-xs">1</div>
@@ -275,7 +298,6 @@ const App: React.FC = () => {
                 </div>
               </div>
 
-              {/* Item Selection */}
               <div className="space-y-5">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 flex items-center justify-center font-black text-xs">2</div>
@@ -296,7 +318,6 @@ const App: React.FC = () => {
                 </div>
               </div>
 
-              {/* Payment Info */}
               {orderProduct && (
                 <div className="p-8 bg-zinc-50 dark:bg-zinc-800/40 rounded-[2.5rem] border border-zinc-100 dark:border-zinc-700 space-y-8 animate-in zoom-in-95 duration-500">
                   <div className="flex items-center gap-6">
@@ -364,40 +385,160 @@ const App: React.FC = () => {
         )}
 
         {activeSection === 'Admin' && isAdminMode && (
-          <div className="max-w-4xl mx-auto space-y-10 pb-44 animate-in fade-in">
-            <div className="flex justify-between items-center bg-white dark:bg-zinc-900 p-6 rounded-[2rem] shadow-sm border border-zinc-100 dark:border-zinc-800">
-              <h2 className="text-2xl font-black uppercase">Inventory</h2>
-              <button onClick={() => { setEditProduct({ is_premium: false }); setIsEditing(true); }} className="px-6 py-3 bg-[#007AFF] text-white rounded-xl font-black text-[10px] uppercase shadow-xl">Add Asset</button>
+          <div className="max-w-5xl mx-auto space-y-12 pb-44 animate-in fade-in duration-700">
+            {/* Admin Header Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div className="glass-panel p-8 rounded-[2.5rem] flex flex-col justify-between h-40 border-white dark:border-zinc-800">
+                <p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">Total Products</p>
+                <h3 className="text-5xl font-black tracking-tighter">{products.length}</h3>
+              </div>
+              <div className="glass-panel p-8 rounded-[2.5rem] flex flex-col justify-between h-40 border-white dark:border-zinc-800">
+                <p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">Premium Assets</p>
+                <h3 className="text-5xl font-black tracking-tighter text-[#007AFF]">{products.filter(p => p.is_premium).length}</h3>
+              </div>
+              <div className="glass-panel p-8 rounded-[2.5rem] flex flex-col justify-between h-40 border-white dark:border-zinc-800">
+                <p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">Free Assets</p>
+                <h3 className="text-5xl font-black tracking-tighter">{products.filter(p => p.price === 0).length}</h3>
+              </div>
+              <button 
+                onClick={() => { setEditProduct({ is_premium: false }); setIsEditing(true); }}
+                className="bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-[2.5rem] flex flex-col items-center justify-center gap-4 hover:scale-[1.02] transition-transform active:scale-95 shadow-2xl"
+              >
+                <i className="fa-solid fa-plus text-3xl"></i>
+                <span className="text-[10px] font-black uppercase tracking-widest">Add New Asset</span>
+              </button>
             </div>
 
-            {isEditing && (
-              <div className="glass-panel p-8 rounded-[2.5rem] space-y-6 border-white dark:border-zinc-800 shadow-2xl relative animate-in slide-in-from-top-6">
-                <input placeholder="Title" className="w-full p-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 font-bold" value={editProduct.title || ''} onChange={e => setEditProduct({...editProduct, title: e.target.value})} />
-                <input placeholder="Image URL" className="w-full p-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 font-bold" value={editProduct.image || ''} onChange={e => setEditProduct({...editProduct, image: e.target.value})} />
-                <div className="grid grid-cols-2 gap-4">
-                  <input placeholder="Price" type="number" className="p-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 font-bold" value={editProduct.price || 0} onChange={e => setEditProduct({...editProduct, price: parseFloat(e.target.value)})} />
-                  <select className="p-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 font-bold" value={editProduct.category} onChange={e => setEditProduct({...editProduct, category: e.target.value as Section})}>
-                    <option value="Themes">Themes</option><option value="Widgets">Widgets</option><option value="Walls">Walls</option>
-                  </select>
+            {/* Admin Tabs */}
+            <div className="flex gap-4 p-2 bg-zinc-100 dark:bg-zinc-900/50 rounded-2xl w-fit">
+              {(['Inventory', 'Banner', 'Settings'] as const).map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setAdminTab(tab)}
+                  className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${adminTab === tab ? 'bg-white dark:bg-zinc-800 shadow-md text-[#007AFF]' : 'text-zinc-400 hover:text-zinc-600'}`}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+
+            {/* Inventory View */}
+            {adminTab === 'Inventory' && (
+              <div className="space-y-8 animate-in slide-in-from-bottom-4">
+                {isEditing && (
+                  <div className="glass-panel p-10 rounded-[3rem] space-y-8 border-white dark:border-zinc-800 shadow-2xl">
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-2xl font-black tracking-tighter uppercase">{editProduct.id ? 'Edit Asset' : 'New Asset'}</h3>
+                      <button onClick={() => setIsEditing(false)} className="w-10 h-10 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center"><i className="fa-solid fa-xmark"></i></button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-zinc-400 ml-2">Title</label>
+                        <input className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none border-2 border-transparent focus:border-[#007AFF]" value={editProduct.title || ''} onChange={e => setEditProduct({...editProduct, title: e.target.value})} />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-zinc-400 ml-2">Category</label>
+                        <select className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none border-2 border-transparent focus:border-[#007AFF] appearance-none" value={editProduct.category} onChange={e => setEditProduct({...editProduct, category: e.target.value as Section})}>
+                          <option value="Themes">Themes</option><option value="Widgets">Widgets</option><option value="Walls">Walls</option>
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-zinc-400 ml-2">Price (EGP)</label>
+                        <input type="number" className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none border-2 border-transparent focus:border-[#007AFF]" value={editProduct.price || 0} onChange={e => setEditProduct({...editProduct, price: parseFloat(e.target.value)})} />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-zinc-400 ml-2">Image URL</label>
+                        <input className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none border-2 border-transparent focus:border-[#007AFF]" value={editProduct.image || ''} onChange={e => setEditProduct({...editProduct, image: e.target.value})} />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase text-zinc-400 ml-2">Description</label>
+                      <textarea className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-medium h-32 outline-none border-2 border-transparent focus:border-[#007AFF] resize-none" value={editProduct.description || ''} onChange={e => setEditProduct({...editProduct, description: e.target.value})} />
+                    </div>
+                    <div className="flex items-center gap-4 p-5 bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl">
+                      <input type="checkbox" id="premium" className="w-5 h-5 accent-[#007AFF]" checked={editProduct.is_premium} onChange={e => setEditProduct({...editProduct, is_premium: e.target.checked})} />
+                      <label htmlFor="premium" className="text-xs font-black uppercase tracking-widest cursor-pointer">Premium Asset Badge</label>
+                    </div>
+                    <button onClick={handleSaveProduct} disabled={isPublishing} className="w-full py-6 bg-[#007AFF] text-white rounded-[2rem] font-black uppercase tracking-[0.2em] shadow-2xl disabled:opacity-50">
+                      {isPublishing ? 'Publishing...' : 'Sync to Cloud'}
+                    </button>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 gap-4">
+                  {dbProducts.map(p => (
+                    <div key={p.id} className="p-6 bg-white dark:bg-zinc-900 rounded-[2.5rem] flex items-center justify-between shadow-sm border border-zinc-100 dark:border-zinc-800 hover:border-[#007AFF]/30 transition-all">
+                      <div className="flex items-center gap-6">
+                        <img src={p.image} className="w-16 h-16 rounded-2xl object-cover shadow-md" />
+                        <div>
+                          <p className="font-black text-lg tracking-tight">{p.title}</p>
+                          <p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">{p.category} • {p.price} EGP</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-3">
+                        <button onClick={() => {setEditProduct(p); setIsEditing(true);}} className="w-12 h-12 bg-blue-50 dark:bg-blue-900/20 text-[#007AFF] rounded-full flex items-center justify-center hover:scale-110 transition-transform"><i className="fa-solid fa-pen"></i></button>
+                        <button onClick={async () => { if(confirm('Delete permanently?')) { await supabase.from('products').delete().eq('id', p.id); setDbProducts(ps => ps.filter(x => x.id !== p.id)); showNotification("Deleted"); } }} className="w-12 h-12 bg-red-50 dark:bg-red-900/20 text-red-500 rounded-full flex items-center justify-center hover:scale-110 transition-transform"><i className="fa-solid fa-trash"></i></button>
+                      </div>
+                    </div>
+                  ))}
+                  {dbProducts.length === 0 && (
+                    <div className="py-20 text-center glass-panel rounded-[3rem] border-dashed border-2 border-zinc-200">
+                      <p className="text-zinc-400 font-black uppercase tracking-widest text-xs">No Cloud Assets Found</p>
+                    </div>
+                  )}
                 </div>
-                <button onClick={handleSaveProduct} disabled={isPublishing} className="w-full py-5 bg-[#007AFF] text-white rounded-2xl font-black uppercase tracking-widest">{isPublishing ? "Syncing..." : "Publish Now"}</button>
               </div>
             )}
 
-            <div className="grid grid-cols-1 gap-4">
-              {dbProducts.map(p => (
-                <div key={p.id} className="p-5 bg-white dark:bg-zinc-900 rounded-[2rem] flex justify-between items-center shadow-sm border border-zinc-100 dark:border-zinc-800">
-                  <div className="flex items-center gap-5">
-                    <img src={p.image} className="w-12 h-12 rounded-xl object-cover" />
-                    <div><p className="font-black text-sm">{p.title}</p><p className="text-[9px] font-black uppercase text-zinc-400">{p.category}</p></div>
+            {/* Banner View */}
+            {adminTab === 'Banner' && (
+              <div className="glass-panel p-10 rounded-[3rem] space-y-8 border-white dark:border-zinc-800 shadow-2xl animate-in slide-in-from-bottom-4">
+                <h3 className="text-2xl font-black tracking-tighter uppercase">Home Page Banner</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase text-zinc-400 ml-2">Title</label>
+                    <input className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none" value={banner.title} onChange={e => setBanner({...banner, title: e.target.value})} />
                   </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => {setEditProduct(p); setIsEditing(true);}} className="w-9 h-9 bg-blue-50 dark:bg-blue-900/20 text-blue-500 rounded-lg flex items-center justify-center"><i className="fa-solid fa-pen text-xs"></i></button>
-                    <button onClick={async () => { if(confirm('Delete?')) { await supabase.from('products').delete().eq('id', p.id); setDbProducts(ps => ps.filter(x => x.id !== p.id)); } }} className="w-9 h-9 bg-red-50 dark:bg-red-900/20 text-red-500 rounded-lg flex items-center justify-center"><i className="fa-solid fa-trash text-xs"></i></button>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase text-zinc-400 ml-2">Highlight (Blue)</label>
+                    <input className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none" value={banner.highlight} onChange={e => setBanner({...banner, highlight: e.target.value})} />
                   </div>
                 </div>
-              ))}
-            </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase text-zinc-400 ml-2">Image URL</label>
+                  <input className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none" value={banner.imageUrl} onChange={e => setBanner({...banner, imageUrl: e.target.value})} />
+                </div>
+                <button onClick={handleUpdateBanner} className="w-full py-6 bg-[#007AFF] text-white rounded-[2rem] font-black uppercase tracking-[0.2em] shadow-2xl">
+                  Update Home Banner
+                </button>
+              </div>
+            )}
+
+            {/* Settings View */}
+            {adminTab === 'Settings' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in slide-in-from-bottom-4">
+                <div className="glass-panel p-10 rounded-[3rem] space-y-6 border-white dark:border-zinc-800">
+                  <h3 className="text-2xl font-black tracking-tighter uppercase">Site Identity</h3>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase text-zinc-400 ml-2">Store Logo URL</label>
+                    <input className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none" defaultValue={siteLogo} onBlur={e => handleUpdateSettings('site_logo', e.target.value)} />
+                  </div>
+                  <div className="p-6 bg-zinc-100 dark:bg-zinc-800 rounded-3xl flex items-center gap-6">
+                    <img src={siteLogo} className="w-20 h-20 rounded-full object-cover shadow-lg border-4 border-white dark:border-zinc-700" alt="Preview" />
+                    <div><p className="font-black text-xs uppercase tracking-widest text-[#007AFF]">Logo Preview</p></div>
+                  </div>
+                </div>
+
+                <div className="glass-panel p-10 rounded-[3rem] space-y-6 border-white dark:border-zinc-800">
+                  <h3 className="text-2xl font-black tracking-tighter uppercase">Security</h3>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase text-zinc-400 ml-2">Master Password</label>
+                    <input type="password" placeholder="••••" className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none text-2xl tracking-[0.5em]" defaultValue={adminPassword} onBlur={e => handleUpdateSettings('admin_password', e.target.value)} />
+                    <p className="text-[9px] font-bold text-red-500 uppercase tracking-widest mt-4">Warning: Changing this will require immediate re-login.</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </main>
