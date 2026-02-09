@@ -22,14 +22,16 @@ const App: React.FC = () => {
     return stored ? stored === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
   });
 
+  // Database State
   const [dbProducts, setDbProducts] = useState<Product[]>([]);
   const [dbVideos, setDbVideos] = useState<YoutubeVideo[]>([]);
   const [siteLogo, setSiteLogo] = useState<string>("https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
   const [loadingLogo, setLoadingLogo] = useState<string>(() => localStorage.getItem('cached_loading_logo') || "https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
   const [adminPassword, setAdminPassword] = useState('1234');
 
-  const products = useMemo(() => dbProducts.length > 0 ? dbProducts : MOCK_PRODUCTS, [dbProducts]);
-  const videos = useMemo(() => dbVideos.length > 0 ? dbVideos : MOCK_VIDEOS, [dbVideos]);
+  // Logic: Only show what is in the database. No more hardcoded fallbacks that can't be deleted.
+  const products = useMemo(() => dbProducts, [dbProducts]);
+  const videos = useMemo(() => dbVideos, [dbVideos]);
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [passwordInput, setPasswordInput] = useState('');
@@ -55,7 +57,6 @@ const App: React.FC = () => {
   }, [isDarkMode]);
 
   const refreshData = async () => {
-    const startTime = Date.now();
     try {
       const [prodRes, vidRes, setRes] = await Promise.all([
         supabase.from('products').select('*').order('created_at', { ascending: false }),
@@ -78,9 +79,7 @@ const App: React.FC = () => {
     } catch (err) {
       console.error("Fetch Error:", err);
     } finally {
-      const elapsed = Date.now() - startTime;
-      const delay = Math.max(0, 1200 - elapsed);
-      setTimeout(() => setIsLoading(false), delay);
+      setIsLoading(false);
     }
   };
 
@@ -202,6 +201,29 @@ const App: React.FC = () => {
     }
   };
 
+  const seedSampleData = async () => {
+    if (!window.confirm("This will import sample products and videos into your database so you can manage them. Continue?")) return;
+    setIsPublishing(true);
+    try {
+      // Import Products
+      const productsToSeed = MOCK_PRODUCTS.map(p => ({
+        ...p,
+        id: `seed-${p.id}-${Date.now()}` // Unique IDs for the DB
+      }));
+      await supabase.from('products').insert(productsToSeed);
+      
+      // Import Videos
+      await supabase.from('videos').insert(MOCK_VIDEOS);
+      
+      await refreshData();
+      showNotify("Sample data imported successfully!");
+    } catch (err) {
+      showNotify("Seeding failed", "error");
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
   const updateSetting = async (key: string, value: string) => {
     try {
       const { error } = await supabase.from('settings').upsert({ key, value });
@@ -254,9 +276,16 @@ const App: React.FC = () => {
           <div className="space-y-16 animate-in fade-in slide-in-from-bottom-8 duration-700">
             <section className="space-y-8">
               <h2 className="text-xl font-black tracking-tight uppercase px-1 flex items-center gap-3"><div className="w-1.5 h-6 bg-[#007AFF] rounded-full"></div> Marketplace</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                {products.map(p => <ProductCard key={p.id} product={p} onPreview={(id) => window.location.hash = `#/preview/${id}`} onBuy={(id) => { setOrderProductId(id); window.location.hash = '#/order'; }} />)}
-              </div>
+              {products.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {products.map(p => <ProductCard key={p.id} product={p} onPreview={(id) => window.location.hash = `#/preview/${id}`} onBuy={(id) => { setOrderProductId(id); window.location.hash = '#/order'; }} />)}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-20 text-zinc-400 gap-4">
+                  <i className="fa-solid fa-box-open text-5xl"></i>
+                  <p className="font-black uppercase text-xs tracking-widest">Your store is currently empty</p>
+                </div>
+              )}
             </section>
           </div>
         )}
@@ -389,6 +418,9 @@ const App: React.FC = () => {
                       </div>
                     </div>
                   ))}
+                  {dbProducts.length === 0 && !isLoading && (
+                    <div className="text-center py-10 text-zinc-400 font-black uppercase text-[10px]">No database products found.</div>
+                  )}
                 </div>
               </div>
             )}
@@ -429,7 +461,7 @@ const App: React.FC = () => {
                       </div>
                     </div>
                   )) : (
-                    <div className="text-center py-20 text-zinc-400 font-black uppercase text-[10px]">No tutorials listed.</div>
+                    <div className="text-center py-20 text-zinc-400 font-black uppercase text-[10px]">No tutorials found.</div>
                   )}
                 </div>
               </div>
@@ -453,11 +485,26 @@ const App: React.FC = () => {
                   </div>
                 </div>
                 <div className="glass-panel p-10 rounded-[3.5rem] space-y-8">
-                  <h3 className="font-black text-xl uppercase tracking-tighter">Access Control</h3>
-                  <div className="space-y-4">
-                    <label className="text-[10px] font-black uppercase text-zinc-400 block">Master Administrator Password</label>
-                    <input type="password" placeholder="••••••••" className="w-full p-6 rounded-[2rem] bg-zinc-100 dark:bg-zinc-800 font-black focus:outline-[#007AFF]" onBlur={e => e.target.value && updateSetting('admin_password', e.target.value)} />
-                    <p className="text-[8px] text-zinc-400 font-bold uppercase tracking-widest">* Settings are auto-saved on field blur</p>
+                  <h3 className="font-black text-xl uppercase tracking-tighter">Utility & Safety</h3>
+                  <div className="space-y-6">
+                    <div className="space-y-3">
+                      <label className="text-[10px] font-black uppercase text-zinc-400 block">System Maintenance</label>
+                      <button 
+                        onClick={seedSampleData}
+                        disabled={isPublishing}
+                        className="w-full py-4 bg-zinc-900 text-white rounded-2xl font-black uppercase text-[9px] tracking-widest hover:bg-zinc-800 transition-colors disabled:opacity-50"
+                      >
+                        {isPublishing ? 'Processing...' : 'Import Sample Assets'}
+                      </button>
+                      <p className="text-[7px] text-zinc-400 font-bold uppercase text-center tracking-tighter">Use this to populate your site with deletable sample data</p>
+                    </div>
+                    
+                    <div className="h-px bg-zinc-100 dark:bg-zinc-800" />
+                    
+                    <div className="space-y-3">
+                      <label className="text-[10px] font-black uppercase text-zinc-400 block">Master Password</label>
+                      <input type="password" placeholder="••••••••" className="w-full p-6 rounded-[2rem] bg-zinc-100 dark:bg-zinc-800 font-black focus:outline-[#007AFF]" onBlur={e => e.target.value && updateSetting('admin_password', e.target.value)} />
+                    </div>
                   </div>
                 </div>
               </div>
