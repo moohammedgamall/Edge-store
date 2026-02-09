@@ -21,9 +21,8 @@ export interface Product {
   gallery?: string[];
   rating: number;
   downloads: string;
-  isPremium: boolean;
+  is_premium: boolean;
   compatibility: string;
-  download_url?: string; 
 }
 
 export interface NavItem {

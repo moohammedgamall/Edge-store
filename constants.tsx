@@ -28,7 +28,7 @@ export const MOCK_PRODUCTS: Product[] = [
     image: 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?auto=format&fit=crop&q=80&w=400',
     rating: 4.8,
     downloads: '2.5k',
-    isPremium: true,
+    is_premium: true,
     compatibility: 'ColorOS 14/15'
   },
   {
@@ -40,8 +40,7 @@ export const MOCK_PRODUCTS: Product[] = [
     image: 'https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?auto=format&fit=crop&q=80&w=400',
     rating: 4.5,
     downloads: '10k',
-    isPremium: false,
-    compatibility: 'Realme UI 5.0',
-    download_url: 'https://github.com/google/material-design-icons/archive/master.zip'
+    is_premium: false,
+    compatibility: 'Realme UI 5.0'
   }
 ];

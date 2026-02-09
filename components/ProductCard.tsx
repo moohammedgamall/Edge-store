@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Product, Section } from '../types';
 
@@ -50,7 +51,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onBuy, onPreview }) 
             <span className="text-2xl font-black text-[#1C1C1E]">
               {product.price === 0 ? 'FREE' : `${product.price.toFixed(2)} EGP`}
             </span>
-            {product.isPremium && (
+            {product.is_premium && (
               <div className="p-1.5 bg-blue-50 rounded-full">
                 <i className="fa-solid fa-shield-halved text-sm text-[#007AFF]"></i>
               </div>

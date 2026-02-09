@@ -35,7 +35,7 @@ const App: React.FC = () => {
   const [selectedProductId, setSelectedProductId] = useState<string>('');
 
   const [isEditing, setIsEditing] = useState<boolean>(false);
-  const [editProduct, setEditProduct] = useState<Partial<Product>>({});
+  const [editProduct, setEditProduct] = useState<Partial<Product>>({ is_premium: false });
   const [isEditingBanner, setIsEditingBanner] = useState<boolean>(false);
 
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -127,7 +127,7 @@ const App: React.FC = () => {
 
   const showNotification = (message: string, type: 'success' | 'info' = 'success') => {
     setNotification({ message, type });
-    setTimeout(() => setNotification(null), 3000);
+    setTimeout(() => setNotification(null), 4000);
   };
 
   const handleAdminAuth = () => {
@@ -222,7 +222,8 @@ const App: React.FC = () => {
     }
     
     setIsPublishing(true);
-    // تم تغيير المسمى هنا إلى download_url ليتوافق مع قاعدة البيانات
+    
+    // تم حذف download_url تماماً من هنا
     const productToSave = { 
       id: editProduct.id || Date.now().toString(),
       title: editProduct.title,
@@ -233,9 +234,8 @@ const App: React.FC = () => {
       gallery: editProduct.gallery || [],
       rating: editProduct.rating || 5.0,
       downloads: editProduct.downloads || '0',
-      isPremium: editProduct.isPremium || false,
-      compatibility: editProduct.compatibility || 'ColorOS 15',
-      download_url: editProduct.download_url || ''
+      is_premium: editProduct.is_premium || false,
+      compatibility: editProduct.compatibility || 'ColorOS 15'
     };
 
     try {
@@ -243,12 +243,7 @@ const App: React.FC = () => {
       
       if (error) {
         console.error("Supabase Error:", error);
-        // رسالة تنبيه مخصصة في حال لم يجد العمود
-        if (error.message?.includes('column')) {
-            showNotification("Database Error: Column 'download_url' missing in Supabase", "info");
-        } else {
-            showNotification("Failed to save: " + error.message, "info");
-        }
+        showNotification(`Error: ${error.message}`, "info");
       } else {
         setProducts(prev => {
           const exists = prev.find(p => p.id === productToSave.id);
@@ -261,7 +256,7 @@ const App: React.FC = () => {
         showNotification("Asset published successfully!");
       }
     } catch (err: any) {
-      showNotification("Error: Check your connection", "info");
+      showNotification("Critical Error: Check Connection", "info");
     } finally {
       setIsPublishing(false);
     }
@@ -287,22 +282,13 @@ const App: React.FC = () => {
     }
   };
 
-  const handleDownload = (product: Product) => {
-    if (product.download_url) {
-      window.open(product.download_url, '_blank');
-      showNotification("Download started...");
-    } else {
-      showNotification("Link not available", "info");
-    }
-  };
-
   const handleOpenPreview = (id: string) => {
     window.location.hash = `#/preview/${id}`;
   };
 
   const handleOrderViaTelegram = () => {
     if (!selectedProduct) return;
-    const message = `👋 *New Order from Edge Store*\n\n📱 Device: ${selectedPhone}\n📦 Item: ${selectedProduct.title}\n📂 Category: ${selectedProduct.category}\n💰 Price: ${selectedProduct.price === 0 ? 'FREE' : selectedProduct.price + ' EGP'}`;
+    const message = `👋 *New Inquiry from Edge Store*\n\n📱 Device: ${selectedPhone}\n📦 Item: ${selectedProduct.title}\n📂 Category: ${selectedProduct.category}\n💰 Price: ${selectedProduct.price === 0 ? 'FREE' : selectedProduct.price + ' EGP'}`;
     window.open(`https://t.me/Mohamed_edge?text=${encodeURIComponent(message)}`, '_blank');
   };
 
@@ -324,7 +310,7 @@ const App: React.FC = () => {
         <div className="flex flex-wrap gap-2">
           <button onClick={() => { setIsChangingPassword(!isChangingPassword); setIsEditing(false); setIsEditingBanner(false); }} className={`px-5 py-3 rounded-2xl font-black text-xs transition-all ${isChangingPassword ? 'bg-zinc-900 text-white' : 'bg-white border shadow-sm'}`}>Security</button>
           <button onClick={() => { setIsEditingBanner(!isEditingBanner); setIsEditing(false); setIsChangingPassword(false); }} className={`px-5 py-3 rounded-2xl font-black text-xs transition-all ${isEditingBanner ? 'bg-zinc-900 text-white' : 'bg-white border shadow-sm'}`}>Banner</button>
-          <button onClick={() => { setIsEditing(true); setIsEditingBanner(false); setIsChangingPassword(false); setEditProduct({ id: Date.now().toString(), price: 0, category: 'Themes', rating: 5.0, downloads: '0', isPremium: false, gallery: [] }); }} className="px-5 py-3 bg-[#007AFF] text-white rounded-2xl font-black text-xs shadow-xl shadow-blue-500/20"><i className="fa-solid fa-plus mr-2"></i>Add Asset</button>
+          <button onClick={() => { setIsEditing(true); setIsEditingBanner(false); setIsChangingPassword(false); setEditProduct({ id: Date.now().toString(), price: 0, category: 'Themes', rating: 5.0, downloads: '0', is_premium: false, gallery: [] }); }} className="px-5 py-3 bg-[#007AFF] text-white rounded-2xl font-black text-xs shadow-xl shadow-blue-500/20"><i className="fa-solid fa-plus mr-2"></i>Add Asset</button>
         </div>
       </header>
 
@@ -366,26 +352,29 @@ const App: React.FC = () => {
 
       {isEditing && (
         <div className="glass-panel p-8 rounded-[2.5rem] space-y-6 animate-in zoom-in-95 border-white shadow-2xl">
-          <div className="flex justify-between items-center"><h3 className="text-xl font-black tracking-tight">Editor</h3><button onClick={() => setIsEditing(false)} className="w-10 h-10 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-500"><i className="fa-solid fa-xmark"></i></button></div>
+          <div className="flex justify-between items-center"><h3 className="text-xl font-black tracking-tight">Asset Editor</h3><button onClick={() => setIsEditing(false)} className="w-10 h-10 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-500 hover:bg-zinc-200 transition-colors"><i className="fa-solid fa-xmark"></i></button></div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
             <div className="space-y-4">
-              <input placeholder="Asset Name" className="w-full p-4 rounded-2xl border-2 border-zinc-100 outline-none font-bold text-base" value={editProduct.title || ''} onChange={e => setEditProduct({...editProduct, title: e.target.value})} />
+              <input placeholder="Asset Name" className="w-full p-4 rounded-2xl border-2 border-zinc-100 outline-none font-bold text-base focus:border-[#007AFF] transition-colors" value={editProduct.title || ''} onChange={e => setEditProduct({...editProduct, title: e.target.value})} />
               <div className="grid grid-cols-2 gap-3">
-                <input placeholder="Price (EGP)" type="number" className="w-full p-4 rounded-xl border-2 border-zinc-100 font-bold text-sm" value={editProduct.price || 0} onChange={e => setEditProduct({...editProduct, price: parseFloat(e.target.value)})} />
-                <input placeholder="OS Version" className="w-full p-4 rounded-xl border-2 border-zinc-100 font-bold text-sm" value={editProduct.compatibility || ''} onChange={e => setEditProduct({...editProduct, compatibility: e.target.value})} />
+                <input placeholder="Price (EGP)" type="number" className="w-full p-4 rounded-xl border-2 border-zinc-100 font-bold text-sm focus:border-[#007AFF]" value={editProduct.price || 0} onChange={e => setEditProduct({...editProduct, price: parseFloat(e.target.value)})} />
+                <input placeholder="OS Version" className="w-full p-4 rounded-xl border-2 border-zinc-100 font-bold text-sm focus:border-[#007AFF]" value={editProduct.compatibility || ''} onChange={e => setEditProduct({...editProduct, compatibility: e.target.value})} />
               </div>
-              <select className="w-full p-4 rounded-xl border-2 border-zinc-100 font-black text-sm bg-white" value={editProduct.category} onChange={e => setEditProduct({...editProduct, category: e.target.value as Section})}>
+              <div className="flex items-center gap-2 p-2 bg-zinc-50 rounded-xl border">
+                 <input type="checkbox" id="is_premium_check" checked={editProduct.is_premium} onChange={e => setEditProduct({...editProduct, is_premium: e.target.checked})} className="w-5 h-5 accent-[#007AFF]" />
+                 <label htmlFor="is_premium_check" className="text-sm font-black text-zinc-600 cursor-pointer">Premium Asset</label>
+              </div>
+              <select className="w-full p-4 rounded-xl border-2 border-zinc-100 font-black text-sm bg-white focus:border-[#007AFF]" value={editProduct.category} onChange={e => setEditProduct({...editProduct, category: e.target.value as Section})}>
                 <option value="Themes">Themes</option><option value="Widgets">Widgets</option><option value="Walls">Walls</option>
               </select>
-              <div onClick={() => fileInputRef.current?.click()} className="w-full h-40 rounded-2xl border-2 border-dashed flex items-center justify-center cursor-pointer bg-zinc-50 overflow-hidden relative group">
-                {editProduct.image ? <img src={editProduct.image} className="w-full h-full object-cover" alt="" /> : <div className="text-center"><i className="fa-solid fa-image text-zinc-300 text-3xl mb-1"></i><p className="text-[10px] font-black text-zinc-400 uppercase">Main Cover</p></div>}
+              <div onClick={() => fileInputRef.current?.click()} className="w-full h-40 rounded-2xl border-2 border-dashed flex items-center justify-center cursor-pointer bg-zinc-50 overflow-hidden relative group hover:bg-zinc-100 transition-colors">
+                {editProduct.image ? <img src={editProduct.image} className="w-full h-full object-cover" alt="" /> : <div className="text-center"><i className="fa-solid fa-image text-zinc-300 text-3xl mb-1"></i><p className="text-[10px] font-black text-zinc-400 uppercase">Main Cover Image</p></div>}
               </div>
               <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleMainImageUpload} />
-              <input placeholder="Download URL" className="w-full p-4 rounded-xl border-2 border-zinc-100 font-bold text-sm" value={editProduct.download_url || ''} onChange={e => setEditProduct({...editProduct, download_url: e.target.value})} />
             </div>
             <div className="p-6 bg-zinc-50 rounded-3xl border-2 border-dashed border-zinc-200 space-y-4">
               <h4 className="text-xs font-black uppercase text-zinc-400">Screenshots (Max 15)</h4>
-              <button onClick={() => galleryInputRef.current?.click()} className="w-full py-4 bg-white border shadow-sm text-[#007AFF] rounded-2xl flex items-center justify-center gap-3 font-black text-xs"><i className="fa-solid fa-plus-circle"></i> Add Images</button>
+              <button onClick={() => galleryInputRef.current?.click()} className="w-full py-4 bg-white border shadow-sm text-[#007AFF] rounded-2xl flex items-center justify-center gap-3 font-black text-xs hover:shadow-md transition-all"><i className="fa-solid fa-plus-circle"></i> Add Images</button>
               <input ref={galleryInputRef} type="file" multiple accept="image/*" className="hidden" onChange={handleGalleryImagesUpload} />
               <div className="grid grid-cols-3 gap-2 max-h-64 overflow-y-auto p-1 custom-scrollbar">
                 {editProduct.gallery?.map((url, idx) => (
@@ -397,27 +386,27 @@ const App: React.FC = () => {
               </div>
             </div>
           </div>
-          <textarea placeholder="Description" className="w-full p-5 rounded-2xl border-2 border-zinc-100 outline-none font-medium text-sm h-32" value={editProduct.description || ''} onChange={e => setEditProduct({...editProduct, description: e.target.value})} />
+          <textarea placeholder="Description" className="w-full p-5 rounded-2xl border-2 border-zinc-100 outline-none font-medium text-sm h-32 focus:border-[#007AFF]" value={editProduct.description || ''} onChange={e => setEditProduct({...editProduct, description: e.target.value})} />
           <button 
             disabled={isPublishing}
             onClick={handleSaveProduct} 
-            className="w-full py-5 bg-[#007AFF] text-white rounded-[1.5rem] font-black text-lg shadow-2xl disabled:opacity-50 active:scale-95 transition-all"
+            className="w-full py-5 bg-[#007AFF] text-white rounded-[1.5rem] font-black text-lg shadow-2xl disabled:opacity-50 active:scale-95 transition-all flex items-center justify-center gap-3"
           >
-            {isPublishing ? "Publishing..." : "Publish Live Asset"}
+            {isPublishing ? <><i className="fa-solid fa-circle-notch animate-spin"></i> Publishing...</> : "Publish Live Asset"}
           </button>
         </div>
       )}
 
       <div className="grid grid-cols-1 gap-4 px-2">
         {products.map(p => (
-          <div key={p.id} className="glass-panel p-4 rounded-3xl flex items-center justify-between border-white shadow-sm">
+          <div key={p.id} className="glass-panel p-4 rounded-3xl flex items-center justify-between border-white shadow-sm hover:shadow-md transition-shadow">
             <div className="flex items-center gap-4">
               <img src={p.image} className="w-14 h-14 rounded-2xl object-cover shadow-sm" alt="" />
-              <div><h4 className="font-black text-base">{p.title}</h4><p className="text-[10px] text-zinc-400 font-black uppercase tracking-widest">{p.category} • {p.price} EGP</p></div>
+              <div><h4 className="font-black text-base">{p.title}</h4><p className="text-[10px] text-zinc-400 font-black uppercase tracking-widest">{p.category} • {p.price} EGP {p.is_premium ? '• PREMIUM' : ''}</p></div>
             </div>
             <div className="flex gap-2">
-              <button onClick={() => { setEditProduct(p); setIsEditing(true); setIsEditingBanner(false); setIsChangingPassword(false); }} className="w-10 h-10 bg-blue-50 text-[#007AFF] rounded-xl flex items-center justify-center shadow-sm"><i className="fa-solid fa-pen"></i></button>
-              <button onClick={async () => { if(confirm('Permanently delete this item?')) { const {error} = await supabase.from('products').delete().eq('id', p.id); if(!error) setProducts(pr => pr.filter(x => x.id !== p.id)); } }} className="w-10 h-10 bg-red-50 text-red-500 rounded-xl flex items-center justify-center shadow-sm"><i className="fa-solid fa-trash"></i></button>
+              <button onClick={() => { setEditProduct(p); setIsEditing(true); setIsEditingBanner(false); setIsChangingPassword(false); }} className="w-10 h-10 bg-blue-50 text-[#007AFF] rounded-xl flex items-center justify-center shadow-sm hover:bg-blue-100 transition-colors"><i className="fa-solid fa-pen"></i></button>
+              <button onClick={async () => { if(confirm('Permanently delete this item?')) { const {error} = await supabase.from('products').delete().eq('id', p.id); if(!error) setProducts(pr => pr.filter(x => x.id !== p.id)); } }} className="w-10 h-10 bg-red-50 text-red-500 rounded-xl flex items-center justify-center shadow-sm hover:bg-red-100 transition-colors"><i className="fa-solid fa-trash"></i></button>
             </div>
           </div>
         ))}
@@ -472,7 +461,7 @@ const App: React.FC = () => {
                       <p className="text-[11px] font-bold text-zinc-900">Immediate</p>
                     </div>
                  </div>
-                 <button onClick={() => { setSelectedCategory(p.category === 'Apps' ? 'Themes' : p.category as Section); setSelectedProductId(p.id); setActiveSection('Order'); window.location.hash = '#/order'; }} className="w-full py-5 rounded-[1.5rem] bg-[#007AFF] text-white font-black text-lg shadow-2xl shadow-blue-500/20 active:scale-95 transition-all">Proceed to Checkout</button>
+                 <button onClick={() => { setSelectedCategory(p.category === 'Apps' ? 'Themes' : p.category as Section); setSelectedProductId(p.id); setActiveSection('Order'); window.location.hash = '#/order'; }} className="w-full py-5 rounded-[1.5rem] bg-[#007AFF] text-white font-black text-lg shadow-2xl shadow-blue-500/20 active:scale-95 transition-all">Get it Now</button>
               </div>
            </div>
         </div>
@@ -484,7 +473,7 @@ const App: React.FC = () => {
     return (
       <div className="max-w-6xl mx-auto space-y-10 pb-32 animate-in fade-in px-2">
         <header className="flex flex-col items-center text-center gap-5">
-           <h2 className="text-4xl font-black text-zinc-900 tracking-tighter">Secure Checkout</h2>
+           <h2 className="text-4xl font-black text-zinc-900 tracking-tighter">Product Inquiry</h2>
            <a href="https://t.me/Mohamed_edge" target="_blank" className="flex items-center gap-4 bg-white p-3 pr-8 rounded-2xl border shadow-sm group hover:border-[#007AFF] transition-all">
               <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center group-hover:bg-[#007AFF] transition-colors"><i className="fa-brands fa-telegram text-3xl text-[#007AFF] group-hover:text-white"></i></div>
               <div className="text-left"><p className="text-[10px] font-black text-zinc-400 uppercase leading-none mb-1">Direct Contact</p><p className="font-black text-zinc-900 text-lg">@Mohamed_edge</p></div>
@@ -525,7 +514,7 @@ const App: React.FC = () => {
                 <div className="space-y-6">
                   <div className="flex items-center justify-between p-5 bg-zinc-50 rounded-2xl border text-center">
                       <div className="w-full">
-                        <p className="text-[9px] font-black text-zinc-400 uppercase mb-1 tracking-widest">Order Total</p>
+                        <p className="text-[9px] font-black text-zinc-400 uppercase mb-1 tracking-widest">Price / Method</p>
                         <p className="text-3xl font-black">{selectedProduct?.price || 0} EGP</p>
                       </div>
                   </div>
@@ -541,13 +530,9 @@ const App: React.FC = () => {
                   )}
 
                   <div className="space-y-3">
-                    {selectedProduct?.price === 0 ? (
-                      <button onClick={() => handleDownload(selectedProduct)} className="w-full py-5 bg-[#007AFF] text-white font-black text-lg rounded-2xl shadow-xl active:scale-95 transition-all">Download Asset</button>
-                    ) : (
-                      <button onClick={handleOrderViaTelegram} disabled={!selectedProduct} className="w-full py-5 bg-[#24A1DE] text-white font-black text-lg rounded-2xl shadow-xl shadow-sky-500/20 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50">
-                        <i className="fa-brands fa-telegram text-2xl"></i><span>Order via Telegram</span>
-                      </button>
-                    )}
+                    <button onClick={handleOrderViaTelegram} disabled={!selectedProduct} className="w-full py-5 bg-[#24A1DE] text-white font-black text-lg rounded-2xl shadow-xl shadow-sky-500/20 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50">
+                      <i className="fa-brands fa-telegram text-2xl"></i><span>Order via Telegram</span>
+                    </button>
                   </div>
                 </div>
              </div>
