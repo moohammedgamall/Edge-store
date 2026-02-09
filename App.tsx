@@ -92,7 +92,7 @@ const App: React.FC = () => {
     refreshData();
   }, []);
 
-  // Routing
+  // Routing Logic
   useEffect(() => {
     const handleRoute = () => {
       const hash = window.location.hash;
@@ -212,7 +212,7 @@ const App: React.FC = () => {
       if (key === 'admin_password') setAdminPassword(value);
       if (key === 'site_logo') setSiteLogo(value);
       if (key === 'loading_logo') setLoadingLogo(value);
-      showNotify("Updated");
+      showNotify("Setting Synchronized");
     } catch (err) { showNotify("Sync Failed", "error"); }
   };
 
@@ -265,7 +265,6 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {/* ... Other sections (Preview, Order) remain similar but omitted for brevity to focus on Admin updates ... */}
         {activeSection === 'Preview' && selectedProduct && (
            <div className="max-w-6xl mx-auto animate-in fade-in duration-500">
              <button onClick={() => window.history.back()} className="mb-8 w-12 h-12 bg-white dark:bg-zinc-800 rounded-full shadow-lg flex items-center justify-center"><i className="fa-solid fa-arrow-left"></i></button>
@@ -303,7 +302,7 @@ const App: React.FC = () => {
            </div>
         )}
 
-        {/* SECTION: ADMIN PANEL (Updated UI) */}
+        {/* SECTION: ADMIN PANEL */}
         {activeSection === 'Admin' && isAdminMode && (
           <div className="max-w-5xl mx-auto space-y-8 animate-in slide-in-from-right-10 duration-500">
             {/* Responsive Admin Tab Navigation */}
@@ -337,7 +336,7 @@ const App: React.FC = () => {
                 <div className="glass-panel p-6 rounded-[2.5rem] flex flex-col sm:flex-row justify-between items-center gap-4">
                   <div>
                     <h3 className="text-xl font-black uppercase tracking-tight">Cloud Inventory</h3>
-                    <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">{dbProducts.length} Items Syncing</p>
+                    <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">{dbProducts.length} Items Managed</p>
                   </div>
                   <div className="flex gap-2 w-full sm:w-auto">
                     <button onClick={syncMocksToCloud} className="flex-1 sm:flex-none px-5 py-3.5 bg-zinc-100 dark:bg-zinc-800 rounded-xl font-black uppercase text-[9px] hover:bg-zinc-200 transition-colors">Import Local</button>
@@ -424,18 +423,70 @@ const App: React.FC = () => {
 
             {/* TAB: SETTINGS */}
             {adminTab === 'Settings' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="glass-panel p-8 rounded-[3rem] space-y-6">
-                  <h3 className="font-black text-xl">Identity</h3>
-                  <label className="block space-y-3">
-                    <span className="text-[9px] font-black text-zinc-400 uppercase">Site Brand Logo</span>
-                    <input type="file" className="hidden" id="logo-up" onChange={async e => { if(e.target.files?.[0]) { const b = await fileToBase64(e.target.files[0]); await updateSetting('site_logo', b); } }} />
-                    <label htmlFor="logo-up" className="w-full p-4 bg-zinc-100 dark:bg-zinc-800 rounded-xl font-black text-[10px] text-center block cursor-pointer border-2 border-transparent hover:border-[#007AFF]">Replace Site Icon</label>
-                  </label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-10">
+                <div className="glass-panel p-8 rounded-[3rem] space-y-8 shadow-2xl border border-white/40 dark:border-white/5">
+                  <div className="flex items-center gap-3">
+                    <div className="w-1.5 h-6 bg-[#007AFF] rounded-full"></div>
+                    <h3 className="font-black text-xl tracking-tight">Identity Hub</h3>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <label className="block space-y-3">
+                      <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">Site Header Logo</span>
+                      <div className="relative group">
+                         <input type="file" className="hidden" id="site-logo-up" onChange={async e => { if(e.target.files?.[0]) { const b = await fileToBase64(e.target.files[0]); await updateSetting('site_logo', b); } }} />
+                         <label htmlFor="site-logo-up" className="w-full flex items-center gap-4 p-5 bg-zinc-100 dark:bg-zinc-800 rounded-2xl border-2 border-transparent hover:border-[#007AFF] transition-all cursor-pointer">
+                           <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white dark:border-zinc-700 bg-white">
+                              <img src={siteLogo} className="w-full h-full object-cover" />
+                           </div>
+                           <div className="flex-1">
+                             <p className="text-[10px] font-black uppercase">Replace Site Icon</p>
+                             <p className="text-[8px] text-zinc-400">Visible in navigation bar</p>
+                           </div>
+                           <i className="fa-solid fa-cloud-arrow-up text-zinc-300"></i>
+                         </label>
+                      </div>
+                    </label>
+
+                    <label className="block space-y-3">
+                      <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">Splash Preloader Asset</span>
+                      <div className="relative group">
+                         <input type="file" className="hidden" id="loading-logo-up" onChange={async e => { if(e.target.files?.[0]) { const b = await fileToBase64(e.target.files[0]); await updateSetting('loading_logo', b); } }} />
+                         <label htmlFor="loading-logo-up" className="w-full flex items-center gap-4 p-5 bg-zinc-100 dark:bg-zinc-800 rounded-2xl border-2 border-transparent hover:border-[#007AFF] transition-all cursor-pointer">
+                           <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white dark:border-zinc-700 bg-white">
+                              <img src={loadingLogo} className="w-full h-full object-cover" />
+                           </div>
+                           <div className="flex-1">
+                             <p className="text-[10px] font-black uppercase">Replace Loading Logo</p>
+                             <p className="text-[8px] text-zinc-400">Visible during app startup</p>
+                           </div>
+                           <i className="fa-solid fa-bolt-lightning text-zinc-300"></i>
+                         </label>
+                      </div>
+                    </label>
+                  </div>
                 </div>
-                <div className="glass-panel p-8 rounded-[3rem] space-y-6">
-                  <h3 className="font-black text-xl">Master Key</h3>
-                  <input type="password" placeholder="New Password" className="w-full p-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 font-black" onBlur={e => e.target.value && updateSetting('admin_password', e.target.value)} />
+
+                <div className="glass-panel p-8 rounded-[3rem] space-y-8 shadow-2xl border border-white/40 dark:border-white/5">
+                  <div className="flex items-center gap-3">
+                    <div className="w-1.5 h-6 bg-red-500 rounded-full"></div>
+                    <h3 className="font-black text-xl tracking-tight">Access Control</h3>
+                  </div>
+                  <div className="space-y-4">
+                    <label className="block space-y-3">
+                      <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">Admin Master Key</span>
+                      <div className="relative">
+                        <input 
+                          type="password" 
+                          placeholder="Update Admin Key" 
+                          className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black text-lg outline-none border-2 border-transparent focus:border-red-500 transition-all" 
+                          onBlur={e => e.target.value && updateSetting('admin_password', e.target.value)} 
+                        />
+                        <i className="fa-solid fa-key absolute right-5 top-1/2 -translate-y-1/2 text-zinc-300"></i>
+                      </div>
+                      <p className="text-[8px] text-zinc-400 font-bold px-2 italic">Key is updated immediately upon focus loss.</p>
+                    </label>
+                  </div>
                 </div>
               </div>
             )}
