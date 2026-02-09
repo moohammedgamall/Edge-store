@@ -28,7 +28,7 @@ const App: React.FC = () => {
   const [dbProducts, setDbProducts] = useState<Product[]>([]);
   const [dbVideos, setDbVideos] = useState<YoutubeVideo[]>([]);
   const [siteLogo, setSiteLogo] = useState<string>("https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
-  const [loadingLogo, setLoadingLogo] = useState<string>("https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
+  const [loadingLogo, setLoadingLogo] = useState<string>(() => localStorage.getItem('cached_loading_logo') || "https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
   const [adminPassword, setAdminPassword] = useState('1234');
 
   // Merged Data Logic
@@ -76,15 +76,17 @@ const App: React.FC = () => {
         setRes.data.forEach(s => {
           if (s.key === 'admin_password') setAdminPassword(s.value);
           if (s.key === 'site_logo') setSiteLogo(s.value);
-          if (s.key === 'loading_logo') setLoadingLogo(s.value);
+          if (s.key === 'loading_logo') {
+            setLoadingLogo(s.value);
+            localStorage.setItem('cached_loading_logo', s.value);
+          }
         });
       }
     } catch (err) {
       console.error("Fetch Error:", err);
     } finally {
-      // Ensure loader is visible for at least 1.5 seconds for branding effect
       const elapsed = Date.now() - startTime;
-      const delay = Math.max(0, 1500 - elapsed);
+      const delay = Math.max(0, 1200 - elapsed);
       setTimeout(() => setIsLoading(false), delay);
     }
   };
@@ -212,7 +214,10 @@ const App: React.FC = () => {
       if (error) throw error;
       if (key === 'admin_password') setAdminPassword(value);
       if (key === 'site_logo') setSiteLogo(value);
-      if (key === 'loading_logo') setLoadingLogo(value);
+      if (key === 'loading_logo') {
+        setLoadingLogo(value);
+        localStorage.setItem('cached_loading_logo', value);
+      }
       showNotify("Master Setting Updated");
     } catch (err) { 
       console.error(err);
@@ -223,11 +228,10 @@ const App: React.FC = () => {
   const selectedProduct = useMemo(() => products.find(p => p.id === selectedProductId), [products, selectedProductId]);
   const orderProduct = useMemo(() => products.find(p => p.id === orderProductId), [products, orderProductId]);
 
-  // ENHANCED LOADER: Visible when isLoading is true
   if (isLoading) return (
     <div className="h-screen w-full flex flex-col items-center justify-center bg-[#F2F2F7] dark:bg-[#2C2C2E] transition-colors duration-500">
       <div className="relative group">
-        <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-4 border-white dark:border-zinc-800 shadow-2xl relative z-10 transition-transform duration-700">
+        <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-4 border-white dark:border-zinc-800 shadow-2xl relative z-10 transition-transform duration-700 bg-white">
           <img 
             src={loadingLogo} 
             className="w-full h-full object-cover" 
@@ -286,7 +290,6 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {/* Preview & Order Sections remain functional */}
         {activeSection === 'Preview' && selectedProduct && (
            <div className="max-w-6xl mx-auto animate-in fade-in duration-500">
              <button onClick={() => window.history.back()} className="mb-8 w-12 h-12 bg-white dark:bg-zinc-800 rounded-full shadow-lg flex items-center justify-center hover:scale-110 transition-transform"><i className="fa-solid fa-arrow-left"></i></button>
@@ -331,10 +334,8 @@ const App: React.FC = () => {
            </div>
         )}
 
-        {/* SECTION: ADMIN PANEL */}
         {activeSection === 'Admin' && isAdminMode && (
           <div className="max-w-5xl mx-auto space-y-8 animate-in slide-in-from-right-10 duration-500">
-            {/* Nav Tabs */}
             <div className="w-full max-w-md mx-auto">
               <div className="flex p-1.5 bg-zinc-200/50 dark:bg-zinc-900/50 backdrop-blur-3xl rounded-[2rem] shadow-inner border border-white/40 dark:border-white/5">
                 {[
@@ -359,7 +360,6 @@ const App: React.FC = () => {
               </div>
             </div>
 
-            {/* Content per Tab */}
             {adminTab === 'Inventory' && (
               <div className="space-y-8">
                 <div className="glass-panel p-6 rounded-[2.5rem] flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -431,7 +431,6 @@ const App: React.FC = () => {
               </div>
             )}
 
-            {/* TAB: VIDEOS */}
             {adminTab === 'Videos' && (
               <div className="space-y-6">
                 <button onClick={() => setIsEditingVideo(true)} className="w-full py-5 bg-red-500 text-white rounded-[1.5rem] font-black uppercase text-xs shadow-lg active:scale-95 transition-all">Upload New Tutorial</button>
@@ -456,7 +455,6 @@ const App: React.FC = () => {
               </div>
             )}
 
-            {/* TAB: SETTINGS (Logo & Security) */}
             {adminTab === 'Settings' && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-10">
                 <div className="glass-panel p-10 rounded-[3.5rem] space-y-10 shadow-2xl">
@@ -466,7 +464,6 @@ const App: React.FC = () => {
                   </div>
                   
                   <div className="space-y-6">
-                    {/* SITE LOGO */}
                     <div className="space-y-3">
                       <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">Site Navigation Logo</p>
                       <label className="w-full flex items-center gap-5 p-5 bg-zinc-100 dark:bg-zinc-800 rounded-3xl border-2 border-transparent hover:border-[#007AFF] transition-all cursor-pointer">
@@ -482,7 +479,6 @@ const App: React.FC = () => {
                       </label>
                     </div>
 
-                    {/* LOADING LOGO (Fixed & Improved) */}
                     <div className="space-y-3">
                       <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">Splash Preloader Asset</p>
                       <label className="w-full flex items-center gap-5 p-5 bg-zinc-100 dark:bg-zinc-800 rounded-3xl border-2 border-transparent hover:border-[#007AFF] transition-all cursor-pointer">
@@ -527,7 +523,6 @@ const App: React.FC = () => {
         )}
       </main>
 
-      {/* Persistent Toast Notifications */}
       {notification && (
         <div className={`fixed top-12 left-1/2 -translate-x-1/2 z-[200] px-8 py-5 rounded-[2rem] font-black text-[10px] uppercase shadow-2xl animate-in fade-in slide-in-from-top-12 flex items-center gap-4 border-2 ${notification.type === 'success' ? 'bg-[#007AFF] text-white border-blue-400' : 'bg-red-500 text-white border-red-400'}`}>
           <i className={`fa-solid ${notification.type === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation'} text-xl`}></i>
