@@ -17,7 +17,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeSection, onSectionChange })
   return (
     <div className="fixed bottom-6 left-0 right-0 z-50 pointer-events-none px-4 flex justify-center">
       <div className="w-full max-w-[360px] flex items-center justify-center pointer-events-auto">
-        <div className="w-full flex items-center bg-white/95 dark:bg-zinc-900/95 backdrop-blur-3xl p-1.5 rounded-full shadow-[0_15px_40px_-10px_rgba(0,0,0,0.12)] dark:shadow-[0_15px_40px_-10px_rgba(0,0,0,0.4)] border border-white/50 dark:border-white/10">
+        <div className="w-full flex items-center bg-white/95 dark:bg-[#2C2C2E]/95 backdrop-blur-3xl p-1.5 rounded-full shadow-[0_15px_40px_-10px_rgba(0,0,0,0.12)] dark:shadow-[0_15px_40px_-10px_rgba(0,0,0,0.4)] border border-white/50 dark:border-white/10">
           <nav className="flex items-center justify-around w-full">
             {ALL_ITEMS.map((item) => {
               const isActive = activeSection === item.id;
@@ -45,12 +45,6 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeSection, onSectionChange })
                     `}>
                       {item.label}
                     </span>
-
-                    {item.id === 'Order' && isActive && (
-                      <span className="absolute top-0 right-1 bg-[#007AFF] text-white text-[6px] font-black px-1 py-0.5 rounded-full border border-white dark:border-zinc-800 shadow-sm scale-90">
-                        NEW
-                      </span>
-                    )}
                   </div>
                 </button>
               );

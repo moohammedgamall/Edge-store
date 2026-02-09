@@ -344,7 +344,7 @@ const App: React.FC = () => {
   };
 
   if (isLoading) return (
-    <div className="h-screen w-full flex flex-col items-center justify-center bg-[#F2F2F7] dark:bg-zinc-950 relative">
+    <div className="h-screen w-full flex flex-col items-center justify-center bg-[#F2F2F7] dark:bg-[#2C2C2E] relative">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-blue-500/5 blur-[80px] rounded-full"></div>
       <div className="w-48 h-48 animate-pulse rounded-full overflow-hidden shadow-2xl mb-12 relative z-10 border-4 border-white dark:border-zinc-800">
         {!imgLoadError ? (
