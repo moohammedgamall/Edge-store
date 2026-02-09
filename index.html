@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
 <head>
@@ -35,6 +36,15 @@
         * { -ms-overflow-style: none; scrollbar-width: none; }
 
         .no-scrollbar::-webkit-scrollbar { display: none; }
+
+        /* Pre-loader Animation */
+        @keyframes spin-custom {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        .spinner-ring {
+          animation: spin-custom 10s linear infinite;
+        }
     </style>
 <script type="importmap">
 {
@@ -48,7 +58,26 @@
 </script>
 </head>
 <body class="bg-[#F2F2F7] dark:bg-[#2C2C2E] text-zinc-900 dark:text-zinc-100 selection:bg-blue-500/30">
-    <div id="root"></div>
+    <div id="root">
+        <!-- Static Pre-loader for Instant Feedback -->
+        <div style="height: 100vh; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: #F2F2F7;">
+            <div style="position: relative;">
+                <div style="width: 96px; height: 96px; border-radius: 50%; overflow: hidden; border: 4px solid white; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
+                    <img src="https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa" style="width: 100%; height: 100%; object-fit: cover;" alt="">
+                </div>
+                <div class="spinner-ring" style="position: absolute; top: -8px; left: -8px; right: -8px; bottom: -8px; border-radius: 50%; border: 2px dashed #007AFF;"></div>
+            </div>
+            <h3 style="margin-top: 32px; font-size: 1.25rem; font-weight: 900; letter-spacing: -0.05em; color: #18181b; text-transform: uppercase;">MOHAMED EDGE</h3>
+        </div>
+    </div>
     <script type="module" src="index.tsx"></script>
+    <script>
+        // Check dark mode immediately to avoid flash
+        if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+            document.querySelector('#root > div').style.backgroundColor = '#2C2C2E';
+            document.querySelector('#root h3').style.color = '#f4f4f5';
+        }
+    </script>
 </body>
 </html>

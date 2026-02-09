@@ -17,7 +17,11 @@ const App: React.FC = () => {
   const [activeSection, setActiveSection] = useState<Section>('Home');
   const [isLoading, setIsLoading] = useState(true);
   const [notification, setNotification] = useState<{message: string, type: 'success' | 'info'} | null>(null);
-  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => localStorage.getItem('theme') === 'dark');
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+    const stored = localStorage.getItem('theme');
+    if (stored) return stored === 'dark';
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
   
   // Database States
   const [dbProducts, setDbProducts] = useState<Product[]>([]);
@@ -27,7 +31,7 @@ const App: React.FC = () => {
   const [loadingLogo, setLoadingLogo] = useState<string>("https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
   const [adminPassword, setAdminPassword] = useState('1234');
 
-  // Merged Products (Mock + DB)
+  // Merged Products
   const products = useMemo(() => {
     const merged = [...dbProducts, ...MOCK_PRODUCTS];
     return Array.from(new Map(merged.map(item => [item.id, item])).values());
@@ -49,7 +53,6 @@ const App: React.FC = () => {
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [editProduct, setEditProduct] = useState<Partial<Product>>({ is_premium: false });
   
-  // Admin Tabs
   const [adminTab, setAdminTab] = useState<'Inventory' | 'Banner' | 'Videos' | 'Settings'>('Inventory');
   const [newVideoUrl, setNewVideoUrl] = useState('');
   const [newVideoTitle, setNewVideoTitle] = useState('');
@@ -108,8 +111,8 @@ const App: React.FC = () => {
       } catch (e) {
         console.error("DB Fetch Error", e);
       } finally {
-        // Keeping it short but ensuring the logo renders
-        setTimeout(() => setIsLoading(false), 400);
+        // Reduced artificial delay for snappier experience
+        setTimeout(() => setIsLoading(false), 200);
       }
     };
     fetchData();
@@ -227,20 +230,21 @@ const App: React.FC = () => {
   };
 
   if (isLoading) return (
-    <div className="h-screen w-full flex flex-col items-center justify-center bg-[#F2F2F7] dark:bg-[#2C2C2E] animate-in fade-in duration-300">
+    <div className="h-screen w-full flex flex-col items-center justify-center bg-[#F2F2F7] dark:bg-[#2C2C2E] animate-in fade-in duration-200">
       <div className="relative">
         <div className="w-24 h-24 rounded-full overflow-hidden shadow-2xl border-4 border-white dark:border-zinc-800">
           <img src={loadingLogo} className="w-full h-full object-cover" alt="" loading="eager" />
         </div>
         <div className="absolute -inset-2 rounded-full border-2 border-dashed border-[#007AFF] animate-[spin_10s_linear_infinite]"></div>
       </div>
-      <h3 className="mt-8 text-xl font-black tracking-tighter text-zinc-900 dark:text-zinc-100 uppercase animate-in slide-in-from-bottom-2 duration-700">MOHAMED EDGE</h3>
+      <h3 className="mt-8 text-xl font-black tracking-tighter text-zinc-900 dark:text-zinc-100 uppercase animate-in slide-in-from-bottom-2 duration-500">MOHAMED EDGE</h3>
     </div>
   );
 
   return (
     <div className="min-h-screen">
       <Header 
+        isAdmin={isAdminMode}
         onAdminTrigger={() => setIsAuthModalOpen(true)} 
         onLogout={() => { setIsAdminMode(false); window.location.hash = '#/'; }} 
         onThemeToggle={() => setIsDarkMode(!isDarkMode)} 

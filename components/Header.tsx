@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 
 interface HeaderProps {
+  isAdmin: boolean;
   onAdminTrigger: () => void;
   onLogout: () => void;
   onThemeToggle: () => void;
@@ -9,10 +10,9 @@ interface HeaderProps {
   logoUrl?: string;
 }
 
-const Header: React.FC<HeaderProps> = ({ onAdminTrigger, onLogout, onThemeToggle, isDarkMode, logoUrl }) => {
+const Header: React.FC<HeaderProps> = ({ isAdmin, onAdminTrigger, onLogout, onThemeToggle, isDarkMode, logoUrl }) => {
   const [clickCount, setClickCount] = useState(0);
   const [imgError, setImgError] = useState(false);
-  const isAdminPath = window.location.hash === '#/admin';
 
   const handleTitleClick = () => {
     setClickCount(prev => prev + 1);
@@ -68,7 +68,7 @@ const Header: React.FC<HeaderProps> = ({ onAdminTrigger, onLogout, onThemeToggle
             <i className={`fa-solid ${isDarkMode ? 'fa-sun' : 'fa-moon'} text-sm`}></i>
           </button>
 
-          {isAdminPath && (
+          {isAdmin && (
             <div className="flex items-center gap-2 md:gap-3 animate-in fade-in slide-in-from-right-4">
               <span className="hidden sm:inline-block bg-red-500/10 text-red-600 text-[8px] md:text-[10px] font-black px-2 md:px-3 py-1 rounded-full uppercase tracking-widest border border-red-500/20">
                 Admin
