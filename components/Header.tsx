@@ -4,9 +4,10 @@ import React, { useState, useEffect } from 'react';
 interface HeaderProps {
   onAdminTrigger: () => void;
   onLogout: () => void;
+  logoUrl?: string;
 }
 
-const Header: React.FC<HeaderProps> = ({ onAdminTrigger, onLogout }) => {
+const Header: React.FC<HeaderProps> = ({ onAdminTrigger, onLogout, logoUrl }) => {
   const [clickCount, setClickCount] = useState(0);
   const [imgError, setImgError] = useState(false);
   const isAdminPath = window.location.hash === '#/admin';
@@ -27,6 +28,9 @@ const Header: React.FC<HeaderProps> = ({ onAdminTrigger, onLogout }) => {
     return () => clearTimeout(timer);
   }, [clickCount, onAdminTrigger]);
 
+  const defaultLogo = "https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa";
+  const finalLogo = logoUrl || defaultLogo;
+
   return (
     <header className="sticky top-0 z-40 w-full flex justify-center bg-white/80 backdrop-blur-3xl border-b border-zinc-200/50">
       <div className="w-full max-w-7xl px-8 py-5 flex items-center justify-between">
@@ -38,7 +42,7 @@ const Header: React.FC<HeaderProps> = ({ onAdminTrigger, onLogout }) => {
           <div className="w-12 h-12 flex items-center justify-center bg-white rounded-xl overflow-hidden shadow-sm border border-zinc-100 p-1 relative">
             {!imgError ? (
               <img 
-                src="images/logo.jpg" 
+                src={finalLogo}
                 alt="Edge Store" 
                 className="w-full h-full object-contain block"
                 onError={() => setImgError(true)}

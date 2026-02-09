@@ -24,6 +24,11 @@ const App: React.FC = () => {
   const [banner, setBanner] = useState<BannerSettings & { isVisible?: boolean }>(DEFAULT_BANNER);
   const [products, setProducts] = useState<Product[]>([]);
 
+  // Site Identity State
+  const [siteLogo, setSiteLogo] = useState<string>("https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
+  const [loadingLogo, setLoadingLogo] = useState<string>("https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
+  const [isEditingIdentity, setIsEditingIdentity] = useState(false);
+
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [adminPassword, setAdminPassword] = useState('1234');
   const [passwordInput, setPasswordInput] = useState('');
@@ -41,6 +46,8 @@ const App: React.FC = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const sliderRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const logoFileInputRef = useRef<HTMLInputElement>(null);
+  const loadingLogoFileInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const bannerFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -81,14 +88,21 @@ const App: React.FC = () => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const { data: settingsData } = await supabase
-          .from('settings')
-          .select('value')
-          .eq('key', 'admin_password')
-          .maybeSingle();
+        // Fetch Settings
+        const { data: settingsData } = await supabase.from('settings').select('key, value');
         
-        if (settingsData) setAdminPassword(settingsData.value);
+        if (settingsData) {
+          const pass = settingsData.find(s => s.key === 'admin_password');
+          if (pass) setAdminPassword(pass.value);
+          
+          const sLogo = settingsData.find(s => s.key === 'site_logo');
+          if (sLogo) setSiteLogo(sLogo.value);
 
+          const lLogo = settingsData.find(s => s.key === 'loading_logo');
+          if (lLogo) setLoadingLogo(lLogo.value);
+        }
+
+        // Fetch Banner
         const { data: bannerData } = await supabase
           .from('banner')
           .select('*')
@@ -106,6 +120,7 @@ const App: React.FC = () => {
           });
         }
 
+        // Fetch Products
         const { data: productsData } = await supabase
           .from('products')
           .select('*')
@@ -171,6 +186,28 @@ const App: React.FC = () => {
     }
   };
 
+  const handleSaveIdentity = async () => {
+    setIsPublishing(true);
+    try {
+      const { error: error1 } = await supabase
+        .from('settings')
+        .upsert({ key: 'site_logo', value: siteLogo }, { onConflict: 'key' });
+      
+      const { error: error2 } = await supabase
+        .from('settings')
+        .upsert({ key: 'loading_logo', value: loadingLogo }, { onConflict: 'key' });
+      
+      if (error1 || error2) throw (error1 || error2);
+      
+      setIsEditingIdentity(false);
+      showNotification("Identity Config Updated");
+    } catch (err) {
+      showNotification("Save Failed", "info");
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
   const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -178,6 +215,19 @@ const App: React.FC = () => {
       reader.onload = () => resolve(reader.result as string);
       reader.onerror = error => reject(error);
     });
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>, target: 'site' | 'loading') => {
+    const file = e.target.files?.[0];
+    if (file) {
+      try {
+        const base64 = await fileToBase64(file);
+        if (target === 'site') setSiteLogo(base64);
+        else setLoadingLogo(base64);
+      } catch (err) {
+        showNotification("File processing failed", "info");
+      }
+    }
   };
 
   const handleMainImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -326,11 +376,88 @@ const App: React.FC = () => {
           <p className="text-zinc-500 text-xs font-black uppercase tracking-widest">Storefront Control</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button onClick={() => { setIsChangingPassword(!isChangingPassword); setIsEditing(false); setIsEditingBanner(false); }} className={`px-5 py-3 rounded-2xl font-black text-xs transition-all ${isChangingPassword ? 'bg-zinc-900 text-white' : 'bg-white border shadow-sm'}`}>Security</button>
-          <button onClick={() => { setIsEditingBanner(!isEditingBanner); setIsEditing(false); setIsChangingPassword(false); }} className={`px-5 py-3 rounded-2xl font-black text-xs transition-all ${isEditingBanner ? 'bg-zinc-900 text-white' : 'bg-white border shadow-sm'}`}>Banner</button>
-          <button onClick={() => { setIsEditing(true); setIsEditingBanner(false); setIsChangingPassword(false); setEditProduct({ id: Date.now().toString(), price: 0, category: 'Themes', rating: 5.0, downloads: '0', is_premium: false, gallery: [] }); }} className="px-5 py-3 bg-[#007AFF] text-white rounded-2xl font-black text-xs shadow-xl shadow-blue-500/20"><i className="fa-solid fa-plus mr-2"></i>Add Asset</button>
+          <button onClick={() => { setIsEditingIdentity(!isEditingIdentity); setIsEditingBanner(false); setIsEditing(false); setIsChangingPassword(false); }} className={`px-5 py-3 rounded-2xl font-black text-xs transition-all ${isEditingIdentity ? 'bg-zinc-900 text-white' : 'bg-white border shadow-sm'}`}>Identity</button>
+          <button onClick={() => { setIsChangingPassword(!isChangingPassword); setIsEditing(false); setIsEditingBanner(false); setIsEditingIdentity(false); }} className={`px-5 py-3 rounded-2xl font-black text-xs transition-all ${isChangingPassword ? 'bg-zinc-900 text-white' : 'bg-white border shadow-sm'}`}>Security</button>
+          <button onClick={() => { setIsEditingBanner(!isEditingBanner); setIsEditing(false); setIsChangingPassword(false); setIsEditingIdentity(false); }} className={`px-5 py-3 rounded-2xl font-black text-xs transition-all ${isEditingBanner ? 'bg-zinc-900 text-white' : 'bg-white border shadow-sm'}`}>Banner</button>
+          <button onClick={() => { setIsEditing(true); setIsEditingBanner(false); setIsChangingPassword(false); setIsEditingIdentity(false); setEditProduct({ id: Date.now().toString(), price: 0, category: 'Themes', rating: 5.0, downloads: '0', is_premium: false, gallery: [] }); }} className="px-5 py-3 bg-[#007AFF] text-white rounded-2xl font-black text-xs shadow-xl shadow-blue-500/20"><i className="fa-solid fa-plus mr-2"></i>Add Asset</button>
         </div>
       </header>
+
+      {isEditingIdentity && (
+        <div className="glass-panel p-6 rounded-[2rem] space-y-8 animate-in slide-in-from-top-4 border-white shadow-xl">
+           <h4 className="text-sm font-black uppercase tracking-widest text-zinc-900 border-b pb-4">Store Identity System</h4>
+           
+           <div className="space-y-12">
+              {/* Site Logo Section */}
+              <div className="space-y-4">
+                 <div className="flex items-center gap-2 mb-2">
+                    <div className="w-1.5 h-4 bg-[#007AFF] rounded-full"></div>
+                    <h5 className="font-black text-xs uppercase text-zinc-400">Section 1: Header Logo</h5>
+                 </div>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div 
+                      onClick={() => logoFileInputRef.current?.click()}
+                      className="h-32 rounded-2xl border-2 border-dashed border-zinc-200 bg-white flex flex-col items-center justify-center cursor-pointer hover:bg-zinc-50 transition-colors group"
+                    >
+                      <i className="fa-solid fa-cloud-arrow-up text-zinc-300 text-2xl mb-1 group-hover:text-[#007AFF]"></i>
+                      <p className="text-[10px] font-black text-zinc-400 uppercase">Upload Site Logo</p>
+                      <input ref={logoFileInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleLogoUpload(e, 'site')} />
+                    </div>
+                    <div className="space-y-2">
+                      <input 
+                        placeholder="Or paste external URL" 
+                        className="w-full p-4 rounded-xl border-2 border-zinc-100 font-bold text-sm bg-white outline-none focus:border-[#007AFF]" 
+                        value={siteLogo.startsWith('data:') ? '' : siteLogo} 
+                        onChange={e => setSiteLogo(e.target.value)} 
+                      />
+                      <div className="p-4 bg-zinc-50 rounded-xl border border-zinc-100 flex items-center gap-4">
+                        <img src={siteLogo} className="w-10 h-10 object-contain bg-white rounded shadow-sm p-1" alt="Site" />
+                        <p className="text-[9px] font-bold text-zinc-400">Header Preview</p>
+                      </div>
+                    </div>
+                 </div>
+              </div>
+
+              {/* Loading Logo Section */}
+              <div className="space-y-4">
+                 <div className="flex items-center gap-2 mb-2">
+                    <div className="w-1.5 h-4 bg-amber-500 rounded-full"></div>
+                    <h5 className="font-black text-xs uppercase text-zinc-400">Section 2: Loading Logo</h5>
+                 </div>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div 
+                      onClick={() => loadingLogoFileInputRef.current?.click()}
+                      className="h-32 rounded-2xl border-2 border-dashed border-zinc-200 bg-white flex flex-col items-center justify-center cursor-pointer hover:bg-zinc-50 transition-colors group"
+                    >
+                      <i className="fa-solid fa-spinner text-zinc-300 text-2xl mb-1 group-hover:text-amber-500"></i>
+                      <p className="text-[10px] font-black text-zinc-400 uppercase">Upload Loading Logo</p>
+                      <input ref={loadingLogoFileInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleLogoUpload(e, 'loading')} />
+                    </div>
+                    <div className="space-y-2">
+                      <input 
+                        placeholder="Or paste external URL" 
+                        className="w-full p-4 rounded-xl border-2 border-zinc-100 font-bold text-sm bg-white outline-none focus:border-amber-500" 
+                        value={loadingLogo.startsWith('data:') ? '' : loadingLogo} 
+                        onChange={e => setLoadingLogo(e.target.value)} 
+                      />
+                      <div className="p-4 bg-zinc-50 rounded-xl border border-zinc-100 flex items-center gap-4">
+                        <img src={loadingLogo} className="w-10 h-10 object-contain bg-white rounded shadow-sm p-1" alt="Loading" />
+                        <p className="text-[9px] font-bold text-zinc-400">Loading Preview</p>
+                      </div>
+                    </div>
+                 </div>
+              </div>
+
+              <button 
+                onClick={handleSaveIdentity} 
+                disabled={isPublishing}
+                className="w-full py-5 bg-[#007AFF] text-white rounded-[1.5rem] font-black text-sm shadow-xl shadow-blue-500/10 active:scale-[0.99] disabled:opacity-50 transition-all"
+              >
+                {isPublishing ? "Synchronizing with Server..." : "Apply Identity Changes"}
+              </button>
+           </div>
+        </div>
+      )}
 
       {isChangingPassword && (
         <div className="glass-panel p-6 rounded-[2rem] space-y-4 animate-in slide-in-from-top-4 border-white shadow-xl">
@@ -425,7 +552,7 @@ const App: React.FC = () => {
               <div><h4 className="font-black text-base">{p.title}</h4><p className="text-[10px] text-zinc-400 font-black uppercase tracking-widest">{p.category} • {p.price} EGP {p.is_premium ? '• PREMIUM' : ''}</p></div>
             </div>
             <div className="flex gap-2">
-              <button onClick={() => { setEditProduct(p); setIsEditing(true); setIsEditingBanner(false); setIsChangingPassword(false); }} className="w-10 h-10 bg-blue-50 text-[#007AFF] rounded-xl flex items-center justify-center shadow-sm hover:bg-blue-100 transition-colors"><i className="fa-solid fa-pen"></i></button>
+              <button onClick={() => { setEditProduct(p); setIsEditing(true); setIsEditingBanner(false); setIsChangingPassword(false); setIsEditingIdentity(false); }} className="w-10 h-10 bg-blue-50 text-[#007AFF] rounded-xl flex items-center justify-center shadow-sm hover:bg-blue-100 transition-colors"><i className="fa-solid fa-pen"></i></button>
               <button onClick={async () => { if(confirm('Permanently delete this item?')) { const {error} = await supabase.from('products').delete().eq('id', p.id); if(!error) setProducts(pr => pr.filter(x => x.id !== p.id)); } }} className="w-10 h-10 bg-red-50 text-red-500 rounded-xl flex items-center justify-center shadow-sm hover:bg-red-100 transition-colors"><i className="fa-solid fa-trash"></i></button>
             </div>
           </div>
@@ -593,16 +720,11 @@ const App: React.FC = () => {
         <div className="w-40 h-40 relative z-10 animate-pulse flex items-center justify-center">
           {!imgLoadError ? (
             <img 
-              src="images/logo.jpg" 
-              alt="Logo" 
+              src={loadingLogo}
+              alt="Loading Logo" 
               className="w-full h-full object-contain"
               onError={() => {
-                const target = event?.target as HTMLImageElement;
-                if (target && !target.src.includes('logo.jpg')) {
-                    target.src = 'logo.jpg';
-                } else {
-                    setImgLoadError(true);
-                }
+                setImgLoadError(true);
               }}
             />
           ) : (
@@ -633,7 +755,7 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#F2F2F7]">
-      <Header onAdminTrigger={() => setIsAuthModalOpen(true)} onLogout={handleLogout} />
+      <Header logoUrl={siteLogo} onAdminTrigger={() => setIsAuthModalOpen(true)} onLogout={handleLogout} />
       {isAuthModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/30 backdrop-blur-xl animate-in fade-in duration-300">
            <div className="w-full max-w-[320px] glass-panel p-8 rounded-[3rem] space-y-6 border-white shadow-2xl animate-in zoom-in-95">
