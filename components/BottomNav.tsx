@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Section } from '../types';
 import { NAV_ITEMS } from '../constants';
@@ -10,44 +11,54 @@ interface BottomNavProps {
 const BottomNav: React.FC<BottomNavProps> = ({ activeSection, onSectionChange }) => {
   const ALL_ITEMS = [
     ...NAV_ITEMS,
-    { id: 'Order' as Section, label: 'Order', icon: 'fa-solid fa-bag-shopping' }
+    { id: 'Order' as Section, label: 'ORDER', icon: 'fa-solid fa-bag-shopping' }
   ];
 
   return (
-    <div className="fixed bottom-6 left-0 right-0 z-50 pointer-events-none px-4 flex justify-center">
-      <div className="w-full max-w-[360px] flex items-center justify-center pointer-events-auto">
-        <div className="w-full flex items-center bg-white/95 dark:bg-[#2C2C2E]/95 backdrop-blur-3xl p-1.5 rounded-full shadow-[0_15px_40px_-10px_rgba(0,0,0,0.15)] dark:shadow-[0_15px_50px_-10px_rgba(0,0,0,0.5)] border border-white/50 dark:border-white/10">
-          <nav className="flex items-center justify-around w-full">
-            {ALL_ITEMS.map((item) => {
-              const isActive = activeSection === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => onSectionChange(item.id)}
-                  className="relative flex-1 flex items-center justify-center transition-all duration-300 group outline-none"
-                >
+    <div className="fixed bottom-8 left-0 right-0 z-50 px-4 flex justify-center">
+      <div className="w-full max-w-[420px] bg-white/80 dark:bg-[#2C2C2E]/90 backdrop-blur-2xl rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.12)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] border border-white/40 dark:border-white/5 p-1.5">
+        <nav className="flex items-center justify-between relative">
+          {ALL_ITEMS.map((item) => {
+            const isActive = activeSection === item.id;
+            const isOrder = item.id === 'Order';
+            
+            return (
+              <button
+                key={item.id}
+                onClick={() => onSectionChange(item.id)}
+                className="relative flex-1 flex flex-col items-center justify-center py-2.5 transition-all duration-300 outline-none group"
+              >
+                {/* Active Pill Background */}
+                {isActive && (
+                  <div className="absolute inset-y-1 inset-x-1 bg-blue-50 dark:bg-blue-900/30 rounded-full animate-in fade-in zoom-in-95 duration-300 -z-10" />
+                )}
+                
+                <div className="relative">
                   <div className={`
-                    relative flex flex-col items-center justify-center px-3 py-2 rounded-full transition-all duration-400 min-w-[60px]
-                    ${isActive ? 'bg-[#007AFF]/10 dark:bg-[#007AFF]/20' : 'bg-transparent'}
+                    transition-all duration-300 mb-1 flex items-center justify-center
+                    ${isActive ? 'text-[#007AFF] scale-110' : 'text-zinc-400 dark:text-zinc-500'}
                   `}>
-                    <div className={`
-                      transition-all duration-300 text-lg mb-0.5
-                      ${isActive ? 'text-[#007AFF] scale-110' : 'text-zinc-400 dark:text-zinc-500'}
-                    `}>
-                      <i className={item.icon}></i>
-                    </div>
-                    <span className={`
-                      text-[9px] font-black tracking-tight transition-colors duration-300 uppercase
-                      ${isActive ? 'text-[#007AFF]' : 'text-zinc-500 dark:text-zinc-400'}
-                    `}>
-                      {item.label}
-                    </span>
+                    <i className={`${item.icon} text-lg`}></i>
                   </div>
-                </button>
-              );
-            })}
-          </nav>
-        </div>
+                  
+                  {/* NEW Badge for Order */}
+                  {isOrder && (
+                    <div className="absolute -top-1.5 -right-3 bg-[#007AFF] text-white text-[7px] font-black px-1 py-0.5 rounded-md shadow-sm border border-white dark:border-zinc-800 scale-90 group-hover:scale-100 transition-transform">
+                      NEW
+                    </div>
+                  )}
+                </div>
+                
+                <span className={`
+                  text-[9px] font-black tracking-tighter transition-colors duration-300
+                  ${isActive ? 'text-[#007AFF]' : 'text-zinc-400 dark:text-zinc-500'}
+                `}>
+                  {item.label}
+                </span>
+              </button>
+            );
+          })}
+        </nav>
       </div>
     </div>
   );
