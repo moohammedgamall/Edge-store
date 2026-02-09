@@ -153,15 +153,60 @@ const App: React.FC = () => {
   };
 
   const deleteProduct = async (id: string) => {
-    if (!window.confirm("Are you sure you want to delete this product?")) return;
+    if (!window.confirm("حذف هذا المنتج نهائياً؟")) return;
     try {
-      const { error } = await supabase.from('products').delete().match({ id });
+      const { error } = await supabase.from('products').delete().eq('id', id);
       if (error) throw error;
       setDbProducts(prev => prev.filter(p => p.id !== id));
-      showNotify("Product Removed");
+      showNotify("تم حذف المنتج بنجاح");
     } catch (err) { 
       console.error(err);
-      showNotify("Sync Conflict", "error"); 
+      showNotify("فشل في الحذف، حاول مرة أخرى", "error"); 
+    }
+  };
+
+  const saveVideo = async () => {
+    if (!editVideo.title || !editVideo.url) return showNotify("برجاء إدخال العنوان والرابط", "error");
+    setIsPublishing(true);
+    try {
+      // Extract YouTube ID
+      const url = new URL(editVideo.url);
+      let vidId = '';
+      if (url.hostname === 'youtu.be') {
+        vidId = url.pathname.slice(1);
+      } else {
+        vidId = url.searchParams.get('v') || '';
+      }
+      
+      if (!vidId) {
+        vidId = editVideo.url.split('/').pop() || '';
+      }
+
+      const { error } = await supabase.from('videos').upsert({
+        id: vidId || Date.now().toString(),
+        title: editVideo.title,
+        url: editVideo.url
+      });
+      
+      if (error) throw error;
+      await refreshData();
+      setIsEditingVideo(false);
+      setEditVideo({ title: '', url: '' });
+      showNotify("تمت إضافة الفيديو بنجاح");
+    } catch (err) { 
+      showNotify("رابط يوتيوب غير صحيح", "error"); 
+    } finally { setIsPublishing(false); }
+  };
+
+  const deleteVideo = async (id: string) => {
+    if (!window.confirm("حذف هذا الفيديو؟")) return;
+    try {
+      const { error } = await supabase.from('videos').delete().eq('id', id);
+      if (error) throw error;
+      setDbVideos(prev => prev.filter(v => v.id !== id));
+      showNotify("تم حذف الفيديو");
+    } catch (err) { 
+      showNotify("فشل حذف الفيديو", "error"); 
     }
   };
 
@@ -175,12 +220,11 @@ const App: React.FC = () => {
         setLoadingLogo(value);
         localStorage.setItem('cached_loading_logo', value);
       }
-      showNotify("Setting Updated");
-    } catch (err) { showNotify("Sync Failed", "error"); }
+      showNotify("تم تحديث الإعدادات");
+    } catch (err) { showNotify("فشل التحديث", "error"); }
   };
 
   const selectedProduct = useMemo(() => products.find(p => p.id === selectedProductId), [products, selectedProductId]);
-  const orderProduct = useMemo(() => products.find(p => p.id === orderProductId), [products, orderProductId]);
 
   if (isLoading) return (
     <div className="h-screen w-full flex flex-col items-center justify-center bg-[#F2F2F7] dark:bg-[#2C2C2E] transition-colors duration-500">
@@ -230,11 +274,9 @@ const App: React.FC = () => {
              <button onClick={() => window.history.back()} className="mb-8 w-12 h-12 bg-white dark:bg-zinc-800 rounded-full shadow-lg flex items-center justify-center hover:scale-110 transition-transform"><i className="fa-solid fa-arrow-left"></i></button>
              <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
                <div className="lg:col-span-7 space-y-6">
-                  {/* Cover */}
                   <div className="glass-panel p-2 rounded-[2.5rem] overflow-hidden shadow-2xl border-4 border-white dark:border-zinc-800">
                     <img src={selectedProduct.image} className="w-full rounded-[2rem]" />
                   </div>
-                  {/* Gallery Grid */}
                   {selectedProduct.gallery && selectedProduct.gallery.length > 0 && (
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                       {selectedProduct.gallery.map((img, idx) => (
@@ -258,7 +300,6 @@ const App: React.FC = () => {
            </div>
         )}
 
-        {/* Admin Section with Multi-image Support */}
         {activeSection === 'Admin' && isAdminMode && (
           <div className="max-w-5xl mx-auto space-y-8 animate-in slide-in-from-right-10 duration-500">
             <div className="w-full max-w-md mx-auto">
@@ -274,38 +315,38 @@ const App: React.FC = () => {
             {adminTab === 'Inventory' && (
               <div className="space-y-8">
                 <div className="glass-panel p-6 rounded-[2.5rem] flex justify-between items-center">
-                  <h3 className="text-xl font-black uppercase">Inventory</h3>
-                  <button onClick={() => { setEditProduct({ title: '', price: 0, category: 'Themes', image: '', description: '', gallery: [] }); setIsEditingProduct(true); }} className="px-8 py-3.5 bg-[#007AFF] text-white rounded-xl font-black uppercase text-[9px] shadow-lg">New Item</button>
+                  <h3 className="text-xl font-black uppercase">إدارة المنتجات</h3>
+                  <button onClick={() => { setEditProduct({ title: '', price: 0, category: 'Themes', image: '', description: '', gallery: [] }); setIsEditingProduct(true); }} className="px-8 py-3.5 bg-[#007AFF] text-white rounded-xl font-black uppercase text-[9px] shadow-lg">إضافة منتج جديد</button>
                 </div>
 
                 {isEditingProduct && (
                   <div className="glass-panel p-8 sm:p-12 rounded-[3.5rem] space-y-8 border-2 border-[#007AFF]/30 animate-in zoom-in">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       <div className="space-y-4">
-                        <label className="text-[10px] font-black uppercase text-zinc-400">Basic Info</label>
-                        <input className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none border-2 border-transparent focus:border-[#007AFF]" value={editProduct.title || ''} onChange={e => setEditProduct({...editProduct, title: e.target.value})} placeholder="Asset Title" />
+                        <label className="text-[10px] font-black uppercase text-zinc-400">معلومات أساسية</label>
+                        <input className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none border-2 border-transparent focus:border-[#007AFF]" value={editProduct.title || ''} onChange={e => setEditProduct({...editProduct, title: e.target.value})} placeholder="اسم المنتج" />
                         <select className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black text-xs outline-none" value={editProduct.category} onChange={e => setEditProduct({...editProduct, category: e.target.value as any})}>
                           <option value="Themes">Themes</option><option value="Widgets">Widgets</option><option value="Walls">Wallpapers</option>
                         </select>
-                        <input type="number" className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black text-xs outline-none" value={editProduct.price || 0} onChange={e => setEditProduct({...editProduct, price: parseFloat(e.target.value)})} placeholder="Price" />
+                        <input type="number" className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black text-xs outline-none" value={editProduct.price || 0} onChange={e => setEditProduct({...editProduct, price: parseFloat(e.target.value)})} placeholder="السعر (EGP)" />
                       </div>
 
                       <div className="space-y-4">
-                        <label className="text-[10px] font-black uppercase text-zinc-400">Cover Image</label>
+                        <label className="text-[10px] font-black uppercase text-zinc-400">صورة الغلاف (Cover)</label>
                         <label className="w-full flex items-center gap-4 p-5 bg-zinc-100 dark:bg-zinc-800 rounded-2xl border-2 border-dashed border-zinc-300 cursor-pointer">
                           <input type="file" className="hidden" accept="image/*" onChange={async e => { if(e.target.files?.[0]) setEditProduct({...editProduct, image: await fileToBase64(e.target.files[0])}) }} />
                           {editProduct.image ? <img src={editProduct.image} className="w-16 h-16 rounded-xl object-cover" /> : <div className="w-16 h-16 bg-zinc-200 dark:bg-zinc-700 rounded-xl flex items-center justify-center"><i className="fa-solid fa-camera"></i></div>}
-                          <span className="text-xs font-bold uppercase">Set Cover</span>
+                          <span className="text-xs font-bold uppercase">اختر صورة الغلاف</span>
                         </label>
                       </div>
                     </div>
 
                     <div className="space-y-4">
                         <div className="flex justify-between items-center">
-                            <label className="text-[10px] font-black uppercase text-zinc-400">Preview Gallery ({(editProduct.gallery || []).length}/20)</label>
+                            <label className="text-[10px] font-black uppercase text-zinc-400">معرض المعاينة ({(editProduct.gallery || []).length}/20)</label>
                             {(editProduct.gallery || []).length < 20 && (
                                 <label className="text-[10px] font-black uppercase text-[#007AFF] cursor-pointer hover:underline">
-                                    + Add Image
+                                    + إضافة صور
                                     <input type="file" multiple className="hidden" accept="image/*" onChange={async e => {
                                         if (e.target.files) {
                                             const newImages = [...(editProduct.gallery || [])];
@@ -328,13 +369,13 @@ const App: React.FC = () => {
                         </div>
                     </div>
 
-                    <textarea className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-medium text-sm h-32 outline-none" placeholder="Product Description..." value={editProduct.description || ''} onChange={e => setEditProduct({...editProduct, description: e.target.value})} />
+                    <textarea className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-medium text-sm h-32 outline-none" placeholder="وصف المنتج..." value={editProduct.description || ''} onChange={e => setEditProduct({...editProduct, description: e.target.value})} />
                     
                     <div className="flex gap-4">
-                       <button onClick={() => setIsEditingProduct(false)} className="flex-1 py-5 bg-zinc-100 dark:bg-zinc-800 font-black text-[10px] uppercase rounded-2xl">Discard</button>
+                       <button onClick={() => setIsEditingProduct(false)} className="flex-1 py-5 bg-zinc-100 dark:bg-zinc-800 font-black text-[10px] uppercase rounded-2xl">تجاهل</button>
                        <button onClick={saveProduct} className="flex-[3] py-5 bg-[#007AFF] text-white font-black text-[10px] uppercase rounded-2xl shadow-xl">
                         {isPublishing ? <i className="fa-solid fa-spinner animate-spin mr-2"></i> : <i className="fa-solid fa-cloud-arrow-up mr-2"></i>}
-                        Publish Asset
+                        حفظ ونشر المنتج
                        </button>
                     </div>
                   </div>
@@ -349,7 +390,7 @@ const App: React.FC = () => {
                       </div>
                       <div className="flex gap-3">
                         <button onClick={() => { setEditProduct({ ...p, gallery: p.gallery || [] }); setIsEditingProduct(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="w-11 h-11 bg-[#007AFF]/10 text-[#007AFF] rounded-full flex items-center justify-center"><i className="fa-solid fa-pen-to-square"></i></button>
-                        <button onClick={() => deleteProduct(p.id)} className="w-11 h-11 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center"><i className="fa-solid fa-trash-can"></i></button>
+                        <button onClick={() => deleteProduct(p.id)} className="w-11 h-11 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center hover:bg-red-500 hover:text-white transition-all"><i className="fa-solid fa-trash-can"></i></button>
                       </div>
                     </div>
                   ))}
@@ -357,27 +398,68 @@ const App: React.FC = () => {
               </div>
             )}
             
-            {/* Other Admin Tabs remain similar */}
+            {adminTab === 'Videos' && (
+              <div className="space-y-8">
+                <div className="glass-panel p-6 rounded-[2.5rem] flex justify-between items-center">
+                  <h3 className="text-xl font-black uppercase">إدارة الشروحات</h3>
+                  <button onClick={() => { setEditVideo({ title: '', url: '' }); setIsEditingVideo(true); }} className="px-8 py-3.5 bg-red-500 text-white rounded-xl font-black uppercase text-[9px] shadow-lg">إضافة فيديو يوتيوب</button>
+                </div>
+
+                {isEditingVideo && (
+                  <div className="glass-panel p-8 rounded-[2.5rem] space-y-6 border-2 border-red-500/30 animate-in zoom-in">
+                    <div className="space-y-4">
+                      <input className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none border-2 border-transparent focus:border-red-500" value={editVideo.title || ''} onChange={e => setEditVideo({...editVideo, title: e.target.value})} placeholder="عنوان الفيديو" />
+                      <input className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none border-2 border-transparent focus:border-red-500" value={editVideo.url || ''} onChange={e => setEditVideo({...editVideo, url: e.target.value})} placeholder="رابط اليوتيوب (مثال: https://www.youtube.com/watch?v=...)" />
+                    </div>
+                    <div className="flex gap-4">
+                      <button onClick={() => setIsEditingVideo(false)} className="flex-1 py-5 bg-zinc-100 dark:bg-zinc-800 font-black text-[10px] uppercase rounded-2xl">تجاهل</button>
+                      <button onClick={saveVideo} className="flex-[3] py-5 bg-red-500 text-white font-black text-[10px] uppercase rounded-2xl shadow-xl">حفظ الفيديو</button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 gap-4">
+                  {dbVideos.length > 0 ? dbVideos.map(v => (
+                    <div key={v.id} className="p-4 glass-panel rounded-[2rem] flex items-center justify-between group">
+                      <div className="flex items-center gap-4">
+                        <div className="w-20 h-12 bg-zinc-100 rounded-lg overflow-hidden">
+                          <img src={`https://img.youtube.com/vi/${v.id}/default.jpg`} className="w-full h-full object-cover" />
+                        </div>
+                        <span className="font-black text-sm">{v.title}</span>
+                      </div>
+                      <button onClick={() => deleteVideo(v.id)} className="w-11 h-11 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center hover:bg-red-500 hover:text-white transition-all"><i className="fa-solid fa-trash-can"></i></button>
+                    </div>
+                  )) : (
+                    <div className="text-center py-20 text-zinc-400 font-black uppercase text-xs">لا يوجد فيديوهات مرفوعة حالياً</div>
+                  )}
+                </div>
+              </div>
+            )}
+            
             {adminTab === 'Settings' && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="glass-panel p-10 rounded-[3.5rem] space-y-8">
-                  <h3 className="font-black text-xl uppercase tracking-tighter">Branding</h3>
+                  <h3 className="font-black text-xl uppercase tracking-tighter">الهوية والشعارات</h3>
                   <div className="space-y-4">
                     <label className="block p-5 bg-zinc-100 dark:bg-zinc-800 rounded-3xl cursor-pointer">
-                      <span className="text-[10px] font-black uppercase text-zinc-400 block mb-2">Navigation Logo</span>
+                      <span className="text-[10px] font-black uppercase text-zinc-400 block mb-2">شعار الموقع (Header)</span>
                       <input type="file" className="hidden" onChange={async e => { if(e.target.files?.[0]) updateSetting('site_logo', await fileToBase64(e.target.files[0])) }} />
-                      <div className="flex items-center gap-4"><img src={siteLogo} className="w-12 h-12 rounded-full border-2 border-white" /><span className="text-[10px] font-black uppercase">Change Logo</span></div>
+                      <div className="flex items-center gap-4"><img src={siteLogo} className="w-12 h-12 rounded-full border-2 border-white" /><span className="text-[10px] font-black uppercase">تغيير الشعار</span></div>
                     </label>
                     <label className="block p-5 bg-zinc-100 dark:bg-zinc-800 rounded-3xl cursor-pointer">
-                      <span className="text-[10px] font-black uppercase text-zinc-400 block mb-2">Loading Logo</span>
+                      <span className="text-[10px] font-black uppercase text-zinc-400 block mb-2">شعار شاشة التحميل</span>
                       <input type="file" className="hidden" onChange={async e => { if(e.target.files?.[0]) updateSetting('loading_logo', await fileToBase64(e.target.files[0])) }} />
-                      <div className="flex items-center gap-4"><img src={loadingLogo} className="w-12 h-12 rounded-full border-2 border-white" /><span className="text-[10px] font-black uppercase">Change Splash</span></div>
+                      <div className="flex items-center gap-4"><img src={loadingLogo} className="w-12 h-12 rounded-full border-2 border-white" /><span className="text-[10px] font-black uppercase">تغيير شعار التحميل</span></div>
                     </label>
                   </div>
                 </div>
                 <div className="glass-panel p-10 rounded-[3.5rem] space-y-8">
-                  <h3 className="font-black text-xl uppercase tracking-tighter">Security</h3>
-                  <input type="password" placeholder="New Master Password" className="w-full p-6 rounded-[2rem] bg-zinc-100 dark:bg-zinc-800 font-black" onBlur={e => e.target.value && updateSetting('admin_password', e.target.value)} />
+                  <h3 className="font-black text-xl uppercase tracking-tighter">الأمان</h3>
+                  <div className="space-y-4">
+                    <label className="text-[10px] font-black uppercase text-zinc-400 block">كلمة سر الإدارة الجديدة</label>
+                    <input type="password" placeholder="أدخل كلمة السر الجديدة" className="w-full p-6 rounded-[2rem] bg-zinc-100 dark:bg-zinc-800 font-black" onBlur={e => e.target.value && updateSetting('admin_password', e.target.value)} />
+                    <p className="text-[9px] text-zinc-400 font-bold">* سيتم حفظ كلمة السر فور الخروج من الحقل</p>
+                  </div>
                 </div>
               </div>
             )}
