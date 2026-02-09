@@ -27,10 +27,8 @@ const App: React.FC = () => {
 
   // Merged Products (Mock + DB)
   const products = useMemo(() => {
-    // ندمج المنتجات من قاعدة البيانات مع المنتجات التجريبية لضمان وجود محتوى دائماً
     const merged = [...dbProducts, ...MOCK_PRODUCTS];
-    // نزيل التكرار بناءً على العنوان إذا لزم الأمر
-    return Array.from(new Map(merged.map(item => [item.title, item])).values());
+    return Array.from(new Map(merged.map(item => [item.id, item])).values());
   }, [dbProducts]);
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -71,7 +69,7 @@ const App: React.FC = () => {
     const fetchData = async () => {
       try {
         const { data: prodData } = await supabase.from('products').select('*').order('created_at', { ascending: false });
-        if (prodData) setDbProducts(prodData);
+        if (prodData && prodData.length > 0) setDbProducts(prodData);
 
         const { data: settingsData } = await supabase.from('settings').select('key, value');
         if (settingsData) {
@@ -96,11 +94,15 @@ const App: React.FC = () => {
 
   const selectedProduct = useMemo(() => products.find(p => p.id === selectedProductId), [products, selectedProductId]);
   const orderProduct = useMemo(() => products.find(p => p.id === orderProductId), [products, orderProductId]);
-  const filteredOrderItems = useMemo(() => products.filter(p => p.category === orderCategory), [products, orderCategory]);
 
   const showNotification = (message: string) => {
     setNotification({ message, type: 'success' });
     setTimeout(() => setNotification(null), 3000);
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    showNotification("Number Copied!");
   };
 
   const handleAdminAuth = () => {
@@ -174,7 +176,6 @@ const App: React.FC = () => {
       <main className="max-w-7xl mx-auto px-4 py-8">
         {activeSection === 'Home' && (
           <div className="space-y-16 pb-44 animate-in fade-in duration-500">
-            {/* Banner Section */}
             <section className="relative w-full aspect-[4/5] sm:aspect-video rounded-[2.5rem] overflow-hidden shadow-2xl border-[4px] border-white dark:border-zinc-800">
               <img src={banner.imageUrl} className="absolute inset-0 w-full h-full object-cover transition-transform duration-[5s] hover:scale-110" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent flex flex-col justify-end p-8 md:p-14">
@@ -185,7 +186,6 @@ const App: React.FC = () => {
               </div>
             </section>
             
-            {/* Latest Products Grid */}
             <section className="space-y-8">
               <div className="flex justify-between items-end px-2">
                 <h2 className="text-xl font-black tracking-tight flex items-center gap-3 uppercase">
@@ -204,7 +204,6 @@ const App: React.FC = () => {
               </div>
             </section>
 
-            {/* Latest Videos Section */}
             <section className="space-y-8">
               <h2 className="text-xl font-black tracking-tight flex items-center gap-3 px-2 uppercase">
                 <div className="w-1.5 h-6 bg-red-500 rounded-full"></div> Latest Tutorials
@@ -249,52 +248,99 @@ const App: React.FC = () => {
         )}
 
         {activeSection === 'Order' && (
-          <div className="max-w-xl mx-auto space-y-8 pb-44 animate-in slide-in-from-bottom-10">
-            <div className="text-center space-y-2">
-              <h2 className="text-4xl font-black tracking-tighter">Fast Order</h2>
-              <p className="text-zinc-500 font-bold text-xs uppercase tracking-widest">Pay via Vodafone Cash</p>
+          <div className="max-w-2xl mx-auto space-y-10 pb-44 animate-in slide-in-from-bottom-10 duration-500">
+            <div className="text-center space-y-3">
+              <h2 className="text-5xl font-black tracking-tighter text-zinc-900 dark:text-zinc-100">Checkout</h2>
+              <p className="text-zinc-500 dark:text-zinc-400 font-bold text-xs uppercase tracking-[0.3em]">Premium Digital Asset</p>
             </div>
 
-            <div className="glass-panel p-8 rounded-[2.5rem] space-y-8 border-white dark:border-zinc-800 shadow-2xl">
-              <div className="space-y-4">
-                <p className="text-[10px] font-black uppercase text-zinc-400 tracking-[0.2em] ml-2">1. Device Model</p>
-                <div className="grid grid-cols-2 gap-3">
+            <div className="glass-panel p-10 rounded-[3rem] space-y-10 border-white dark:border-zinc-800 shadow-2xl relative overflow-hidden">
+              {/* Device Selection */}
+              <div className="space-y-5">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 flex items-center justify-center font-black text-xs">1</div>
+                  <p className="text-[11px] font-black uppercase text-zinc-500 tracking-widest">Select Your Device</p>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
                   {['Realme', 'Oppo'].map(t => (
-                    <button key={t} onClick={() => setOrderPhoneType(t as any)} className={`py-4 rounded-2xl border-2 transition-all font-black uppercase text-[10px] tracking-widest ${orderPhoneType === t ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 border-zinc-900 dark:border-white shadow-xl' : 'bg-transparent border-zinc-100 dark:border-zinc-800 text-zinc-400'}`}>
+                    <button 
+                      key={t} 
+                      onClick={() => setOrderPhoneType(t as any)} 
+                      className={`py-5 rounded-[1.5rem] border-2 transition-all font-black text-xs tracking-widest uppercase flex flex-col items-center gap-2 ${orderPhoneType === t ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 border-zinc-900 dark:border-white shadow-xl scale-[1.02]' : 'bg-transparent border-zinc-100 dark:border-zinc-800 text-zinc-400 hover:border-zinc-200'}`}
+                    >
+                      <i className={`fa-solid ${t === 'Realme' ? 'fa-mobile-screen' : 'fa-mobile'} text-xl`}></i>
                       {t}
                     </button>
                   ))}
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <p className="text-[10px] font-black uppercase text-zinc-400 tracking-[0.2em] ml-2">2. Digital Item</p>
-                <select value={orderProductId} onChange={e => setOrderProductId(e.target.value)} className="w-full p-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none border-2 border-transparent focus:border-[#007AFF] transition-all text-sm text-zinc-900 dark:text-white appearance-none">
-                  <option value="" disabled>Search your item...</option>
-                  {products.map(p => <option key={p.id} value={p.id}>{p.title} ({p.price} EGP)</option>)}
-                </select>
+              {/* Item Selection */}
+              <div className="space-y-5">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 flex items-center justify-center font-black text-xs">2</div>
+                  <p className="text-[11px] font-black uppercase text-zinc-500 tracking-widest">Select Item</p>
+                </div>
+                <div className="relative group">
+                  <select 
+                    value={orderProductId} 
+                    onChange={e => setOrderProductId(e.target.value)} 
+                    className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none border-2 border-transparent focus:border-[#007AFF] transition-all text-sm text-zinc-900 dark:text-white appearance-none cursor-pointer"
+                  >
+                    <option value="" disabled>Choose from store...</option>
+                    {products.map(p => <option key={p.id} value={p.id}>{p.title} — {p.price} EGP</option>)}
+                  </select>
+                  <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-400">
+                    <i className="fa-solid fa-chevron-down"></i>
+                  </div>
+                </div>
               </div>
 
+              {/* Payment Info */}
               {orderProduct && (
-                <div className="p-6 bg-zinc-50 dark:bg-zinc-800/40 rounded-[2rem] border border-zinc-100 dark:border-zinc-700 space-y-6 animate-in zoom-in-95">
-                  <div className="flex items-center gap-5">
-                    <img src={orderProduct.image} className="w-16 h-16 rounded-xl object-cover shadow-md" />
-                    <div>
-                      <h4 className="text-lg font-black">{orderProduct.title}</h4>
-                      <p className="text-xl font-black text-[#007AFF]">{orderProduct.price} EGP</p>
+                <div className="p-8 bg-zinc-50 dark:bg-zinc-800/40 rounded-[2.5rem] border border-zinc-100 dark:border-zinc-700 space-y-8 animate-in zoom-in-95 duration-500">
+                  <div className="flex items-center gap-6">
+                    <div className="w-24 h-24 rounded-2xl overflow-hidden shadow-lg border-2 border-white dark:border-zinc-700">
+                      <img src={orderProduct.image} className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex-1">
+                      <span className="text-[9px] font-black uppercase text-[#007AFF] tracking-widest">{orderProduct.category}</span>
+                      <h4 className="text-2xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight">{orderProduct.title}</h4>
+                      <p className="text-2xl font-black text-zinc-900 dark:text-zinc-100 mt-1">{orderProduct.price} EGP</p>
                     </div>
                   </div>
-                  <div className="pt-4 border-t dark:border-zinc-700 text-center">
-                    <p className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                      Send payment to: <br/> <span className="text-zinc-900 dark:text-white font-black text-lg select-all">01091931466</span>
-                    </p>
+                  
+                  <div className="pt-8 border-t dark:border-zinc-700 space-y-6">
+                    <div className="text-center space-y-4">
+                      <p className="text-[11px] font-black text-zinc-400 uppercase tracking-widest">Payment Method: Vodafone Cash</p>
+                      <div 
+                        onClick={() => copyToClipboard("01091931466")}
+                        className="group relative inline-flex flex-col items-center cursor-pointer active:scale-95 transition-transform"
+                      >
+                        <span className="text-3xl font-black text-zinc-900 dark:text-white tracking-tighter hover:text-[#007AFF] transition-colors">01091931466</span>
+                        <div className="mt-2 flex items-center gap-2 text-[10px] font-black text-zinc-400 uppercase tracking-widest group-hover:text-zinc-900 dark:group-hover:text-white">
+                          <i className="fa-solid fa-copy"></i> Click to copy number
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <button onClick={() => {
-                    const msg = `New Order:%0A- Item: ${orderProduct.title}%0A- Device: ${orderPhoneType}`;
-                    window.open(`https://t.me/Mohamed_edge?text=${msg}`);
-                  }} className="w-full py-5 bg-[#24A1DE] text-white rounded-xl font-black text-sm uppercase tracking-widest shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3">
-                    <i className="fa-brands fa-telegram text-xl"></i> Send Screenshot
+
+                  <button 
+                    onClick={() => {
+                      const msg = `Checkout Request:%0A- Asset: ${orderProduct.title}%0A- Device: ${orderPhoneType}%0A- Price: ${orderProduct.price} EGP%0A---%0AAttached below is the transaction screenshot.`;
+                      window.open(`https://t.me/Mohamed_edge?text=${msg}`);
+                    }} 
+                    className="w-full py-6 bg-[#24A1DE] text-white rounded-[1.5rem] font-black text-sm uppercase tracking-widest shadow-2xl shadow-blue-500/20 active:scale-95 transition-all flex items-center justify-center gap-4"
+                  >
+                    <i className="fa-brands fa-telegram text-2xl"></i> Send Screenshot to Edge
                   </button>
+                </div>
+              )}
+              
+              {!orderProduct && (
+                <div className="py-20 text-center space-y-4 border-2 border-dashed border-zinc-100 dark:border-zinc-800 rounded-[2.5rem]">
+                   <i className="fa-solid fa-cart-arrow-down text-4xl text-zinc-200"></i>
+                   <p className="text-zinc-400 font-black text-[10px] uppercase tracking-widest">Please select an asset above to continue</p>
                 </div>
               )}
             </div>
