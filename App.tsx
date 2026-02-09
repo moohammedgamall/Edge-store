@@ -223,7 +223,6 @@ const App: React.FC = () => {
     
     setIsPublishing(true);
     
-    // تم حذف download_url تماماً من هنا
     const productToSave = { 
       id: editProduct.id || Date.now().toString(),
       title: editProduct.title,
@@ -232,7 +231,7 @@ const App: React.FC = () => {
       price: editProduct.price || 0,
       image: editProduct.image,
       gallery: editProduct.gallery || [],
-      rating: editProduct.rating || 5.0,
+      rating: 5.0, // تقييم ثابت
       downloads: editProduct.downloads || '0',
       is_premium: editProduct.is_premium || false,
       compatibility: editProduct.compatibility || 'ColorOS 15'
@@ -300,6 +299,16 @@ const App: React.FC = () => {
     }
   };
 
+  const getSingularCategory = (cat?: string) => {
+    if (!cat) return 'Asset';
+    switch (cat) {
+      case 'Themes': return 'Theme';
+      case 'Widgets': return 'Widget';
+      case 'Walls': return 'Wallpaper';
+      default: return 'Asset';
+    }
+  };
+
   const renderAdmin = () => (
     <div className="max-w-5xl mx-auto space-y-8 pb-32 animate-in fade-in">
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-2">
@@ -362,7 +371,9 @@ const App: React.FC = () => {
               </div>
               <div className="flex items-center gap-2 p-2 bg-zinc-50 rounded-xl border">
                  <input type="checkbox" id="is_premium_check" checked={editProduct.is_premium} onChange={e => setEditProduct({...editProduct, is_premium: e.target.checked})} className="w-5 h-5 accent-[#007AFF]" />
-                 <label htmlFor="is_premium_check" className="text-sm font-black text-zinc-600 cursor-pointer">Premium Asset</label>
+                 <label htmlFor="is_premium_check" className="text-sm font-black text-zinc-600 cursor-pointer">
+                   Premium {getSingularCategory(editProduct.category)}
+                 </label>
               </div>
               <select className="w-full p-4 rounded-xl border-2 border-zinc-100 font-black text-sm bg-white focus:border-[#007AFF]" value={editProduct.category} onChange={e => setEditProduct({...editProduct, category: e.target.value as Section})}>
                 <option value="Themes">Themes</option><option value="Widgets">Widgets</option><option value="Walls">Walls</option>
@@ -446,7 +457,6 @@ const App: React.FC = () => {
               <div className="glass-panel p-8 rounded-[2.5rem] border-white shadow-2xl space-y-8">
                  <div className="flex justify-between items-center">
                     <div><p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest mb-1">Total Price</p><p className="text-4xl font-black text-zinc-900">{p.price === 0 ? 'FREE' : `${p.price} EGP`}</p></div>
-                    <div className="text-amber-500 font-black flex items-center gap-1.5 text-lg"><i className="fa-solid fa-star"></i> {p.rating}</div>
                  </div>
                  <div className="space-y-3 pt-4 border-t border-zinc-100"><h4 className="font-black text-xs uppercase text-zinc-400 tracking-widest">About Asset</h4><p className="text-zinc-500 text-sm leading-relaxed font-medium">{p.description || "Premium digital asset designed exclusively for Realme UI and ColorOS devices."}</p></div>
                  <div className="grid grid-cols-2 gap-4">
@@ -458,7 +468,7 @@ const App: React.FC = () => {
                     <div className="p-4 bg-zinc-50 rounded-2xl border text-center flex flex-col items-center justify-center">
                       <i className="fa-solid fa-circle-check text-green-500 mb-2 text-lg"></i>
                       <p className="text-[9px] font-black text-zinc-400 uppercase tracking-tighter">Availability</p>
-                      <p className="text-[11px] font-bold text-zinc-900">Immediate</p>
+                      <p className="text-[11px] font-bold text-zinc-900">Permanent for life</p>
                     </div>
                  </div>
                  <button onClick={() => { setSelectedCategory(p.category === 'Apps' ? 'Themes' : p.category as Section); setSelectedProductId(p.id); setActiveSection('Order'); window.location.hash = '#/order'; }} className="w-full py-5 rounded-[1.5rem] bg-[#007AFF] text-white font-black text-lg shadow-2xl shadow-blue-500/20 active:scale-95 transition-all">Get it Now</button>
@@ -642,7 +652,7 @@ const App: React.FC = () => {
                 <div className="text-[10px] font-black uppercase text-zinc-400 tracking-widest bg-zinc-100 px-3 py-1 rounded-full">{products.length} Items</div>
               </div>
               <div className="grid grid-cols-1 gap-8 sm:gap-12">
-                {products.length > 0 ? products.slice(0, 5).map(p => (
+                {products.length > 0 ? products.map(p => (
                   <ProductCard key={p.id} product={p} onPreview={handleOpenPreview} onBuy={(id, cat) => { setSelectedCategory(cat === 'Apps' ? 'Themes' : cat as Section); setSelectedProductId(id); setActiveSection('Order'); window.location.hash = '#/order'; }} />
                 )) : <div className="text-center py-20 bg-white/50 rounded-[3rem] border border-dashed border-zinc-200"><i className="fa-solid fa-box-open text-zinc-200 text-6xl mb-4"></i><p className="text-zinc-400 font-black uppercase tracking-widest text-xs">Waiting for Content...</p></div>}
               </div>

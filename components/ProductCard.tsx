@@ -36,10 +36,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onBuy, onPreview }) 
           <h3 className="font-black text-xl tracking-tight text-zinc-900 group-hover:text-[#007AFF] transition-colors">
             {product.title}
           </h3>
-          <div className="flex items-center gap-1.5 text-amber-500 bg-amber-50 px-2 py-1 rounded-lg">
-            <i className="fa-solid fa-star text-xs"></i>
-            <span className="text-xs font-black">{product.rating}</span>
-          </div>
         </div>
         
         <p className="text-zinc-500 text-sm leading-relaxed min-h-[40px] font-medium">
