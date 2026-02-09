@@ -439,22 +439,25 @@ const App: React.FC = () => {
 
         {/* Admin Dashboard */}
         {activeSection === 'Admin' && isAdminMode && (
-          <div className="max-w-6xl mx-auto space-y-10 pb-44 animate-in fade-in duration-700">
-            <div className="flex flex-wrap gap-2 md:gap-4 p-1.5 md:p-2 bg-zinc-100 dark:bg-zinc-900/50 rounded-2xl md:rounded-[1.5rem] w-fit">
-              {(['Inventory', 'Banner', 'Videos', 'Settings'] as const).map(tab => (
-                <button
-                  key={tab}
-                  onClick={() => setAdminTab(tab)}
-                  className={`px-4 md:px-8 py-2.5 md:py-3 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all ${adminTab === tab ? 'bg-white dark:bg-zinc-800 shadow-md text-[#007AFF]' : 'text-zinc-400 hover:text-zinc-600'}`}
-                >
-                  {tab}
-                </button>
-              ))}
+          <div className="max-w-5xl mx-auto space-y-8 pb-44 animate-in fade-in duration-700">
+            {/* Scrollable Tabs Wrapper */}
+            <div className="w-full overflow-x-auto no-scrollbar py-2">
+              <div className="flex gap-2 md:gap-4 p-1.5 md:p-2 bg-zinc-100 dark:bg-zinc-900/50 rounded-2xl md:rounded-[1.5rem] w-max mx-auto shadow-inner">
+                {(['Inventory', 'Banner', 'Videos', 'Settings'] as const).map(tab => (
+                  <button
+                    key={tab}
+                    onClick={() => setAdminTab(tab)}
+                    className={`px-5 md:px-8 py-2.5 md:py-3 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${adminTab === tab ? 'bg-white dark:bg-zinc-800 shadow-md text-[#007AFF]' : 'text-zinc-400 hover:text-zinc-600'}`}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Inventory Tab */}
             {adminTab === 'Inventory' && (
-              <div className="space-y-8">
+              <div className="space-y-6">
                 <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center bg-white dark:bg-zinc-900 p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] shadow-sm">
                   <h3 className="text-xl md:text-2xl font-black tracking-tighter uppercase">Cloud Store</h3>
                   <button onClick={() => { setEditProduct({ is_premium: false }); setIsEditing(true); }} className="w-full sm:w-auto px-8 py-4 bg-[#007AFF] text-white rounded-2xl font-black text-[10px] uppercase shadow-lg active:scale-95">Add New Asset</button>
@@ -468,7 +471,7 @@ const App: React.FC = () => {
                         <input className="w-full p-4 md:p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none border-2 border-transparent focus:border-[#007AFF]" value={editProduct.title || ''} onChange={e => setEditProduct({...editProduct, title: e.target.value})} />
                       </div>
                       <div className="space-y-1.5">
-                        <label className="text-[9px] font-black uppercase text-zinc-400 ml-2">Asset Image (Device Upload)</label>
+                        <label className="text-[9px] font-black uppercase text-zinc-400 ml-2">Asset Image</label>
                         <div className="flex gap-4">
                           <label className="flex-1 p-4 md:p-5 rounded-2xl bg-[#007AFF]/10 text-[#007AFF] font-black text-center text-[10px] uppercase cursor-pointer border-2 border-dashed border-[#007AFF]/30">
                             Upload File
@@ -490,8 +493,8 @@ const App: React.FC = () => {
                     </div>
                     <textarea placeholder="Asset Description..." className="w-full p-5 md:p-6 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-medium h-32 outline-none text-sm" value={editProduct.description || ''} onChange={e => setEditProduct({...editProduct, description: e.target.value})} />
                     <div className="flex gap-4">
-                      <button onClick={() => setIsEditing(false)} className="flex-1 py-5 bg-zinc-100 dark:bg-zinc-800 text-zinc-500 rounded-[1.5rem] md:rounded-[2rem] font-black uppercase text-[10px] tracking-widest">Cancel</button>
-                      <button onClick={handleSaveProduct} disabled={isPublishing} className="flex-[2] py-5 bg-[#007AFF] text-white rounded-[1.5rem] md:rounded-[2rem] font-black uppercase tracking-widest shadow-2xl">{isPublishing ? "Publishing..." : "Sync to Cloud"}</button>
+                      <button onClick={() => setIsEditing(false)} className="flex-1 py-4 md:py-5 bg-zinc-100 dark:bg-zinc-800 text-zinc-500 rounded-[1.5rem] md:rounded-[2rem] font-black uppercase text-[10px] tracking-widest">Cancel</button>
+                      <button onClick={handleSaveProduct} disabled={isPublishing} className="flex-[2] py-4 md:py-5 bg-[#007AFF] text-white rounded-[1.5rem] md:rounded-[2rem] font-black uppercase tracking-widest shadow-2xl">{isPublishing ? "Publishing..." : "Sync to Cloud"}</button>
                     </div>
                   </div>
                 )}
@@ -499,13 +502,16 @@ const App: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {dbProducts.map(p => (
                     <div key={p.id} className="p-5 md:p-6 bg-white dark:bg-zinc-900 rounded-[2rem] flex items-center justify-between border border-zinc-100 dark:border-zinc-800">
-                      <div className="flex items-center gap-4 md:gap-6">
-                        <img src={p.image} className="w-12 h-12 md:w-16 md:h-16 rounded-2xl object-cover" />
-                        <div><p className="font-black text-sm md:text-lg leading-none">{p.title}</p><p className="text-[9px] font-black uppercase text-zinc-400 tracking-widest mt-1.5">{p.category} • {p.price} EGP</p></div>
+                      <div className="flex items-center gap-4 md:gap-6 overflow-hidden">
+                        <img src={p.image} className="w-12 h-12 md:w-16 md:h-16 rounded-2xl object-cover shrink-0" />
+                        <div className="min-w-0">
+                          <p className="font-black text-sm md:text-lg leading-none truncate">{p.title}</p>
+                          <p className="text-[9px] font-black uppercase text-zinc-400 tracking-widest mt-1.5">{p.category} • {p.price} EGP</p>
+                        </div>
                       </div>
-                      <div className="flex gap-2">
-                        <button onClick={() => {setEditProduct(p); setIsEditing(true);}} className="w-10 h-10 md:w-12 md:h-12 bg-blue-50 text-[#007AFF] rounded-full flex items-center justify-center"><i className="fa-solid fa-pen text-sm"></i></button>
-                        <button onClick={async () => { if(confirm('Delete?')) { await supabase.from('products').delete().eq('id', p.id); setDbProducts(ps => ps.filter(x => x.id !== p.id)); showNotification("Deleted"); } }} className="w-10 h-10 md:w-12 md:h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center"><i className="fa-solid fa-trash text-sm"></i></button>
+                      <div className="flex gap-2 shrink-0">
+                        <button onClick={() => {setEditProduct(p); setIsEditing(true);}} className="w-10 h-10 md:w-12 md:h-12 bg-blue-50 text-[#007AFF] rounded-full flex items-center justify-center transition-colors hover:bg-blue-100"><i className="fa-solid fa-pen text-sm"></i></button>
+                        <button onClick={async () => { if(confirm('Delete?')) { await supabase.from('products').delete().eq('id', p.id); setDbProducts(ps => ps.filter(x => x.id !== p.id)); showNotification("Deleted"); } }} className="w-10 h-10 md:w-12 md:h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center transition-colors hover:bg-red-100"><i className="fa-solid fa-trash text-sm"></i></button>
                       </div>
                     </div>
                   ))}
@@ -515,7 +521,7 @@ const App: React.FC = () => {
 
             {/* Banner Tab */}
             {adminTab === 'Banner' && (
-              <div className="max-w-3xl glass-panel p-8 md:p-10 rounded-[2.5rem] md:rounded-[3rem] space-y-8 animate-in slide-in-from-bottom-4">
+              <div className="max-w-4xl mx-auto glass-panel p-8 md:p-10 rounded-[2.5rem] md:rounded-[3rem] space-y-6 md:space-y-8 animate-in slide-in-from-bottom-4">
                 <h3 className="text-2xl font-black tracking-tighter uppercase">Hero Banner</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                   <input className="w-full p-4 md:p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none" placeholder="Title" value={banner.title} onChange={e => setBanner({...banner, title: e.target.value})} />
@@ -527,7 +533,7 @@ const App: React.FC = () => {
                     <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 group-hover:text-[#007AFF] transition-colors">Click to upload banner image</span>
                     <input type="file" accept="image/*" className="hidden" onChange={e => handleImageUpload(e, 'banner')} />
                   </label>
-                  {banner.imageUrl && <img src={banner.imageUrl} className="mt-4 w-full h-32 md:h-40 object-cover rounded-2xl shadow-lg border-2 border-white dark:border-zinc-700" />}
+                  {banner.imageUrl && <img src={banner.imageUrl} className="mt-4 w-full h-32 md:h-48 object-cover rounded-2xl shadow-lg border-2 border-white dark:border-zinc-700" />}
                 </div>
                 <button onClick={handleUpdateBanner} className="w-full py-5 md:py-6 bg-[#007AFF] text-white rounded-[1.5rem] md:rounded-[2rem] font-black uppercase tracking-[0.2em] shadow-2xl">Update Home Banner</button>
               </div>
@@ -535,24 +541,24 @@ const App: React.FC = () => {
 
             {/* Videos Tab */}
             {adminTab === 'Videos' && (
-              <div className="space-y-8 animate-in slide-in-from-bottom-4">
-                <div className="max-w-3xl glass-panel p-8 md:p-10 rounded-[2.5rem] md:rounded-[3rem] space-y-6">
+              <div className="space-y-6 animate-in slide-in-from-bottom-4">
+                <div className="max-w-4xl mx-auto glass-panel p-8 md:p-10 rounded-[2.5rem] md:rounded-[3rem] space-y-6">
                   <h3 className="text-2xl font-black tracking-tighter uppercase">Manage YouTube Links</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                     <input className="w-full p-4 md:p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none" placeholder="Video Title" value={newVideoTitle} onChange={e => setNewVideoTitle(e.target.value)} />
-                    <input className="w-full p-4 md:p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none" placeholder="YouTube URL (https://...)" value={newVideoUrl} onChange={e => setNewVideoUrl(e.target.value)} />
+                    <input className="w-full p-4 md:p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none" placeholder="YouTube URL" value={newVideoUrl} onChange={e => setNewVideoUrl(e.target.value)} />
                   </div>
                   <button onClick={handleAddVideo} className="w-full py-4 md:py-5 bg-red-500 text-white rounded-[1.5rem] md:rounded-[2rem] font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all">Add Video to Feed</button>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                   {dbVideos.map(v => (
-                    <div key={v.id} className="p-5 md:p-6 bg-white dark:bg-zinc-900 rounded-[2rem] flex justify-between items-center shadow-sm">
-                      <div className="flex items-center gap-4">
-                        <img src={`https://img.youtube.com/vi/${v.id}/default.jpg`} className="w-16 md:w-20 h-10 md:h-12 rounded-lg object-cover" />
-                        <p className="font-black text-[10px] md:text-xs line-clamp-1">{v.title}</p>
+                    <div key={v.id} className="p-5 md:p-6 bg-white dark:bg-zinc-900 rounded-[2rem] flex justify-between items-center shadow-sm overflow-hidden">
+                      <div className="flex items-center gap-4 min-w-0">
+                        <img src={`https://img.youtube.com/vi/${v.id}/default.jpg`} className="w-16 md:w-20 h-10 md:h-12 rounded-lg object-cover shrink-0" />
+                        <p className="font-black text-[10px] md:text-xs truncate">{v.title}</p>
                       </div>
-                      <button onClick={async () => { await supabase.from('videos').delete().eq('id', v.id); setDbVideos(prev => prev.filter(x => x.id !== v.id)); showNotification("Video Removed"); }} className="w-8 h-8 md:w-10 md:h-10 bg-red-50 text-red-500 rounded-full flex items-center justify-center"><i className="fa-solid fa-trash-can text-sm"></i></button>
+                      <button onClick={async () => { await supabase.from('videos').delete().eq('id', v.id); setDbVideos(prev => prev.filter(x => x.id !== v.id)); showNotification("Video Removed"); }} className="w-8 h-8 md:w-10 md:h-10 bg-red-50 text-red-500 rounded-full flex items-center justify-center shrink-0"><i className="fa-solid fa-trash-can text-sm"></i></button>
                     </div>
                   ))}
                 </div>
@@ -568,7 +574,7 @@ const App: React.FC = () => {
                     <p className="text-[9px] font-black uppercase text-zinc-400">Site Logo (Header)</p>
                     <label className="flex items-center gap-4 md:gap-6 p-4 bg-zinc-100 dark:bg-zinc-800 rounded-[1.5rem] md:rounded-3xl cursor-pointer hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">
                       <img src={siteLogo} className="w-12 h-12 md:w-16 md:h-16 rounded-full object-cover shadow-lg border-2 border-white" />
-                      <span className="text-[10px] font-black uppercase tracking-widest">Update Header Logo</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest truncate">Update Header Logo</span>
                       <input type="file" accept="image/*" className="hidden" onChange={e => handleImageUpload(e, 'siteLogo')} />
                     </label>
                   </div>
@@ -576,7 +582,7 @@ const App: React.FC = () => {
                     <p className="text-[9px] font-black uppercase text-zinc-400">Loading Logo (App Boot)</p>
                     <label className="flex items-center gap-4 md:gap-6 p-4 bg-zinc-100 dark:bg-zinc-800 rounded-[1.5rem] md:rounded-3xl cursor-pointer hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">
                       <img src={loadingLogo} className="w-12 h-12 md:w-16 md:h-16 rounded-full object-cover shadow-lg border-2 border-white" />
-                      <span className="text-[10px] font-black uppercase tracking-widest">Update Loader Image</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest truncate">Update Loader Image</span>
                       <input type="file" accept="image/*" className="hidden" onChange={e => handleImageUpload(e, 'loadingLogo')} />
                     </label>
                   </div>
@@ -586,7 +592,7 @@ const App: React.FC = () => {
                   <h3 className="text-xl md:text-2xl font-black tracking-tighter uppercase">Master Security</h3>
                   <div className="space-y-4">
                     <p className="text-[9px] font-black uppercase text-zinc-400">Change Admin Password</p>
-                    <input type="password" placeholder="New Master Key" className="w-full p-5 md:p-6 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-bold text-center text-xl md:text-3xl tracking-[0.2em] md:tracking-[0.5em] outline-none" onBlur={e => e.target.value && handleUpdateSettings('admin_password', e.target.value)} />
+                    <input type="password" placeholder="New Master Key" className="w-full p-5 md:p-6 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-bold text-center text-xl md:text-3xl tracking-[0.2em] md:tracking-[0.5em] outline-none border-2 border-transparent focus:border-[#007AFF] transition-all" onBlur={e => e.target.value && handleUpdateSettings('admin_password', e.target.value)} />
                     <p className="text-[8px] font-bold text-red-500 uppercase tracking-widest text-center mt-4 leading-relaxed">Security Note: Password is updated instantly on leave.</p>
                   </div>
                 </div>
