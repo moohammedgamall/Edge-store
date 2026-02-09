@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { Section, Product, BannerSettings, YoutubeVideo } from './types';
 import { MOCK_PRODUCTS, DEFAULT_BANNER, MOCK_VIDEOS } from './constants';
@@ -21,8 +21,10 @@ const App: React.FC = () => {
   
   // Database States
   const [dbProducts, setDbProducts] = useState<Product[]>([]);
+  const [dbVideos, setDbVideos] = useState<YoutubeVideo[]>([]);
   const [banner, setBanner] = useState<BannerSettings>(DEFAULT_BANNER);
   const [siteLogo, setSiteLogo] = useState<string>("https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
+  const [loadingLogo, setLoadingLogo] = useState<string>("https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
   const [adminPassword, setAdminPassword] = useState('1234');
 
   // Merged Products (Mock + DB)
@@ -30,6 +32,12 @@ const App: React.FC = () => {
     const merged = [...dbProducts, ...MOCK_PRODUCTS];
     return Array.from(new Map(merged.map(item => [item.id, item])).values());
   }, [dbProducts]);
+
+  // Merged Videos
+  const videos = useMemo(() => {
+    const merged = [...dbVideos, ...MOCK_VIDEOS];
+    return Array.from(new Map(merged.map(v => [v.id, v])).values());
+  }, [dbVideos]);
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [passwordInput, setPasswordInput] = useState('');
@@ -42,7 +50,9 @@ const App: React.FC = () => {
   const [editProduct, setEditProduct] = useState<Partial<Product>>({ is_premium: false });
   
   // Admin Tabs
-  const [adminTab, setAdminTab] = useState<'Inventory' | 'Settings' | 'Banner'>('Inventory');
+  const [adminTab, setAdminTab] = useState<'Inventory' | 'Banner' | 'Videos' | 'Settings'>('Inventory');
+  const [newVideoUrl, setNewVideoUrl] = useState('');
+  const [newVideoTitle, setNewVideoTitle] = useState('');
 
   useEffect(() => {
     if (isDarkMode) document.documentElement.classList.add('dark');
@@ -72,14 +82,18 @@ const App: React.FC = () => {
     const fetchData = async () => {
       try {
         const { data: prodData } = await supabase.from('products').select('*').order('created_at', { ascending: false });
-        if (prodData && prodData.length > 0) setDbProducts(prodData);
+        if (prodData) setDbProducts(prodData);
+
+        const { data: vidData } = await supabase.from('videos').select('*');
+        if (vidData) setDbVideos(vidData);
 
         const { data: settingsData } = await supabase.from('settings').select('key, value');
         if (settingsData) {
-          const pass = settingsData.find(s => s.key === 'admin_password');
-          if (pass) setAdminPassword(pass.value);
-          const logo = settingsData.find(s => s.key === 'site_logo');
-          if (logo) setSiteLogo(logo.value);
+          settingsData.forEach(s => {
+            if (s.key === 'admin_password') setAdminPassword(s.value);
+            if (s.key === 'site_logo') setSiteLogo(s.value);
+            if (s.key === 'loading_logo') setLoadingLogo(s.value);
+          });
         }
 
         const { data: bannerData } = await supabase.from('banner').select('*').eq('id', 1).maybeSingle();
@@ -94,7 +108,7 @@ const App: React.FC = () => {
       } catch (e) {
         console.error("DB Fetch Error", e);
       } finally {
-        setTimeout(() => setIsLoading(false), 800);
+        setTimeout(() => setIsLoading(false), 1200);
       }
     };
     fetchData();
@@ -126,6 +140,38 @@ const App: React.FC = () => {
     }
   };
 
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = error => reject(error);
+    });
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, target: 'product' | 'siteLogo' | 'loadingLogo' | 'banner') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    try {
+      const base64 = await fileToBase64(file);
+      if (target === 'product') {
+        setEditProduct(prev => ({ ...prev, image: base64 }));
+      } else if (target === 'siteLogo') {
+        setSiteLogo(base64);
+        await handleUpdateSettings('site_logo', base64);
+      } else if (target === 'loadingLogo') {
+        setLoadingLogo(base64);
+        await handleUpdateSettings('loading_logo', base64);
+      } else if (target === 'banner') {
+        setBanner(prev => ({ ...prev, imageUrl: base64 }));
+      }
+      showNotification("Image Uploaded Locally");
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const handleSaveProduct = async () => {
     if (!editProduct.title || !editProduct.image) return;
     setIsPublishing(true);
@@ -144,33 +190,50 @@ const App: React.FC = () => {
       const { data } = await supabase.from('products').select('*').order('created_at', { ascending: false });
       if (data) setDbProducts(data);
       setIsEditing(false);
-      showNotification("Cloud Synced!");
+      showNotification("Product Published!");
     } catch (err) { console.error(err); }
     finally { setIsPublishing(false); }
+  };
+
+  const handleAddVideo = async () => {
+    const urlParams = new URLSearchParams(new URL(newVideoUrl).search);
+    const videoId = urlParams.get('v');
+    if (!videoId) return showNotification("Invalid YouTube Link");
+    
+    const newVideo = { id: videoId, title: newVideoTitle || 'New Tutorial', url: newVideoUrl };
+    try {
+      await supabase.from('videos').insert(newVideo);
+      setDbVideos(prev => [...prev, newVideo]);
+      setNewVideoUrl('');
+      setNewVideoTitle('');
+      showNotification("Video Added");
+    } catch (e) { console.error(e); }
   };
 
   const handleUpdateSettings = async (key: string, value: string) => {
     try {
       await supabase.from('settings').upsert({ key, value });
       if (key === 'admin_password') setAdminPassword(value);
-      if (key === 'site_logo') setSiteLogo(value);
-      showNotification("Setting Updated");
+      showNotification("Settings Updated");
     } catch (e) { console.error(e); }
   };
 
   const handleUpdateBanner = async () => {
     try {
       await supabase.from('banner').upsert({ id: 1, ...banner });
-      showNotification("Banner Synced");
+      showNotification("Banner Updated");
     } catch (e) { console.error(e); }
   };
 
   if (isLoading) return (
     <div className="h-screen w-full flex flex-col items-center justify-center bg-[#F2F2F7] dark:bg-[#2C2C2E]">
-      <div className="w-20 h-20 animate-pulse bg-[#007AFF] rounded-full flex items-center justify-center shadow-2xl">
-        <span className="text-white font-black text-xl">ME</span>
+      <div className="relative">
+        <div className="w-24 h-24 animate-pulse rounded-full overflow-hidden shadow-2xl border-4 border-white dark:border-zinc-800">
+          <img src={loadingLogo} className="w-full h-full object-cover" alt="Loading" />
+        </div>
+        <div className="absolute -inset-2 rounded-full border-2 border-dashed border-[#007AFF] animate-[spin_10s_linear_infinite]"></div>
       </div>
-      <h3 className="mt-5 text-lg font-black tracking-tight text-zinc-900 dark:text-zinc-100 uppercase">Edge Marketplace</h3>
+      <h3 className="mt-8 text-lg font-black tracking-widest text-zinc-900 dark:text-zinc-100 uppercase animate-bounce">Edge Marketplace</h3>
     </div>
   );
 
@@ -200,7 +263,7 @@ const App: React.FC = () => {
       <main className="max-w-7xl mx-auto px-4 py-8">
         {activeSection === 'Home' && (
           <div className="space-y-16 pb-44 animate-in fade-in duration-500">
-            {/* 1. Banner Section */}
+            {/* Banner Section */}
             <section className="relative w-full aspect-[4/5] sm:aspect-video rounded-[2.5rem] overflow-hidden shadow-2xl border-[4px] border-white dark:border-zinc-800">
               <img src={banner.imageUrl} className="absolute inset-0 w-full h-full object-cover transition-transform duration-[5s] hover:scale-110" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent flex flex-col justify-end p-8 md:p-14">
@@ -211,43 +274,33 @@ const App: React.FC = () => {
               </div>
             </section>
             
-            {/* 2. Latest Videos (Immediately Under Banner) */}
+            {/* Tutorials Section */}
             <section className="space-y-8">
               <h2 className="text-xl font-black tracking-tight flex items-center gap-3 px-2 uppercase">
-                <div className="w-1.5 h-6 bg-red-500 rounded-full"></div> Tutorials & Guides
+                <div className="w-1.5 h-6 bg-red-500 rounded-full"></div> Latest Tutorials
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {MOCK_VIDEOS.map(video => (
-                  <div 
-                    key={video.id} 
-                    onClick={() => window.open(video.url, '_blank')}
-                    className="group relative aspect-video bg-zinc-200 dark:bg-zinc-800 rounded-[2.5rem] overflow-hidden shadow-lg border-4 border-white dark:border-zinc-700 cursor-pointer active:scale-[0.98] transition-all"
-                  >
-                    <img 
-                      src={`https://img.youtube.com/vi/${video.id}/maxresdefault.jpg`} 
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                      alt={video.title}
-                    />
+                {videos.map(v => (
+                  <div key={v.id} onClick={() => window.open(v.url, '_blank')} className="group relative aspect-video bg-zinc-200 dark:bg-zinc-800 rounded-[2.5rem] overflow-hidden shadow-lg border-4 border-white dark:border-zinc-700 cursor-pointer active:scale-95 transition-all">
+                    <img src={`https://img.youtube.com/vi/${v.id}/maxresdefault.jpg`} className="w-full h-full object-cover transition-transform group-hover:scale-105" alt={v.title} />
                     <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors flex items-center justify-center">
-                       <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white border border-white/30 group-hover:scale-110 transition-transform shadow-2xl">
+                       <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white border border-white/30 group-hover:scale-110 transition-transform">
                           <i className="fa-solid fa-play text-2xl ml-1"></i>
                        </div>
                     </div>
                     <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent">
-                       <p className="text-white font-black text-sm line-clamp-1">{video.title}</p>
+                       <p className="text-white font-black text-sm">{v.title}</p>
                     </div>
                   </div>
                 ))}
               </div>
             </section>
 
-            {/* 3. Featured Assets */}
+            {/* Featured Assets */}
             <section className="space-y-8">
-              <div className="flex justify-between items-end px-2">
-                <h2 className="text-xl font-black tracking-tight flex items-center gap-3 uppercase">
-                  <div className="w-1.5 h-6 bg-[#007AFF] rounded-full"></div> Featured Assets
-                </h2>
-              </div>
+              <h2 className="text-xl font-black tracking-tight flex items-center gap-3 px-2 uppercase">
+                <div className="w-1.5 h-6 bg-[#007AFF] rounded-full"></div> Featured Assets
+              </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {products.map(p => (
                   <ProductCard 
@@ -321,19 +374,14 @@ const App: React.FC = () => {
                   <div className="w-8 h-8 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 flex items-center justify-center font-black text-xs">2</div>
                   <p className="text-[11px] font-black uppercase text-zinc-500 tracking-widest">Select Item</p>
                 </div>
-                <div className="relative group">
-                  <select 
-                    value={orderProductId} 
-                    onChange={e => setOrderProductId(e.target.value)} 
-                    className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none border-2 border-transparent focus:border-[#007AFF] transition-all text-sm text-zinc-900 dark:text-white appearance-none cursor-pointer"
-                  >
-                    <option value="" disabled>Choose from store...</option>
-                    {products.map(p => <option key={p.id} value={p.id}>{p.title} — {p.price} EGP</option>)}
-                  </select>
-                  <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-400">
-                    <i className="fa-solid fa-chevron-down"></i>
-                  </div>
-                </div>
+                <select 
+                  value={orderProductId} 
+                  onChange={e => setOrderProductId(e.target.value)} 
+                  className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none border-2 border-transparent focus:border-[#007AFF] transition-all text-sm appearance-none cursor-pointer"
+                >
+                  <option value="" disabled>Choose from store...</option>
+                  {products.map(p => <option key={p.id} value={p.id}>{p.title} — {p.price} EGP</option>)}
+                </select>
               </div>
 
               {orderProduct && (
@@ -349,43 +397,30 @@ const App: React.FC = () => {
                     </div>
                   </div>
                   
-                  <div className="pt-8 border-t dark:border-zinc-700 space-y-6">
-                    <div className="text-center space-y-4">
-                      <p className="text-[11px] font-black text-zinc-400 uppercase tracking-widest">Payment Method: Vodafone Cash</p>
-                      <div 
-                        onClick={() => copyToClipboard("01091931466")}
-                        className="group relative inline-flex flex-col items-center cursor-pointer active:scale-95 transition-transform"
-                      >
-                        <span className="text-3xl font-black text-zinc-900 dark:text-white tracking-tighter hover:text-[#007AFF] transition-colors">01091931466</span>
-                        <div className="mt-2 flex items-center gap-2 text-[10px] font-black text-zinc-400 uppercase tracking-widest group-hover:text-zinc-900 dark:group-hover:text-white">
-                          <i className="fa-solid fa-copy"></i> Click to copy number
-                        </div>
-                      </div>
+                  <div className="text-center space-y-4 pt-8 border-t dark:border-zinc-700">
+                    <p className="text-[11px] font-black text-zinc-400 uppercase tracking-widest">Payment Method: Vodafone Cash</p>
+                    <div onClick={() => copyToClipboard("01091931466")} className="group cursor-pointer inline-flex flex-col items-center">
+                      <span className="text-3xl font-black text-zinc-900 dark:text-white tracking-tighter hover:text-[#007AFF] transition-colors">01091931466</span>
+                      <span className="mt-2 text-[10px] font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2"><i className="fa-solid fa-copy"></i> Click to copy</span>
                     </div>
                   </div>
 
                   <button 
                     onClick={() => {
-                      const msg = `Checkout Request:%0A- Asset: ${orderProduct.title}%0A- Device: ${orderPhoneType}%0A- Price: ${orderProduct.price} EGP%0A---%0AAttached below is the transaction screenshot.`;
+                      const msg = `Checkout Request:%0A- Asset: ${orderProduct.title}%0A- Device: ${orderPhoneType}%0A- Price: ${orderProduct.price} EGP`;
                       window.open(`https://t.me/Mohamed_edge?text=${msg}`);
                     }} 
-                    className="w-full py-6 bg-[#24A1DE] text-white rounded-[1.5rem] font-black text-sm uppercase tracking-widest shadow-2xl shadow-blue-500/20 active:scale-95 transition-all flex items-center justify-center gap-4"
+                    className="w-full py-6 bg-[#24A1DE] text-white rounded-[1.5rem] font-black text-sm uppercase tracking-widest shadow-2xl active:scale-95 transition-all flex items-center justify-center gap-4"
                   >
                     <i className="fa-brands fa-telegram text-2xl"></i> Send Screenshot to Edge
                   </button>
-                </div>
-              )}
-              
-              {!orderProduct && (
-                <div className="py-20 text-center space-y-4 border-2 border-dashed border-zinc-100 dark:border-zinc-800 rounded-[2.5rem]">
-                   <i className="fa-solid fa-cart-arrow-down text-4xl text-zinc-200"></i>
-                   <p className="text-zinc-400 font-black text-[10px] uppercase tracking-widest">Please select an asset above to continue</p>
                 </div>
               )}
             </div>
           </div>
         )}
 
+        {/* Categories Sections */}
         {(activeSection === 'Themes' || activeSection === 'Widgets' || activeSection === 'Walls') && (
           <div className="space-y-10 pb-44">
             <h2 className="text-3xl font-black tracking-tighter px-2 uppercase">{activeSection}</h2>
@@ -402,34 +437,11 @@ const App: React.FC = () => {
           </div>
         )}
 
+        {/* Admin Dashboard */}
         {activeSection === 'Admin' && isAdminMode && (
           <div className="max-w-5xl mx-auto space-y-12 pb-44 animate-in fade-in duration-700">
-            {/* Admin Header Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="glass-panel p-8 rounded-[2.5rem] flex flex-col justify-between h-40 border-white dark:border-zinc-800">
-                <p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">Total Products</p>
-                <h3 className="text-5xl font-black tracking-tighter">{products.length}</h3>
-              </div>
-              <div className="glass-panel p-8 rounded-[2.5rem] flex flex-col justify-between h-40 border-white dark:border-zinc-800">
-                <p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">Premium Assets</p>
-                <h3 className="text-5xl font-black tracking-tighter text-[#007AFF]">{products.filter(p => p.is_premium).length}</h3>
-              </div>
-              <div className="glass-panel p-8 rounded-[2.5rem] flex flex-col justify-between h-40 border-white dark:border-zinc-800">
-                <p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">Free Assets</p>
-                <h3 className="text-5xl font-black tracking-tighter">{products.filter(p => p.price === 0).length}</h3>
-              </div>
-              <button 
-                onClick={() => { setEditProduct({ is_premium: false }); setIsEditing(true); }}
-                className="bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-[2.5rem] flex flex-col items-center justify-center gap-4 hover:scale-[1.02] transition-transform active:scale-95 shadow-2xl"
-              >
-                <i className="fa-solid fa-plus text-3xl"></i>
-                <span className="text-[10px] font-black uppercase tracking-widest">Add New Asset</span>
-              </button>
-            </div>
-
-            {/* Admin Tabs */}
             <div className="flex gap-4 p-2 bg-zinc-100 dark:bg-zinc-900/50 rounded-2xl w-fit">
-              {(['Inventory', 'Banner', 'Settings'] as const).map(tab => (
+              {(['Inventory', 'Banner', 'Videos', 'Settings'] as const).map(tab => (
                 <button
                   key={tab}
                   onClick={() => setAdminTab(tab)}
@@ -440,119 +452,139 @@ const App: React.FC = () => {
               ))}
             </div>
 
-            {/* Inventory View */}
+            {/* Inventory Tab */}
             {adminTab === 'Inventory' && (
-              <div className="space-y-8 animate-in slide-in-from-bottom-4">
+              <div className="space-y-8">
+                <div className="flex justify-between items-center bg-white dark:bg-zinc-900 p-8 rounded-[2.5rem] shadow-sm">
+                  <h3 className="text-2xl font-black tracking-tighter uppercase">Cloud Store</h3>
+                  <button onClick={() => { setEditProduct({ is_premium: false }); setIsEditing(true); }} className="px-8 py-4 bg-[#007AFF] text-white rounded-2xl font-black text-[10px] uppercase shadow-lg active:scale-95">Add New Asset</button>
+                </div>
+
                 {isEditing && (
-                  <div className="glass-panel p-10 rounded-[3rem] space-y-8 border-white dark:border-zinc-800 shadow-2xl">
-                    <div className="flex justify-between items-center">
-                      <h3 className="text-2xl font-black tracking-tighter uppercase">{editProduct.id ? 'Edit Asset' : 'New Asset'}</h3>
-                      <button onClick={() => setIsEditing(false)} className="w-10 h-10 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center"><i className="fa-solid fa-xmark"></i></button>
-                    </div>
+                  <div className="glass-panel p-10 rounded-[3rem] space-y-8 border-white dark:border-zinc-800 shadow-2xl relative">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
                         <label className="text-[10px] font-black uppercase text-zinc-400 ml-2">Title</label>
                         <input className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none border-2 border-transparent focus:border-[#007AFF]" value={editProduct.title || ''} onChange={e => setEditProduct({...editProduct, title: e.target.value})} />
                       </div>
                       <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-zinc-400 ml-2">Asset Image (Device Upload)</label>
+                        <div className="flex gap-4">
+                          <label className="flex-1 p-5 rounded-2xl bg-[#007AFF]/10 text-[#007AFF] font-black text-center text-xs uppercase cursor-pointer border-2 border-dashed border-[#007AFF]/30">
+                            Upload File
+                            <input type="file" accept="image/*" className="hidden" onChange={e => handleImageUpload(e, 'product')} />
+                          </label>
+                          {editProduct.image && <img src={editProduct.image} className="w-16 h-16 rounded-xl object-cover" />}
+                        </div>
+                      </div>
+                      <div className="space-y-2">
                         <label className="text-[10px] font-black uppercase text-zinc-400 ml-2">Category</label>
-                        <select className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none border-2 border-transparent focus:border-[#007AFF] appearance-none" value={editProduct.category} onChange={e => setEditProduct({...editProduct, category: e.target.value as Section})}>
+                        <select className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none" value={editProduct.category} onChange={e => setEditProduct({...editProduct, category: e.target.value as Section})}>
                           <option value="Themes">Themes</option><option value="Widgets">Widgets</option><option value="Walls">Walls</option>
                         </select>
                       </div>
                       <div className="space-y-2">
                         <label className="text-[10px] font-black uppercase text-zinc-400 ml-2">Price (EGP)</label>
-                        <input type="number" className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none border-2 border-transparent focus:border-[#007AFF]" value={editProduct.price || 0} onChange={e => setEditProduct({...editProduct, price: parseFloat(e.target.value)})} />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase text-zinc-400 ml-2">Image URL</label>
-                        <input className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none border-2 border-transparent focus:border-[#007AFF]" value={editProduct.image || ''} onChange={e => setEditProduct({...editProduct, image: e.target.value})} />
+                        <input type="number" className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none" value={editProduct.price || 0} onChange={e => setEditProduct({...editProduct, price: parseFloat(e.target.value)})} />
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase text-zinc-400 ml-2">Description</label>
-                      <textarea className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-medium h-32 outline-none border-2 border-transparent focus:border-[#007AFF] resize-none" value={editProduct.description || ''} onChange={e => setEditProduct({...editProduct, description: e.target.value})} />
-                    </div>
-                    <div className="flex items-center gap-4 p-5 bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl">
-                      <input type="checkbox" id="premium" className="w-5 h-5 accent-[#007AFF]" checked={editProduct.is_premium} onChange={e => setEditProduct({...editProduct, is_premium: e.target.checked})} />
-                      <label htmlFor="premium" className="text-xs font-black uppercase tracking-widest cursor-pointer">Premium Asset Badge</label>
-                    </div>
-                    <button onClick={handleSaveProduct} disabled={isPublishing} className="w-full py-6 bg-[#007AFF] text-white rounded-[2rem] font-black uppercase tracking-[0.2em] shadow-2xl disabled:opacity-50">
-                      {isPublishing ? 'Publishing...' : 'Sync to Cloud'}
-                    </button>
+                    <textarea placeholder="Asset Description..." className="w-full p-6 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-medium h-32 outline-none" value={editProduct.description || ''} onChange={e => setEditProduct({...editProduct, description: e.target.value})} />
+                    <button onClick={handleSaveProduct} disabled={isPublishing} className="w-full py-6 bg-[#007AFF] text-white rounded-[2rem] font-black uppercase tracking-widest shadow-2xl">{isPublishing ? "Publishing..." : "Sync to Cloud"}</button>
                   </div>
                 )}
 
                 <div className="grid grid-cols-1 gap-4">
                   {dbProducts.map(p => (
-                    <div key={p.id} className="p-6 bg-white dark:bg-zinc-900 rounded-[2.5rem] flex items-center justify-between shadow-sm border border-zinc-100 dark:border-zinc-800 hover:border-[#007AFF]/30 transition-all">
+                    <div key={p.id} className="p-6 bg-white dark:bg-zinc-900 rounded-[2.5rem] flex items-center justify-between border border-zinc-100 dark:border-zinc-800">
                       <div className="flex items-center gap-6">
-                        <img src={p.image} className="w-16 h-16 rounded-2xl object-cover shadow-md" />
-                        <div>
-                          <p className="font-black text-lg tracking-tight">{p.title}</p>
-                          <p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">{p.category} • {p.price} EGP</p>
-                        </div>
+                        <img src={p.image} className="w-16 h-16 rounded-2xl object-cover" />
+                        <div><p className="font-black text-lg">{p.title}</p><p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">{p.category} • {p.price} EGP</p></div>
                       </div>
                       <div className="flex gap-3">
-                        <button onClick={() => {setEditProduct(p); setIsEditing(true);}} className="w-12 h-12 bg-blue-50 dark:bg-blue-900/20 text-[#007AFF] rounded-full flex items-center justify-center hover:scale-110 transition-transform"><i className="fa-solid fa-pen"></i></button>
-                        <button onClick={async () => { if(confirm('Delete permanently?')) { await supabase.from('products').delete().eq('id', p.id); setDbProducts(ps => ps.filter(x => x.id !== p.id)); showNotification("Deleted"); } }} className="w-12 h-12 bg-red-50 dark:bg-red-900/20 text-red-500 rounded-full flex items-center justify-center hover:scale-110 transition-transform"><i className="fa-solid fa-trash"></i></button>
+                        <button onClick={() => {setEditProduct(p); setIsEditing(true);}} className="w-12 h-12 bg-blue-50 text-[#007AFF] rounded-full flex items-center justify-center"><i className="fa-solid fa-pen"></i></button>
+                        <button onClick={async () => { if(confirm('Delete?')) { await supabase.from('products').delete().eq('id', p.id); setDbProducts(ps => ps.filter(x => x.id !== p.id)); showNotification("Deleted"); } }} className="w-12 h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center"><i className="fa-solid fa-trash"></i></button>
                       </div>
                     </div>
                   ))}
-                  {dbProducts.length === 0 && (
-                    <div className="py-20 text-center glass-panel rounded-[3rem] border-dashed border-2 border-zinc-200">
-                      <p className="text-zinc-400 font-black uppercase tracking-widest text-xs">No Cloud Assets Found</p>
-                    </div>
-                  )}
                 </div>
               </div>
             )}
 
-            {/* Banner View */}
+            {/* Banner Tab */}
             {adminTab === 'Banner' && (
-              <div className="glass-panel p-10 rounded-[3rem] space-y-8 border-white dark:border-zinc-800 shadow-2xl animate-in slide-in-from-bottom-4">
-                <h3 className="text-2xl font-black tracking-tighter uppercase">Home Page Banner</h3>
+              <div className="glass-panel p-10 rounded-[3rem] space-y-8 animate-in slide-in-from-bottom-4">
+                <h3 className="text-2xl font-black tracking-tighter uppercase">Hero Banner</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase text-zinc-400 ml-2">Title</label>
-                    <input className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none" value={banner.title} onChange={e => setBanner({...banner, title: e.target.value})} />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase text-zinc-400 ml-2">Highlight (Blue)</label>
-                    <input className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none" value={banner.highlight} onChange={e => setBanner({...banner, highlight: e.target.value})} />
-                  </div>
+                  <input className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none" placeholder="Title" value={banner.title} onChange={e => setBanner({...banner, title: e.target.value})} />
+                  <input className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none" placeholder="Highlight" value={banner.highlight} onChange={e => setBanner({...banner, highlight: e.target.value})} />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase text-zinc-400 ml-2">Image URL</label>
-                  <input className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none" value={banner.imageUrl} onChange={e => setBanner({...banner, imageUrl: e.target.value})} />
+                  <label className="text-[10px] font-black uppercase text-zinc-400 ml-2">Banner Background</label>
+                  <label className="block w-full p-10 rounded-[2rem] bg-zinc-50 dark:bg-zinc-800/50 border-4 border-dashed border-zinc-200 dark:border-zinc-700 cursor-pointer text-center group">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 group-hover:text-[#007AFF] transition-colors">Click to upload banner image</span>
+                    <input type="file" accept="image/*" className="hidden" onChange={e => handleImageUpload(e, 'banner')} />
+                  </label>
+                  {banner.imageUrl && <img src={banner.imageUrl} className="mt-4 w-full h-40 object-cover rounded-2xl shadow-lg border-2 border-white dark:border-zinc-700" />}
                 </div>
-                <button onClick={handleUpdateBanner} className="w-full py-6 bg-[#007AFF] text-white rounded-[2rem] font-black uppercase tracking-[0.2em] shadow-2xl">
-                  Update Home Banner
-                </button>
+                <button onClick={handleUpdateBanner} className="w-full py-6 bg-[#007AFF] text-white rounded-[2rem] font-black uppercase tracking-[0.2em] shadow-2xl">Update Home Banner</button>
               </div>
             )}
 
-            {/* Settings View */}
+            {/* Videos Tab */}
+            {adminTab === 'Videos' && (
+              <div className="space-y-8 animate-in slide-in-from-bottom-4">
+                <div className="glass-panel p-10 rounded-[3rem] space-y-6">
+                  <h3 className="text-2xl font-black tracking-tighter uppercase">Manage YouTube Links</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <input className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none" placeholder="Video Title" value={newVideoTitle} onChange={e => setNewVideoTitle(e.target.value)} />
+                    <input className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none" placeholder="YouTube URL (https://...)" value={newVideoUrl} onChange={e => setNewVideoUrl(e.target.value)} />
+                  </div>
+                  <button onClick={handleAddVideo} className="w-full py-5 bg-red-500 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all">Add Video to Feed</button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {dbVideos.map(v => (
+                    <div key={v.id} className="p-6 bg-white dark:bg-zinc-900 rounded-[2.5rem] flex justify-between items-center shadow-sm">
+                      <div className="flex items-center gap-4">
+                        <img src={`https://img.youtube.com/vi/${v.id}/default.jpg`} className="w-20 h-12 rounded-lg object-cover" />
+                        <p className="font-black text-xs line-clamp-1">{v.title}</p>
+                      </div>
+                      <button onClick={async () => { await supabase.from('videos').delete().eq('id', v.id); setDbVideos(prev => prev.filter(x => x.id !== v.id)); showNotification("Video Removed"); }} className="w-10 h-10 bg-red-50 text-red-500 rounded-full flex items-center justify-center"><i className="fa-solid fa-trash-can"></i></button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Settings Tab */}
             {adminTab === 'Settings' && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in slide-in-from-bottom-4">
-                <div className="glass-panel p-10 rounded-[3rem] space-y-6 border-white dark:border-zinc-800">
-                  <h3 className="text-2xl font-black tracking-tighter uppercase">Site Identity</h3>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase text-zinc-400 ml-2">Store Logo URL</label>
-                    <input className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none" defaultValue={siteLogo} onBlur={e => handleUpdateSettings('site_logo', e.target.value)} />
+                <div className="glass-panel p-10 rounded-[3rem] space-y-8">
+                  <h3 className="text-2xl font-black tracking-tighter uppercase">Identity & Logos</h3>
+                  <div className="space-y-4">
+                    <p className="text-[10px] font-black uppercase text-zinc-400">Site Logo (Header)</p>
+                    <label className="flex items-center gap-6 p-4 bg-zinc-100 dark:bg-zinc-800 rounded-3xl cursor-pointer hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">
+                      <img src={siteLogo} className="w-16 h-16 rounded-full object-cover shadow-lg border-2 border-white" />
+                      <span className="text-xs font-black uppercase tracking-widest">Update Header Logo</span>
+                      <input type="file" accept="image/*" className="hidden" onChange={e => handleImageUpload(e, 'siteLogo')} />
+                    </label>
                   </div>
-                  <div className="p-6 bg-zinc-100 dark:bg-zinc-800 rounded-3xl flex items-center gap-6">
-                    <img src={siteLogo} className="w-20 h-20 rounded-full object-cover shadow-lg border-4 border-white dark:border-zinc-700" alt="Preview" />
-                    <div><p className="font-black text-xs uppercase tracking-widest text-[#007AFF]">Logo Preview</p></div>
+                  <div className="space-y-4">
+                    <p className="text-[10px] font-black uppercase text-zinc-400">Loading Logo (App Boot)</p>
+                    <label className="flex items-center gap-6 p-4 bg-zinc-100 dark:bg-zinc-800 rounded-3xl cursor-pointer hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">
+                      <img src={loadingLogo} className="w-16 h-16 rounded-full object-cover shadow-lg border-2 border-white" />
+                      <span className="text-xs font-black uppercase tracking-widest">Update Loader Image</span>
+                      <input type="file" accept="image/*" className="hidden" onChange={e => handleImageUpload(e, 'loadingLogo')} />
+                    </label>
                   </div>
                 </div>
 
-                <div className="glass-panel p-10 rounded-[3rem] space-y-6 border-white dark:border-zinc-800">
-                  <h3 className="text-2xl font-black tracking-tighter uppercase">Security</h3>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase text-zinc-400 ml-2">Master Password</label>
-                    <input type="password" placeholder="••••" className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none text-2xl tracking-[0.5em]" defaultValue={adminPassword} onBlur={e => handleUpdateSettings('admin_password', e.target.value)} />
-                    <p className="text-[9px] font-bold text-red-500 uppercase tracking-widest mt-4">Warning: Changing this will require immediate re-login.</p>
+                <div className="glass-panel p-10 rounded-[3rem] space-y-8">
+                  <h3 className="text-2xl font-black tracking-tighter uppercase">Master Security</h3>
+                  <div className="space-y-4">
+                    <p className="text-[10px] font-black uppercase text-zinc-400">Change Admin Password</p>
+                    <input type="password" placeholder="Enter New Master Key" className="w-full p-6 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-bold text-center text-3xl tracking-[0.5em] outline-none" onBlur={e => e.target.value && handleUpdateSettings('admin_password', e.target.value)} />
+                    <p className="text-[9px] font-bold text-red-500 uppercase tracking-widest text-center mt-4">Security Note: Password is updated instantly on leave.</p>
                   </div>
                 </div>
               </div>
