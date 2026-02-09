@@ -50,9 +50,9 @@ const App: React.FC = () => {
 
   const selectedProduct = useMemo(() => {
     const found = products.find(p => p.id === selectedProductId);
-    if (found && (found.category === selectedCategory || selectedCategory === 'Themes' || selectedCategory === 'Home')) return found;
+    if (found && (found.category === selectedCategory || selectedCategory === 'Themes' || selectedCategory === 'Home' || activeSection === 'Preview')) return found;
     return productsInCategory.length > 0 ? productsInCategory[0] : null;
-  }, [products, selectedProductId, selectedCategory, productsInCategory]);
+  }, [products, selectedProductId, selectedCategory, productsInCategory, activeSection]);
 
   useEffect(() => {
     const checkRoute = () => {
@@ -441,19 +441,19 @@ const App: React.FC = () => {
 
     return (
       <div className="max-w-5xl mx-auto space-y-6 pb-32 animate-in fade-in slide-in-from-bottom-8">
-        <header className="flex items-center justify-between px-2">
+        <header className="flex items-center justify-between px-2 gap-2">
            <button 
              onClick={() => { window.location.hash = '#/'; setActiveSection('Home'); }} 
-             className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-zinc-900 border border-zinc-200 shadow-lg active:scale-90 transition-all hover:bg-zinc-50"
+             className="w-10 h-10 flex-shrink-0 bg-white/40 backdrop-blur-xl border border-white/30 text-zinc-900 rounded-full flex items-center justify-center shadow-xl active:scale-90 transition-all hover:bg-white/60"
              aria-label="Back"
            >
-             <i className="fa-solid fa-chevron-left"></i>
+             <i className="fa-solid fa-chevron-left text-sm"></i>
            </button>
-           <div className="text-center px-4">
-              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-[#007AFF] mb-1">{p.category}</span>
+           <div className="text-center px-2 flex-1 min-w-0">
+              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-[#007AFF] mb-1 block truncate">{p.category}</span>
               <h2 className="text-2xl font-black tracking-tighter text-zinc-900 line-clamp-1">{p.title}</h2>
            </div>
-           <div className="w-12"></div>
+           <div className="w-10 flex-shrink-0"></div>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 px-2">
@@ -467,7 +467,7 @@ const App: React.FC = () => {
                  <div className="absolute inset-y-0 left-6 flex items-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
                     <button 
                       onClick={() => scrollToIndex((currentSlide - 1 + fullGallery.length) % fullGallery.length)} 
-                      className="w-10 h-10 rounded-full bg-white/40 backdrop-blur-xl border border-white/30 text-zinc-900 flex items-center justify-center shadow-xl pointer-events-auto active:scale-90 transition-all hover:bg-white/60"
+                      className="w-10 h-10 flex-shrink-0 rounded-full bg-white/40 backdrop-blur-xl border border-white/30 text-zinc-900 flex items-center justify-center shadow-xl pointer-events-auto active:scale-90 transition-all hover:bg-white/60"
                     >
                       <i className="fa-solid fa-chevron-left text-sm"></i>
                     </button>
@@ -475,7 +475,7 @@ const App: React.FC = () => {
                  <div className="absolute inset-y-0 right-6 flex items-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
                     <button 
                       onClick={() => scrollToIndex((currentSlide + 1) % fullGallery.length)} 
-                      className="w-10 h-10 rounded-full bg-white/40 backdrop-blur-xl border border-white/30 text-zinc-900 flex items-center justify-center shadow-xl pointer-events-auto active:scale-90 transition-all hover:bg-white/60"
+                      className="w-10 h-10 flex-shrink-0 rounded-full bg-white/40 backdrop-blur-xl border border-white/30 text-zinc-900 flex items-center justify-center shadow-xl pointer-events-auto active:scale-90 transition-all hover:bg-white/60"
                     >
                       <i className="fa-solid fa-chevron-right text-sm"></i>
                     </button>
