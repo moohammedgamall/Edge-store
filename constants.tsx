@@ -1,11 +1,24 @@
 
-import { NavItem, Product, BannerSettings } from './types';
+import { NavItem, Product, BannerSettings, YoutubeVideo } from './types';
 
 export const NAV_ITEMS: NavItem[] = [
   { id: 'Home', label: 'Home', icon: 'fa-solid fa-house' },
   { id: 'Themes', label: 'Themes', icon: 'fa-solid fa-layer-group' },
   { id: 'Widgets', label: 'Widgets', icon: 'fa-solid fa-table-cells-large' },
   { id: 'Walls', label: 'Walls', icon: 'fa-solid fa-image' },
+];
+
+export const MOCK_VIDEOS: YoutubeVideo[] = [
+  {
+    id: 'dQw4w9WgXcQ',
+    title: 'How to Install Custom Themes on ColorOS 15',
+    url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+  },
+  {
+    id: '768x37x3', // Example ID
+    title: 'Top 5 Minimal Widgets for Realme UI 6.0',
+    url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+  }
 ];
 
 export const DEFAULT_BANNER: BannerSettings = {

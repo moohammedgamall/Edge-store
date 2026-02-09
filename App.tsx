@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { Section, Product, BannerSettings, YoutubeVideo } from './types';
-import { MOCK_PRODUCTS, DEFAULT_BANNER } from './constants';
+import { MOCK_PRODUCTS, DEFAULT_BANNER, MOCK_VIDEOS } from './constants';
 import BottomNav from './components/BottomNav';
 import Header from './components/Header';
 import ProductCard from './components/ProductCard';
@@ -200,6 +200,7 @@ const App: React.FC = () => {
       <main className="max-w-7xl mx-auto px-4 py-8">
         {activeSection === 'Home' && (
           <div className="space-y-16 pb-44 animate-in fade-in duration-500">
+            {/* 1. Banner Section */}
             <section className="relative w-full aspect-[4/5] sm:aspect-video rounded-[2.5rem] overflow-hidden shadow-2xl border-[4px] border-white dark:border-zinc-800">
               <img src={banner.imageUrl} className="absolute inset-0 w-full h-full object-cover transition-transform duration-[5s] hover:scale-110" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent flex flex-col justify-end p-8 md:p-14">
@@ -210,6 +211,37 @@ const App: React.FC = () => {
               </div>
             </section>
             
+            {/* 2. Latest Videos (Immediately Under Banner) */}
+            <section className="space-y-8">
+              <h2 className="text-xl font-black tracking-tight flex items-center gap-3 px-2 uppercase">
+                <div className="w-1.5 h-6 bg-red-500 rounded-full"></div> Tutorials & Guides
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {MOCK_VIDEOS.map(video => (
+                  <div 
+                    key={video.id} 
+                    onClick={() => window.open(video.url, '_blank')}
+                    className="group relative aspect-video bg-zinc-200 dark:bg-zinc-800 rounded-[2.5rem] overflow-hidden shadow-lg border-4 border-white dark:border-zinc-700 cursor-pointer active:scale-[0.98] transition-all"
+                  >
+                    <img 
+                      src={`https://img.youtube.com/vi/${video.id}/maxresdefault.jpg`} 
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      alt={video.title}
+                    />
+                    <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                       <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white border border-white/30 group-hover:scale-110 transition-transform shadow-2xl">
+                          <i className="fa-solid fa-play text-2xl ml-1"></i>
+                       </div>
+                    </div>
+                    <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent">
+                       <p className="text-white font-black text-sm line-clamp-1">{video.title}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {/* 3. Featured Assets */}
             <section className="space-y-8">
               <div className="flex justify-between items-end px-2">
                 <h2 className="text-xl font-black tracking-tight flex items-center gap-3 uppercase">
@@ -225,20 +257,6 @@ const App: React.FC = () => {
                     onBuy={(id, cat) => { setOrderProductId(id); setOrderCategory(cat as Section); window.location.hash = '#/order'; }} 
                   />
                 ))}
-              </div>
-            </section>
-
-            <section className="space-y-8">
-              <h2 className="text-xl font-black tracking-tight flex items-center gap-3 px-2 uppercase">
-                <div className="w-1.5 h-6 bg-red-500 rounded-full"></div> Latest Tutorials
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="aspect-video bg-zinc-200 dark:bg-zinc-800 rounded-[2rem] overflow-hidden shadow-lg border-4 border-white dark:border-zinc-700">
-                   <iframe className="w-full h-full" src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="YouTube video player" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>
-                </div>
-                <div className="aspect-video bg-zinc-200 dark:bg-zinc-800 rounded-[2rem] overflow-hidden shadow-lg border-4 border-white dark:border-zinc-700">
-                   <iframe className="w-full h-full" src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="YouTube video player" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>
-                </div>
               </div>
             </section>
           </div>
