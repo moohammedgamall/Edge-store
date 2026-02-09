@@ -111,7 +111,6 @@ const App: React.FC = () => {
       } catch (e) {
         console.error("DB Fetch Error", e);
       } finally {
-        // Reduced artificial delay for snappier experience
         setTimeout(() => setIsLoading(false), 200);
       }
     };
@@ -268,18 +267,24 @@ const App: React.FC = () => {
       <main className="max-w-7xl mx-auto px-4 py-8">
         {activeSection === 'Home' && (
           <div className="space-y-16 pb-44 animate-in fade-in duration-500">
-            {/* Banner Section */}
-            <section className="relative w-full aspect-[4/5] sm:aspect-video rounded-[2.5rem] overflow-hidden shadow-2xl border-[4px] border-white dark:border-zinc-800">
-              <img src={banner.imageUrl} className="absolute inset-0 w-full h-full object-cover transition-transform duration-[5s] hover:scale-110" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent flex flex-col justify-end p-8 md:p-14">
-                <h2 className="text-4xl md:text-7xl font-black text-white leading-tight tracking-tighter">
-                  {banner.title} <br/> <span className="text-[#007AFF]">{banner.highlight}</span>
-                </h2>
-                <button onClick={() => window.location.hash = '#/themes'} className="mt-8 px-8 py-3.5 bg-[#007AFF] text-white rounded-xl font-black text-[10px] uppercase tracking-[0.2em] self-start shadow-xl active:scale-95 transition-all">Explore Assets</button>
+            {/* New Release - Top of Home */}
+            <section className="space-y-8">
+              <h2 className="text-xl font-black tracking-tight flex items-center gap-3 px-2 uppercase">
+                <div className="w-1.5 h-6 bg-[#007AFF] rounded-full"></div> New Release
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {products.map(p => (
+                  <ProductCard 
+                    key={p.id} 
+                    product={p} 
+                    onPreview={(id) => window.location.hash = `#/preview/${id}`} 
+                    onBuy={(id, cat) => { setOrderProductId(id); setOrderCategory(cat as Section); window.location.hash = '#/order'; }} 
+                  />
+                ))}
               </div>
             </section>
-            
-            {/* Tutorials Section */}
+
+            {/* Tutorials Section - Below New Release */}
             <section className="space-y-8">
               <h2 className="text-xl font-black tracking-tight flex items-center gap-3 px-2 uppercase">
                 <div className="w-1.5 h-6 bg-red-500 rounded-full"></div> Latest Tutorials
@@ -297,23 +302,6 @@ const App: React.FC = () => {
                        <p className="text-white font-black text-sm">{v.title}</p>
                     </div>
                   </div>
-                ))}
-              </div>
-            </section>
-
-            {/* Featured Assets */}
-            <section className="space-y-8">
-              <h2 className="text-xl font-black tracking-tight flex items-center gap-3 px-2 uppercase">
-                <div className="w-1.5 h-6 bg-[#007AFF] rounded-full"></div> Featured Assets
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {products.map(p => (
-                  <ProductCard 
-                    key={p.id} 
-                    product={p} 
-                    onPreview={(id) => window.location.hash = `#/preview/${id}`} 
-                    onBuy={(id, cat) => { setOrderProductId(id); setOrderCategory(cat as Section); window.location.hash = '#/order'; }} 
-                  />
                 ))}
               </div>
             </section>
