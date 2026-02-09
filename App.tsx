@@ -108,7 +108,6 @@ const App: React.FC = () => {
       } catch (e) {
         console.error("DB Fetch Error", e);
       } finally {
-        // Reduced timeout for a faster "instant" feel
         setTimeout(() => setIsLoading(false), 400);
       }
     };
@@ -344,41 +343,41 @@ const App: React.FC = () => {
         )}
 
         {activeSection === 'Order' && (
-          <div className="max-w-2xl mx-auto space-y-10 pb-44 animate-in slide-in-from-bottom-10 duration-500">
-            <div className="text-center space-y-3">
-              <h2 className="text-5xl font-black tracking-tighter text-zinc-900 dark:text-zinc-100">Checkout</h2>
-              <p className="text-zinc-500 dark:text-zinc-400 font-bold text-xs uppercase tracking-[0.3em]">Premium Digital Asset</p>
+          <div className="max-w-xl mx-auto space-y-8 pb-44 animate-in slide-in-from-bottom-10 duration-500">
+            <div className="text-center space-y-2">
+              <h2 className="text-4xl md:text-5xl font-black tracking-tighter text-zinc-900 dark:text-zinc-100">Checkout</h2>
+              <p className="text-zinc-500 dark:text-zinc-400 font-bold text-[10px] uppercase tracking-[0.3em]">Premium Digital Asset</p>
             </div>
 
-            <div className="glass-panel p-10 rounded-[3rem] space-y-10 border-white dark:border-zinc-800 shadow-2xl relative overflow-hidden">
-              <div className="space-y-5">
+            <div className="glass-panel p-6 md:p-10 rounded-[2.5rem] md:rounded-[3rem] space-y-8 border-white dark:border-zinc-800 shadow-2xl relative overflow-hidden">
+              <div className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 flex items-center justify-center font-black text-xs">1</div>
-                  <p className="text-[11px] font-black uppercase text-zinc-500 tracking-widest">Select Your Device</p>
+                  <div className="w-7 h-7 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 flex items-center justify-center font-black text-[10px]">1</div>
+                  <p className="text-[10px] font-black uppercase text-zinc-500 tracking-widest">Select Your Device</p>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3 md:gap-4">
                   {['Realme', 'Oppo'].map(t => (
                     <button 
                       key={t} 
                       onClick={() => setOrderPhoneType(t as any)} 
-                      className={`py-5 rounded-[1.5rem] border-2 transition-all font-black text-xs tracking-widest uppercase flex flex-col items-center gap-2 ${orderPhoneType === t ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 border-zinc-900 dark:border-white shadow-xl scale-[1.02]' : 'bg-transparent border-zinc-100 dark:border-zinc-800 text-zinc-400 hover:border-zinc-200'}`}
+                      className={`py-4 md:py-5 rounded-[1.2rem] md:rounded-[1.5rem] border-2 transition-all font-black text-[10px] tracking-widest uppercase flex flex-col items-center gap-2 ${orderPhoneType === t ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 border-zinc-900 dark:border-white shadow-xl scale-[1.02]' : 'bg-transparent border-zinc-100 dark:border-zinc-800 text-zinc-400 hover:border-zinc-200'}`}
                     >
-                      <i className={`fa-solid ${t === 'Realme' ? 'fa-mobile-screen' : 'fa-mobile'} text-xl`}></i>
+                      <i className={`fa-solid ${t === 'Realme' ? 'fa-mobile-screen' : 'fa-mobile'} text-lg`}></i>
                       {t}
                     </button>
                   ))}
                 </div>
               </div>
 
-              <div className="space-y-5">
+              <div className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 flex items-center justify-center font-black text-xs">2</div>
-                  <p className="text-[11px] font-black uppercase text-zinc-500 tracking-widest">Select Item</p>
+                  <div className="w-7 h-7 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 flex items-center justify-center font-black text-[10px]">2</div>
+                  <p className="text-[10px] font-black uppercase text-zinc-500 tracking-widest">Select Item</p>
                 </div>
                 <select 
                   value={orderProductId} 
                   onChange={e => setOrderProductId(e.target.value)} 
-                  className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none border-2 border-transparent focus:border-[#007AFF] transition-all text-sm appearance-none cursor-pointer"
+                  className="w-full p-4 md:p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none border-2 border-transparent focus:border-[#007AFF] transition-all text-xs appearance-none cursor-pointer"
                 >
                   <option value="" disabled>Choose from store...</option>
                   {products.map(p => <option key={p.id} value={p.id}>{p.title} — {p.price} EGP</option>)}
@@ -386,23 +385,23 @@ const App: React.FC = () => {
               </div>
 
               {orderProduct && (
-                <div className="p-8 bg-zinc-50 dark:bg-zinc-800/40 rounded-[2.5rem] border border-zinc-100 dark:border-zinc-700 space-y-8 animate-in zoom-in-95 duration-500">
-                  <div className="flex items-center gap-6">
-                    <div className="w-24 h-24 rounded-2xl overflow-hidden shadow-lg border-2 border-white dark:border-zinc-700">
+                <div className="p-6 md:p-8 bg-zinc-50 dark:bg-zinc-800/40 rounded-[2rem] md:rounded-[2.5rem] border border-zinc-100 dark:border-zinc-700 space-y-6 animate-in zoom-in-95 duration-500">
+                  <div className="flex items-center gap-4 md:gap-6">
+                    <div className="w-20 h-20 md:w-24 md:h-24 rounded-2xl overflow-hidden shadow-lg border-2 border-white dark:border-zinc-700">
                       <img src={orderProduct.image} className="w-full h-full object-cover" />
                     </div>
                     <div className="flex-1">
-                      <span className="text-[9px] font-black uppercase text-[#007AFF] tracking-widest">{orderProduct.category}</span>
-                      <h4 className="text-2xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight">{orderProduct.title}</h4>
-                      <p className="text-2xl font-black text-zinc-900 dark:text-zinc-100 mt-1">{orderProduct.price} EGP</p>
+                      <span className="text-[8px] font-black uppercase text-[#007AFF] tracking-widest">{orderProduct.category}</span>
+                      <h4 className="text-xl md:text-2xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight">{orderProduct.title}</h4>
+                      <p className="text-xl md:text-2xl font-black text-zinc-900 dark:text-zinc-100 mt-0.5">{orderProduct.price} EGP</p>
                     </div>
                   </div>
                   
-                  <div className="text-center space-y-4 pt-8 border-t dark:border-zinc-700">
-                    <p className="text-[11px] font-black text-zinc-400 uppercase tracking-widest">Payment Method: Vodafone Cash</p>
+                  <div className="text-center space-y-3 pt-6 border-t dark:border-zinc-700">
+                    <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Payment Method: Vodafone Cash</p>
                     <div onClick={() => copyToClipboard("01091931466")} className="group cursor-pointer inline-flex flex-col items-center">
-                      <span className="text-3xl font-black text-zinc-900 dark:text-white tracking-tighter hover:text-[#007AFF] transition-colors">01091931466</span>
-                      <span className="mt-2 text-[10px] font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2"><i className="fa-solid fa-copy"></i> Click to copy</span>
+                      <span className="text-2xl md:text-3xl font-black text-zinc-900 dark:text-white tracking-tighter hover:text-[#007AFF] transition-colors">01091931466</span>
+                      <span className="mt-1.5 text-[9px] font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2"><i className="fa-solid fa-copy"></i> Click to copy</span>
                     </div>
                   </div>
 
@@ -411,9 +410,9 @@ const App: React.FC = () => {
                       const msg = `Checkout Request:%0A- Asset: ${orderProduct.title}%0A- Device: ${orderPhoneType}%0A- Price: ${orderProduct.price} EGP`;
                       window.open(`https://t.me/Mohamed_edge?text=${msg}`);
                     }} 
-                    className="w-full py-6 bg-[#24A1DE] text-white rounded-[1.5rem] font-black text-sm uppercase tracking-widest shadow-2xl active:scale-95 transition-all flex items-center justify-center gap-4"
+                    className="w-full py-5 md:py-6 bg-[#24A1DE] text-white rounded-[1.2rem] md:rounded-[1.5rem] font-black text-xs uppercase tracking-widest shadow-2xl active:scale-95 transition-all flex items-center justify-center gap-3"
                   >
-                    <i className="fa-brands fa-telegram text-2xl"></i> Send Screenshot to Edge
+                    <i className="fa-brands fa-telegram text-xl"></i> Send Screenshot
                   </button>
                 </div>
               )}
@@ -440,13 +439,13 @@ const App: React.FC = () => {
 
         {/* Admin Dashboard */}
         {activeSection === 'Admin' && isAdminMode && (
-          <div className="max-w-5xl mx-auto space-y-12 pb-44 animate-in fade-in duration-700">
-            <div className="flex gap-4 p-2 bg-zinc-100 dark:bg-zinc-900/50 rounded-2xl w-fit">
+          <div className="max-w-6xl mx-auto space-y-10 pb-44 animate-in fade-in duration-700">
+            <div className="flex flex-wrap gap-2 md:gap-4 p-1.5 md:p-2 bg-zinc-100 dark:bg-zinc-900/50 rounded-2xl md:rounded-[1.5rem] w-fit">
               {(['Inventory', 'Banner', 'Videos', 'Settings'] as const).map(tab => (
                 <button
                   key={tab}
                   onClick={() => setAdminTab(tab)}
-                  className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${adminTab === tab ? 'bg-white dark:bg-zinc-800 shadow-md text-[#007AFF]' : 'text-zinc-400 hover:text-zinc-600'}`}
+                  className={`px-4 md:px-8 py-2.5 md:py-3 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all ${adminTab === tab ? 'bg-white dark:bg-zinc-800 shadow-md text-[#007AFF]' : 'text-zinc-400 hover:text-zinc-600'}`}
                 >
                   {tab}
                 </button>
@@ -456,54 +455,57 @@ const App: React.FC = () => {
             {/* Inventory Tab */}
             {adminTab === 'Inventory' && (
               <div className="space-y-8">
-                <div className="flex justify-between items-center bg-white dark:bg-zinc-900 p-8 rounded-[2.5rem] shadow-sm">
-                  <h3 className="text-2xl font-black tracking-tighter uppercase">Cloud Store</h3>
-                  <button onClick={() => { setEditProduct({ is_premium: false }); setIsEditing(true); }} className="px-8 py-4 bg-[#007AFF] text-white rounded-2xl font-black text-[10px] uppercase shadow-lg active:scale-95">Add New Asset</button>
+                <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center bg-white dark:bg-zinc-900 p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] shadow-sm">
+                  <h3 className="text-xl md:text-2xl font-black tracking-tighter uppercase">Cloud Store</h3>
+                  <button onClick={() => { setEditProduct({ is_premium: false }); setIsEditing(true); }} className="w-full sm:w-auto px-8 py-4 bg-[#007AFF] text-white rounded-2xl font-black text-[10px] uppercase shadow-lg active:scale-95">Add New Asset</button>
                 </div>
 
                 {isEditing && (
-                  <div className="glass-panel p-10 rounded-[3rem] space-y-8 border-white dark:border-zinc-800 shadow-2xl relative">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase text-zinc-400 ml-2">Title</label>
-                        <input className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none border-2 border-transparent focus:border-[#007AFF]" value={editProduct.title || ''} onChange={e => setEditProduct({...editProduct, title: e.target.value})} />
+                  <div className="glass-panel p-6 md:p-10 rounded-[2.5rem] md:rounded-[3rem] space-y-6 md:space-y-8 border-white dark:border-zinc-800 shadow-2xl relative">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                      <div className="space-y-1.5">
+                        <label className="text-[9px] font-black uppercase text-zinc-400 ml-2">Title</label>
+                        <input className="w-full p-4 md:p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none border-2 border-transparent focus:border-[#007AFF]" value={editProduct.title || ''} onChange={e => setEditProduct({...editProduct, title: e.target.value})} />
                       </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase text-zinc-400 ml-2">Asset Image (Device Upload)</label>
+                      <div className="space-y-1.5">
+                        <label className="text-[9px] font-black uppercase text-zinc-400 ml-2">Asset Image (Device Upload)</label>
                         <div className="flex gap-4">
-                          <label className="flex-1 p-5 rounded-2xl bg-[#007AFF]/10 text-[#007AFF] font-black text-center text-xs uppercase cursor-pointer border-2 border-dashed border-[#007AFF]/30">
+                          <label className="flex-1 p-4 md:p-5 rounded-2xl bg-[#007AFF]/10 text-[#007AFF] font-black text-center text-[10px] uppercase cursor-pointer border-2 border-dashed border-[#007AFF]/30">
                             Upload File
                             <input type="file" accept="image/*" className="hidden" onChange={e => handleImageUpload(e, 'product')} />
                           </label>
-                          {editProduct.image && <img src={editProduct.image} className="w-16 h-16 rounded-xl object-cover" />}
+                          {editProduct.image && <img src={editProduct.image} className="w-14 h-14 md:w-16 md:h-16 rounded-xl object-cover" />}
                         </div>
                       </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase text-zinc-400 ml-2">Category</label>
-                        <select className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none" value={editProduct.category} onChange={e => setEditProduct({...editProduct, category: e.target.value as Section})}>
+                      <div className="space-y-1.5">
+                        <label className="text-[9px] font-black uppercase text-zinc-400 ml-2">Category</label>
+                        <select className="w-full p-4 md:p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none" value={editProduct.category} onChange={e => setEditProduct({...editProduct, category: e.target.value as Section})}>
                           <option value="Themes">Themes</option><option value="Widgets">Widgets</option><option value="Walls">Walls</option>
                         </select>
                       </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase text-zinc-400 ml-2">Price (EGP)</label>
-                        <input type="number" className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none" value={editProduct.price || 0} onChange={e => setEditProduct({...editProduct, price: parseFloat(e.target.value)})} />
+                      <div className="space-y-1.5">
+                        <label className="text-[9px] font-black uppercase text-zinc-400 ml-2">Price (EGP)</label>
+                        <input type="number" className="w-full p-4 md:p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none" value={editProduct.price || 0} onChange={e => setEditProduct({...editProduct, price: parseFloat(e.target.value)})} />
                       </div>
                     </div>
-                    <textarea placeholder="Asset Description..." className="w-full p-6 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-medium h-32 outline-none" value={editProduct.description || ''} onChange={e => setEditProduct({...editProduct, description: e.target.value})} />
-                    <button onClick={handleSaveProduct} disabled={isPublishing} className="w-full py-6 bg-[#007AFF] text-white rounded-[2rem] font-black uppercase tracking-widest shadow-2xl">{isPublishing ? "Publishing..." : "Sync to Cloud"}</button>
+                    <textarea placeholder="Asset Description..." className="w-full p-5 md:p-6 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-medium h-32 outline-none text-sm" value={editProduct.description || ''} onChange={e => setEditProduct({...editProduct, description: e.target.value})} />
+                    <div className="flex gap-4">
+                      <button onClick={() => setIsEditing(false)} className="flex-1 py-5 bg-zinc-100 dark:bg-zinc-800 text-zinc-500 rounded-[1.5rem] md:rounded-[2rem] font-black uppercase text-[10px] tracking-widest">Cancel</button>
+                      <button onClick={handleSaveProduct} disabled={isPublishing} className="flex-[2] py-5 bg-[#007AFF] text-white rounded-[1.5rem] md:rounded-[2rem] font-black uppercase tracking-widest shadow-2xl">{isPublishing ? "Publishing..." : "Sync to Cloud"}</button>
+                    </div>
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {dbProducts.map(p => (
-                    <div key={p.id} className="p-6 bg-white dark:bg-zinc-900 rounded-[2.5rem] flex items-center justify-between border border-zinc-100 dark:border-zinc-800">
-                      <div className="flex items-center gap-6">
-                        <img src={p.image} className="w-16 h-16 rounded-2xl object-cover" />
-                        <div><p className="font-black text-lg">{p.title}</p><p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">{p.category} • {p.price} EGP</p></div>
+                    <div key={p.id} className="p-5 md:p-6 bg-white dark:bg-zinc-900 rounded-[2rem] flex items-center justify-between border border-zinc-100 dark:border-zinc-800">
+                      <div className="flex items-center gap-4 md:gap-6">
+                        <img src={p.image} className="w-12 h-12 md:w-16 md:h-16 rounded-2xl object-cover" />
+                        <div><p className="font-black text-sm md:text-lg leading-none">{p.title}</p><p className="text-[9px] font-black uppercase text-zinc-400 tracking-widest mt-1.5">{p.category} • {p.price} EGP</p></div>
                       </div>
-                      <div className="flex gap-3">
-                        <button onClick={() => {setEditProduct(p); setIsEditing(true);}} className="w-12 h-12 bg-blue-50 text-[#007AFF] rounded-full flex items-center justify-center"><i className="fa-solid fa-pen"></i></button>
-                        <button onClick={async () => { if(confirm('Delete?')) { await supabase.from('products').delete().eq('id', p.id); setDbProducts(ps => ps.filter(x => x.id !== p.id)); showNotification("Deleted"); } }} className="w-12 h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center"><i className="fa-solid fa-trash"></i></button>
+                      <div className="flex gap-2">
+                        <button onClick={() => {setEditProduct(p); setIsEditing(true);}} className="w-10 h-10 md:w-12 md:h-12 bg-blue-50 text-[#007AFF] rounded-full flex items-center justify-center"><i className="fa-solid fa-pen text-sm"></i></button>
+                        <button onClick={async () => { if(confirm('Delete?')) { await supabase.from('products').delete().eq('id', p.id); setDbProducts(ps => ps.filter(x => x.id !== p.id)); showNotification("Deleted"); } }} className="w-10 h-10 md:w-12 md:h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center"><i className="fa-solid fa-trash text-sm"></i></button>
                       </div>
                     </div>
                   ))}
@@ -513,44 +515,44 @@ const App: React.FC = () => {
 
             {/* Banner Tab */}
             {adminTab === 'Banner' && (
-              <div className="glass-panel p-10 rounded-[3rem] space-y-8 animate-in slide-in-from-bottom-4">
+              <div className="max-w-3xl glass-panel p-8 md:p-10 rounded-[2.5rem] md:rounded-[3rem] space-y-8 animate-in slide-in-from-bottom-4">
                 <h3 className="text-2xl font-black tracking-tighter uppercase">Hero Banner</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <input className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none" placeholder="Title" value={banner.title} onChange={e => setBanner({...banner, title: e.target.value})} />
-                  <input className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none" placeholder="Highlight" value={banner.highlight} onChange={e => setBanner({...banner, highlight: e.target.value})} />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                  <input className="w-full p-4 md:p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none" placeholder="Title" value={banner.title} onChange={e => setBanner({...banner, title: e.target.value})} />
+                  <input className="w-full p-4 md:p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none" placeholder="Highlight" value={banner.highlight} onChange={e => setBanner({...banner, highlight: e.target.value})} />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase text-zinc-400 ml-2">Banner Background</label>
-                  <label className="block w-full p-10 rounded-[2rem] bg-zinc-50 dark:bg-zinc-800/50 border-4 border-dashed border-zinc-200 dark:border-zinc-700 cursor-pointer text-center group">
+                  <label className="text-[9px] font-black uppercase text-zinc-400 ml-2">Banner Background</label>
+                  <label className="block w-full p-8 md:p-10 rounded-[1.5rem] md:rounded-[2rem] bg-zinc-50 dark:bg-zinc-800/50 border-4 border-dashed border-zinc-200 dark:border-zinc-700 cursor-pointer text-center group">
                     <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 group-hover:text-[#007AFF] transition-colors">Click to upload banner image</span>
                     <input type="file" accept="image/*" className="hidden" onChange={e => handleImageUpload(e, 'banner')} />
                   </label>
-                  {banner.imageUrl && <img src={banner.imageUrl} className="mt-4 w-full h-40 object-cover rounded-2xl shadow-lg border-2 border-white dark:border-zinc-700" />}
+                  {banner.imageUrl && <img src={banner.imageUrl} className="mt-4 w-full h-32 md:h-40 object-cover rounded-2xl shadow-lg border-2 border-white dark:border-zinc-700" />}
                 </div>
-                <button onClick={handleUpdateBanner} className="w-full py-6 bg-[#007AFF] text-white rounded-[2rem] font-black uppercase tracking-[0.2em] shadow-2xl">Update Home Banner</button>
+                <button onClick={handleUpdateBanner} className="w-full py-5 md:py-6 bg-[#007AFF] text-white rounded-[1.5rem] md:rounded-[2rem] font-black uppercase tracking-[0.2em] shadow-2xl">Update Home Banner</button>
               </div>
             )}
 
             {/* Videos Tab */}
             {adminTab === 'Videos' && (
               <div className="space-y-8 animate-in slide-in-from-bottom-4">
-                <div className="glass-panel p-10 rounded-[3rem] space-y-6">
+                <div className="max-w-3xl glass-panel p-8 md:p-10 rounded-[2.5rem] md:rounded-[3rem] space-y-6">
                   <h3 className="text-2xl font-black tracking-tighter uppercase">Manage YouTube Links</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <input className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none" placeholder="Video Title" value={newVideoTitle} onChange={e => setNewVideoTitle(e.target.value)} />
-                    <input className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none" placeholder="YouTube URL (https://...)" value={newVideoUrl} onChange={e => setNewVideoUrl(e.target.value)} />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                    <input className="w-full p-4 md:p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none" placeholder="Video Title" value={newVideoTitle} onChange={e => setNewVideoTitle(e.target.value)} />
+                    <input className="w-full p-4 md:p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none" placeholder="YouTube URL (https://...)" value={newVideoUrl} onChange={e => setNewVideoUrl(e.target.value)} />
                   </div>
-                  <button onClick={handleAddVideo} className="w-full py-5 bg-red-500 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all">Add Video to Feed</button>
+                  <button onClick={handleAddVideo} className="w-full py-4 md:py-5 bg-red-500 text-white rounded-[1.5rem] md:rounded-[2rem] font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all">Add Video to Feed</button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                   {dbVideos.map(v => (
-                    <div key={v.id} className="p-6 bg-white dark:bg-zinc-900 rounded-[2.5rem] flex justify-between items-center shadow-sm">
+                    <div key={v.id} className="p-5 md:p-6 bg-white dark:bg-zinc-900 rounded-[2rem] flex justify-between items-center shadow-sm">
                       <div className="flex items-center gap-4">
-                        <img src={`https://img.youtube.com/vi/${v.id}/default.jpg`} className="w-20 h-12 rounded-lg object-cover" />
-                        <p className="font-black text-xs line-clamp-1">{v.title}</p>
+                        <img src={`https://img.youtube.com/vi/${v.id}/default.jpg`} className="w-16 md:w-20 h-10 md:h-12 rounded-lg object-cover" />
+                        <p className="font-black text-[10px] md:text-xs line-clamp-1">{v.title}</p>
                       </div>
-                      <button onClick={async () => { await supabase.from('videos').delete().eq('id', v.id); setDbVideos(prev => prev.filter(x => x.id !== v.id)); showNotification("Video Removed"); }} className="w-10 h-10 bg-red-50 text-red-500 rounded-full flex items-center justify-center"><i className="fa-solid fa-trash-can"></i></button>
+                      <button onClick={async () => { await supabase.from('videos').delete().eq('id', v.id); setDbVideos(prev => prev.filter(x => x.id !== v.id)); showNotification("Video Removed"); }} className="w-8 h-8 md:w-10 md:h-10 bg-red-50 text-red-500 rounded-full flex items-center justify-center"><i className="fa-solid fa-trash-can text-sm"></i></button>
                     </div>
                   ))}
                 </div>
@@ -559,33 +561,33 @@ const App: React.FC = () => {
 
             {/* Settings Tab */}
             {adminTab === 'Settings' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in slide-in-from-bottom-4">
-                <div className="glass-panel p-10 rounded-[3rem] space-y-8">
-                  <h3 className="text-2xl font-black tracking-tighter uppercase">Identity & Logos</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 animate-in slide-in-from-bottom-4">
+                <div className="glass-panel p-8 md:p-10 rounded-[2.5rem] md:rounded-[3rem] space-y-6 md:space-y-8">
+                  <h3 className="text-xl md:text-2xl font-black tracking-tighter uppercase">Identity & Logos</h3>
                   <div className="space-y-4">
-                    <p className="text-[10px] font-black uppercase text-zinc-400">Site Logo (Header)</p>
-                    <label className="flex items-center gap-6 p-4 bg-zinc-100 dark:bg-zinc-800 rounded-3xl cursor-pointer hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">
-                      <img src={siteLogo} className="w-16 h-16 rounded-full object-cover shadow-lg border-2 border-white" />
-                      <span className="text-xs font-black uppercase tracking-widest">Update Header Logo</span>
+                    <p className="text-[9px] font-black uppercase text-zinc-400">Site Logo (Header)</p>
+                    <label className="flex items-center gap-4 md:gap-6 p-4 bg-zinc-100 dark:bg-zinc-800 rounded-[1.5rem] md:rounded-3xl cursor-pointer hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">
+                      <img src={siteLogo} className="w-12 h-12 md:w-16 md:h-16 rounded-full object-cover shadow-lg border-2 border-white" />
+                      <span className="text-[10px] font-black uppercase tracking-widest">Update Header Logo</span>
                       <input type="file" accept="image/*" className="hidden" onChange={e => handleImageUpload(e, 'siteLogo')} />
                     </label>
                   </div>
                   <div className="space-y-4">
-                    <p className="text-[10px] font-black uppercase text-zinc-400">Loading Logo (App Boot)</p>
-                    <label className="flex items-center gap-6 p-4 bg-zinc-100 dark:bg-zinc-800 rounded-3xl cursor-pointer hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">
-                      <img src={loadingLogo} className="w-16 h-16 rounded-full object-cover shadow-lg border-2 border-white" />
-                      <span className="text-xs font-black uppercase tracking-widest">Update Loader Image</span>
+                    <p className="text-[9px] font-black uppercase text-zinc-400">Loading Logo (App Boot)</p>
+                    <label className="flex items-center gap-4 md:gap-6 p-4 bg-zinc-100 dark:bg-zinc-800 rounded-[1.5rem] md:rounded-3xl cursor-pointer hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">
+                      <img src={loadingLogo} className="w-12 h-12 md:w-16 md:h-16 rounded-full object-cover shadow-lg border-2 border-white" />
+                      <span className="text-[10px] font-black uppercase tracking-widest">Update Loader Image</span>
                       <input type="file" accept="image/*" className="hidden" onChange={e => handleImageUpload(e, 'loadingLogo')} />
                     </label>
                   </div>
                 </div>
 
-                <div className="glass-panel p-10 rounded-[3rem] space-y-8">
-                  <h3 className="text-2xl font-black tracking-tighter uppercase">Master Security</h3>
+                <div className="glass-panel p-8 md:p-10 rounded-[2.5rem] md:rounded-[3rem] space-y-6 md:space-y-8">
+                  <h3 className="text-xl md:text-2xl font-black tracking-tighter uppercase">Master Security</h3>
                   <div className="space-y-4">
-                    <p className="text-[10px] font-black uppercase text-zinc-400">Change Admin Password</p>
-                    <input type="password" placeholder="Enter New Master Key" className="w-full p-6 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-bold text-center text-3xl tracking-[0.5em] outline-none" onBlur={e => e.target.value && handleUpdateSettings('admin_password', e.target.value)} />
-                    <p className="text-[9px] font-bold text-red-500 uppercase tracking-widest text-center mt-4">Security Note: Password is updated instantly on leave.</p>
+                    <p className="text-[9px] font-black uppercase text-zinc-400">Change Admin Password</p>
+                    <input type="password" placeholder="New Master Key" className="w-full p-5 md:p-6 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-bold text-center text-xl md:text-3xl tracking-[0.2em] md:tracking-[0.5em] outline-none" onBlur={e => e.target.value && handleUpdateSettings('admin_password', e.target.value)} />
+                    <p className="text-[8px] font-bold text-red-500 uppercase tracking-widest text-center mt-4 leading-relaxed">Security Note: Password is updated instantly on leave.</p>
                   </div>
                 </div>
               </div>
@@ -596,7 +598,7 @@ const App: React.FC = () => {
 
       {notification && (
         <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[200] animate-in slide-in-from-top-4">
-           <div className="bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-8 py-4 rounded-full font-black text-[9px] shadow-2xl flex items-center gap-3 uppercase tracking-[0.2em]">
+           <div className="bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-6 md:px-8 py-3 md:py-4 rounded-full font-black text-[8px] md:text-[9px] shadow-2xl flex items-center gap-3 uppercase tracking-[0.2em]">
               <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
               {notification.message}
            </div>
