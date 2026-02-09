@@ -25,9 +25,10 @@ const App: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [youtubeVideos, setYoutubeVideos] = useState<YoutubeVideo[]>([]);
 
-  // Site Identity State
-  const [siteLogo, setSiteLogo] = useState<string>("https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
-  const [loadingLogo, setLoadingLogo] = useState<string>("https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
+  // Site Identity State - Initializing from LocalStorage for instant branding
+  const [siteLogo, setSiteLogo] = useState<string>(localStorage.getItem('site_logo') || "https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
+  const [loadingLogo, setLoadingLogo] = useState<string>(localStorage.getItem('loading_logo') || "https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
+  
   const [isEditingIdentity, setIsEditingIdentity] = useState(false);
   const [isEditingVideos, setIsEditingVideos] = useState(false);
   const [isEditingBanner, setIsEditingBanner] = useState<boolean>(false);
@@ -90,16 +91,26 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      setIsLoading(true);
+      // Keep loading screen visible for a minimum time for smooth transition
+      const startTime = Date.now();
+      
       try {
         const { data: settingsData } = await supabase.from('settings').select('key, value');
         if (settingsData) {
           const pass = settingsData.find(s => s.key === 'admin_password');
           if (pass) setAdminPassword(pass.value);
+          
           const sLogo = settingsData.find(s => s.key === 'site_logo');
-          if (sLogo) setSiteLogo(sLogo.value);
+          if (sLogo) {
+            setSiteLogo(sLogo.value);
+            localStorage.setItem('site_logo', sLogo.value);
+          }
+          
           const lLogo = settingsData.find(s => s.key === 'loading_logo');
-          if (lLogo) setLoadingLogo(lLogo.value);
+          if (lLogo) {
+            setLoadingLogo(lLogo.value);
+            localStorage.setItem('loading_logo', lLogo.value);
+          }
         }
 
         const { data: bannerData } = await supabase.from('banner').select('*').eq('id', 1).maybeSingle();
@@ -123,7 +134,9 @@ const App: React.FC = () => {
       } catch (error) {
         console.error(error);
       } finally {
-        setTimeout(() => setIsLoading(false), 1200);
+        const elapsed = Date.now() - startTime;
+        const remaining = Math.max(0, 1500 - elapsed);
+        setTimeout(() => setIsLoading(false), remaining);
       }
     };
     fetchData();
@@ -182,6 +195,10 @@ const App: React.FC = () => {
     try {
       await supabase.from('settings').upsert({ key: 'site_logo', value: siteLogo }, { onConflict: 'key' });
       await supabase.from('settings').upsert({ key: 'loading_logo', value: loadingLogo }, { onConflict: 'key' });
+      
+      localStorage.setItem('site_logo', siteLogo);
+      localStorage.setItem('loading_logo', loadingLogo);
+      
       setIsEditingIdentity(false);
       showNotification("Identity Updated");
     } catch (err) { showNotification("Save Failed", "info"); }
@@ -220,8 +237,12 @@ const App: React.FC = () => {
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        if (target === 'site') setSiteLogo(reader.result as string);
-        else setLoadingLogo(reader.result as string);
+        const result = reader.result as string;
+        if (target === 'site') setSiteLogo(result);
+        else {
+          setLoadingLogo(result);
+          setImgLoadError(false); // Reset error state for new logo
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -263,16 +284,24 @@ const App: React.FC = () => {
   };
 
   if (isLoading) return (
-    <div className="h-screen w-full flex flex-col items-center justify-center bg-[#F2F2F7]">
-      <div className="w-48 h-48 animate-pulse rounded-full overflow-hidden shadow-2xl mb-12">
+    <div className="h-screen w-full flex flex-col items-center justify-center bg-[#F2F2F7] relative">
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-blue-500/5 blur-[80px] rounded-full"></div>
+      <div className="w-48 h-48 animate-pulse rounded-full overflow-hidden shadow-2xl mb-12 relative z-10 border-4 border-white">
         {!imgLoadError ? (
-          <img src={loadingLogo} className="w-full h-full object-cover" onError={() => setImgLoadError(true)} />
+          <img 
+            src={loadingLogo} 
+            className="w-full h-full object-cover" 
+            onError={() => setImgLoadError(true)} 
+            alt="Loading..."
+          />
         ) : (
-          <div className="w-full h-full bg-zinc-900 flex items-center justify-center"><span className="text-white font-black text-4xl">ME</span></div>
+          <div className="w-full h-full bg-zinc-900 flex items-center justify-center">
+            <span className="text-white font-black text-4xl">ME</span>
+          </div>
         )}
       </div>
-      <h3 className="text-3xl font-black text-zinc-900 tracking-tighter">Mohamed Edge</h3>
-      <p className="text-[10px] font-black uppercase tracking-[0.5em] text-zinc-400 mt-4">Premium Experience</p>
+      <h3 className="text-3xl font-black text-zinc-900 tracking-tighter relative z-10">Mohamed Edge</h3>
+      <div className="w-12 h-1 bg-[#007AFF] rounded-full mt-4 animate-bounce"></div>
     </div>
   );
 
@@ -366,6 +395,7 @@ const App: React.FC = () => {
           </div>
         )}
 
+        {/* preview, order, and admin sections follow exactly as before... */}
         {activeSection === 'Preview' && selectedProduct && (
            <div className="max-w-5xl mx-auto space-y-6 pb-32 animate-in fade-in">
               <button onClick={() => { setActiveSection('Home'); window.history.back(); }} className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-all"><i className="fa-solid fa-chevron-left"></i></button>
@@ -414,14 +444,14 @@ const App: React.FC = () => {
                   <h4 className="text-xs font-black uppercase text-zinc-400 border-b pb-4 tracking-widest">Site Identity</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-10">
                     <div className="space-y-4">
-                      <p className="text-xs font-black text-zinc-500 uppercase">Site Logo</p>
+                      <p className="text-xs font-black text-zinc-500 uppercase">Site Logo (Header)</p>
                       <div onClick={() => logoFileInputRef.current?.click()} className="h-32 bg-zinc-50 rounded-[2rem] border-2 border-dashed flex items-center justify-center cursor-pointer hover:bg-zinc-100 transition-all">
                         <img src={siteLogo} className="w-16 h-16 rounded-full object-cover shadow-lg" />
                         <input ref={logoFileInputRef} type="file" className="hidden" onChange={e => handleLogoUpload(e, 'site')} />
                       </div>
                     </div>
                     <div className="space-y-4">
-                      <p className="text-xs font-black text-zinc-500 uppercase">Loading Logo</p>
+                      <p className="text-xs font-black text-zinc-500 uppercase">Loading Logo (Intro)</p>
                       <div onClick={() => loadingLogoFileInputRef.current?.click()} className="h-32 bg-zinc-50 rounded-[2rem] border-2 border-dashed flex items-center justify-center cursor-pointer hover:bg-zinc-100 transition-all">
                         <img src={loadingLogo} className="w-16 h-16 rounded-full object-cover shadow-lg" />
                         <input ref={loadingLogoFileInputRef} type="file" className="hidden" onChange={e => handleLogoUpload(e, 'loading')} />
