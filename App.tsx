@@ -493,7 +493,15 @@ const App: React.FC = () => {
 
         {activeSection === 'Preview' && selectedProduct && (
            <div className="max-w-5xl mx-auto space-y-6 pb-32 animate-in fade-in">
-              <button onClick={() => window.history.back()} className="w-12 h-12 bg-white dark:bg-zinc-800 rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-all text-zinc-900 dark:text-zinc-100"><i className="fa-solid fa-chevron-left"></i></button>
+              <button 
+                onClick={() => {
+                  const target = selectedProduct?.category === 'Home' ? '' : selectedProduct?.category.toLowerCase();
+                  window.location.hash = `#/${target}`;
+                }} 
+                className="w-12 h-12 bg-white dark:bg-zinc-800 rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-all text-zinc-900 dark:text-zinc-100"
+              >
+                <i className="fa-solid fa-chevron-left"></i>
+              </button>
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
                  <div className="lg:col-span-7 relative group">
                     <div ref={sliderRef} onScroll={handleSliderScroll} className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar rounded-[3rem] shadow-2xl bg-white dark:bg-zinc-900 border-8 border-white dark:border-zinc-800">
