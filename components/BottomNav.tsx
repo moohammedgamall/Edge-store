@@ -15,9 +15,9 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeSection, onSectionChange })
   ];
 
   return (
-    <div className="fixed bottom-8 left-0 right-0 z-50 px-4 flex justify-center">
-      <div className="w-full max-w-[420px] bg-white/80 dark:bg-[#2C2C2E]/90 backdrop-blur-2xl rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.12)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] border border-white/40 dark:border-white/5 p-1.5">
-        <nav className="flex items-center justify-between relative">
+    <div className="fixed bottom-4 left-0 right-0 z-50 px-4 flex justify-center">
+      <div className="w-full max-w-[440px] bg-white/90 dark:bg-[#1C1C1E]/95 backdrop-blur-3xl rounded-[2rem] shadow-[0_10px_40px_rgba(0,0,0,0.08)] dark:shadow-[0_10px_40px_rgba(0,0,0,0.5)] border border-white/40 dark:border-white/5 p-1">
+        <nav className="flex items-center justify-around relative">
           {ALL_ITEMS.map((item) => {
             const isActive = activeSection === item.id;
             const isOrder = item.id === 'Order';
@@ -26,35 +26,35 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeSection, onSectionChange })
               <button
                 key={item.id}
                 onClick={() => onSectionChange(item.id)}
-                className="relative flex-1 flex flex-col items-center justify-center py-2.5 transition-all duration-300 outline-none group"
+                className="relative flex-1 flex flex-col items-center justify-center py-2 transition-all duration-300 outline-none group"
               >
                 {/* Active Pill Background */}
                 {isActive && (
-                  <div className="absolute inset-y-1 inset-x-1 bg-blue-50 dark:bg-blue-900/30 rounded-full animate-in fade-in zoom-in-95 duration-300 -z-10" />
+                  <div className="absolute inset-y-1 inset-x-1.5 bg-[#EBF5FF] dark:bg-blue-600/20 rounded-2xl animate-in fade-in zoom-in-95 duration-300 -z-10" />
                 )}
                 
-                <div className="relative">
+                <div className="relative flex flex-col items-center">
                   <div className={`
-                    transition-all duration-300 mb-1 flex items-center justify-center
-                    ${isActive ? 'text-[#007AFF] scale-110' : 'text-zinc-400 dark:text-zinc-500'}
+                    transition-all duration-300 mb-0.5 flex items-center justify-center
+                    ${isActive ? 'text-[#007AFF] scale-105' : 'text-[#8E8E93] dark:text-[#98989D]'}
                   `}>
-                    <i className={`${item.icon} text-lg`}></i>
+                    <i className={`${item.icon} ${isActive ? 'text-lg' : 'text-base'}`}></i>
                   </div>
                   
                   {/* NEW Badge for Order */}
                   {isOrder && (
-                    <div className="absolute -top-1.5 -right-3 bg-[#007AFF] text-white text-[7px] font-black px-1 py-0.5 rounded-md shadow-sm border border-white dark:border-zinc-800 scale-90 group-hover:scale-100 transition-transform">
+                    <div className="absolute -top-1.5 -right-5 bg-[#007AFF] text-white text-[7px] font-black px-1.5 py-0.5 rounded-md shadow-sm border border-white dark:border-zinc-800 scale-90">
                       NEW
                     </div>
                   )}
+
+                  <span className={`
+                    text-[8px] font-black tracking-tighter transition-colors duration-300 uppercase
+                    ${isActive ? 'text-[#007AFF]' : 'text-[#8E8E93] dark:text-[#98989D]'}
+                  `}>
+                    {item.label}
+                  </span>
                 </div>
-                
-                <span className={`
-                  text-[9px] font-black tracking-tighter transition-colors duration-300
-                  ${isActive ? 'text-[#007AFF]' : 'text-zinc-400 dark:text-zinc-500'}
-                `}>
-                  {item.label}
-                </span>
               </button>
             );
           })}
