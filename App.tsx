@@ -129,7 +129,7 @@ const App: React.FC = () => {
         if (!productsError && productsData && productsData.length > 0) {
           setProducts(productsData);
         } else {
-          setProducts(MOCK_PRODUCTS); // Fallback to mock if empty or error
+          setProducts(MOCK_PRODUCTS);
         }
 
         // Fetch Videos
@@ -139,8 +139,8 @@ const App: React.FC = () => {
         }
 
       } catch (error) {
-        console.error("Database initialization failed:", error);
-        setProducts(MOCK_PRODUCTS); // Safety fallback
+        console.error("Database connection failed:", error);
+        setProducts(MOCK_PRODUCTS);
       } finally {
         const elapsed = Date.now() - startTime;
         const remaining = Math.max(0, 1500 - elapsed);
@@ -201,16 +201,26 @@ const App: React.FC = () => {
   const handleSaveIdentity = async () => {
     setIsPublishing(true);
     try {
-      await supabase.from('settings').upsert({ key: 'site_logo', value: siteLogo }, { onConflict: 'key' });
-      await supabase.from('settings').upsert({ key: 'loading_logo', value: loadingLogo }, { onConflict: 'key' });
-      await supabase.from('settings').upsert({ key: 'admin_password', value: adminPassword }, { onConflict: 'key' });
+      // Use direct upsert for better reliability
+      const settingsToUpdate = [
+        { key: 'site_logo', value: siteLogo },
+        { key: 'loading_logo', value: loadingLogo },
+        { key: 'admin_password', value: adminPassword }
+      ];
+
+      for (const item of settingsToUpdate) {
+        await supabase.from('settings').upsert(item, { onConflict: 'key' });
+      }
       
       localStorage.setItem('site_logo', siteLogo);
       localStorage.setItem('loading_logo', loadingLogo);
       
       setIsEditingIdentity(false);
-      showNotification("Identity & Security Updated");
-    } catch (err) { showNotification("Save Failed", "info"); }
+      showNotification("Identity & Security Updated Successfully");
+    } catch (err) { 
+      console.error(err);
+      showNotification("Save Failed", "info"); 
+    }
     finally { setIsPublishing(false); }
   };
 
@@ -402,7 +412,7 @@ const App: React.FC = () => {
                   ))
                 ) : (
                   <div className="col-span-full py-20 text-center">
-                    <p className="text-zinc-400 font-bold">No assets found in store.</p>
+                    <p className="text-zinc-400 font-bold italic tracking-tight uppercase text-xs">Waiting for Cloud Sync...</p>
                   </div>
                 )}
               </div>
@@ -425,6 +435,11 @@ const App: React.FC = () => {
                      onBuy={(id, cat) => { setSelectedCategory(cat as Section); setSelectedProductId(id); setActiveSection('Order'); window.location.hash = '#/order'; }} 
                    />
                  ))}
+                 {products.filter(p => p.category === activeSection).length === 0 && (
+                   <div className="col-span-full py-20 text-center glass-panel rounded-[3rem]">
+                      <p className="text-zinc-400 font-black uppercase text-[10px] tracking-widest">No {activeSection} found in store.</p>
+                   </div>
+                 )}
               </div>
            </div>
         ) : null}
@@ -496,7 +511,7 @@ const App: React.FC = () => {
              <div className="flex justify-between items-center">
                 <h2 className="text-3xl font-black tracking-tighter">Master Control</h2>
                 <div className="flex flex-wrap gap-3">
-                   <button onClick={() => { setIsEditingIdentity(!isEditingIdentity); setIsEditingVideos(false); setIsEditingBanner(false); }} className={`px-6 py-3 rounded-2xl font-black text-xs border shadow-sm ${isEditingIdentity ? 'bg-zinc-900 text-white' : 'bg-white'}`}>Identity</button>
+                   <button onClick={() => { setIsEditingIdentity(!isEditingIdentity); setIsEditingVideos(false); setIsEditingBanner(false); }} className={`px-6 py-3 rounded-2xl font-black text-xs border shadow-sm ${isEditingIdentity ? 'bg-zinc-900 text-white' : 'bg-white'}`}>Identity & Security</button>
                    <button onClick={() => { setIsEditingBanner(!isEditingBanner); setIsEditingIdentity(false); setIsEditingVideos(false); }} className={`px-6 py-3 rounded-2xl font-black text-xs border shadow-sm ${isEditingBanner ? 'bg-[#007AFF] text-white' : 'bg-white'}`}>Banner</button>
                    <button onClick={() => { setIsEditingVideos(!isEditingVideos); setIsEditingIdentity(false); setIsEditingBanner(false); }} className={`px-6 py-3 rounded-2xl font-black text-xs border shadow-sm ${isEditingVideos ? 'bg-red-600 text-white' : 'bg-white'}`}>Videos</button>
                    <button onClick={() => setIsEditing(true)} className="px-6 py-3 bg-zinc-900 text-white rounded-2xl font-black text-xs shadow-xl">New Asset</button>
@@ -505,7 +520,7 @@ const App: React.FC = () => {
 
              {isEditingIdentity && (
                <div className="glass-panel p-8 rounded-[3rem] space-y-8 border-white shadow-xl animate-in slide-in-from-top-4">
-                  <h4 className="text-xs font-black uppercase text-zinc-400 border-b pb-4 tracking-widest">Site Identity & Security</h4>
+                  <h4 className="text-xs font-black uppercase text-zinc-400 border-b pb-4 tracking-widest">Global Settings</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-10">
                     <div className="space-y-4">
                       <p className="text-xs font-black text-zinc-500 uppercase">Site Logo (Header)</p>
@@ -523,17 +538,17 @@ const App: React.FC = () => {
                     </div>
                   </div>
                   <div className="space-y-4">
-                    <p className="text-xs font-black text-zinc-500 uppercase ml-2">Admin Security Key (Password)</p>
+                    <p className="text-xs font-black text-zinc-500 uppercase ml-2">Admin Security Key</p>
                     <input 
                       type="text" 
-                      placeholder="Enter new master key..." 
+                      placeholder="Security Key" 
                       className="w-full p-5 rounded-2xl bg-zinc-100 font-black tracking-[0.2em] outline-none border-2 border-transparent focus:border-[#007AFF] transition-all" 
                       value={adminPassword} 
                       onChange={e => setAdminPassword(e.target.value)} 
                     />
                   </div>
-                  <button onClick={handleSaveIdentity} disabled={isPublishing} className="w-full py-5 bg-zinc-900 text-white rounded-2xl font-black disabled:opacity-50 transition-all active:scale-[0.98]">
-                    {isPublishing ? "Updating Cloud..." : "Save Identity & Security Config"}
+                  <button onClick={handleSaveIdentity} disabled={isPublishing} className="w-full py-5 bg-zinc-900 text-white rounded-2xl font-black disabled:opacity-50 active:scale-95 transition-all">
+                    {isPublishing ? "Syncing Identity..." : "Save Identity & Security Config"}
                   </button>
                </div>
              )}
@@ -544,26 +559,26 @@ const App: React.FC = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div className="space-y-4">
                        <p className="text-xs font-black text-zinc-500 uppercase ml-2">Main Title</p>
-                       <input placeholder="e.g. Liquid Glass for" className="w-full p-5 rounded-2xl bg-zinc-100 font-bold outline-none" value={banner.title} onChange={e => setBanner({...banner, title: e.target.value})} />
+                       <input placeholder="Title" className="w-full p-5 rounded-2xl bg-zinc-100 font-bold outline-none" value={banner.title} onChange={e => setBanner({...banner, title: e.target.value})} />
                     </div>
                     <div className="space-y-4">
                        <p className="text-xs font-black text-zinc-500 uppercase ml-2">Highlight Text</p>
-                       <input placeholder="e.g. ColorOS 15" className="w-full p-5 rounded-2xl bg-zinc-100 font-bold outline-none" value={banner.highlight} onChange={e => setBanner({...banner, highlight: e.target.value})} />
+                       <input placeholder="Highlight" className="w-full p-5 rounded-2xl bg-zinc-100 font-bold outline-none" value={banner.highlight} onChange={e => setBanner({...banner, highlight: e.target.value})} />
                     </div>
                   </div>
                   <div className="space-y-4">
-                     <p className="text-xs font-black text-zinc-500 uppercase ml-2">Short Description</p>
-                     <textarea placeholder="Tell users about this collection..." className="w-full p-5 rounded-2xl bg-zinc-100 font-medium h-24 outline-none resize-none" value={banner.description} onChange={e => setBanner({...banner, description: e.target.value})} />
+                     <p className="text-xs font-black text-zinc-500 uppercase ml-2">Description</p>
+                     <textarea placeholder="Description" className="w-full p-5 rounded-2xl bg-zinc-100 font-medium h-24 outline-none resize-none" value={banner.description} onChange={e => setBanner({...banner, description: e.target.value})} />
                   </div>
                   <div className="space-y-4">
-                     <p className="text-xs font-black text-zinc-500 uppercase ml-2">Banner Background Visual</p>
+                     <p className="text-xs font-black text-zinc-500 uppercase ml-2">Banner Visual</p>
                      <div onClick={() => bannerFileInputRef.current?.click()} className="h-48 rounded-[2rem] border-2 border-dashed bg-zinc-50 flex items-center justify-center cursor-pointer overflow-hidden group">
-                        {banner.imageUrl ? <img src={banner.imageUrl} className="w-full h-full object-cover group-hover:scale-105 transition-transform" /> : <p className="text-xs font-black text-zinc-400">Click to upload banner image</p>}
+                        {banner.imageUrl ? <img src={banner.imageUrl} className="w-full h-full object-cover group-hover:scale-105 transition-transform" /> : <p className="text-xs font-black text-zinc-400">Upload Image</p>}
                         <input ref={bannerFileInputRef} type="file" className="hidden" onChange={handleBannerUpload} />
                      </div>
                   </div>
-                  <button onClick={handleSaveBanner} disabled={isPublishing} className="w-full py-5 bg-[#007AFF] text-white rounded-2xl font-black shadow-xl shadow-blue-500/20 active:scale-95 transition-all">
-                    {isPublishing ? "Updating Banner..." : "Save Banner Changes"}
+                  <button onClick={handleSaveBanner} disabled={isPublishing} className="w-full py-5 bg-[#007AFF] text-white rounded-2xl font-black active:scale-95 transition-all">
+                    {isPublishing ? "Updating..." : "Save Banner Changes"}
                   </button>
                </div>
              )}
@@ -572,17 +587,17 @@ const App: React.FC = () => {
                <div className="glass-panel p-8 rounded-[3rem] space-y-8 border-white shadow-xl animate-in slide-in-from-top-4">
                   <h4 className="text-xs font-black uppercase text-red-600 border-b pb-4 tracking-widest">YouTube Manager</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                     <input placeholder="Video Title" className="p-5 rounded-2xl bg-zinc-100 font-bold outline-none border-2 border-transparent focus:border-red-500 transition-all" value={newVideo.title} onChange={e => setNewVideo({...newVideo, title: e.target.value})} />
-                     <input placeholder="YouTube URL (https://...)" className="p-5 rounded-2xl bg-zinc-100 font-bold outline-none border-2 border-transparent focus:border-red-500 transition-all" value={newVideo.url} onChange={e => setNewVideo({...newVideo, url: e.target.value})} />
+                     <input placeholder="Video Title" className="p-5 rounded-2xl bg-zinc-100 font-bold outline-none border-2 border-transparent focus:border-red-500" value={newVideo.title} onChange={e => setNewVideo({...newVideo, title: e.target.value})} />
+                     <input placeholder="YouTube URL" className="p-5 rounded-2xl bg-zinc-100 font-bold outline-none border-2 border-transparent focus:border-red-500" value={newVideo.url} onChange={e => setNewVideo({...newVideo, url: e.target.value})} />
                   </div>
-                  <button onClick={handleSaveVideo} disabled={isPublishing} className="w-full py-5 bg-red-600 text-white rounded-2xl font-black shadow-lg shadow-red-500/20 active:scale-95 transition-all">Add Video to Home</button>
+                  <button onClick={handleSaveVideo} disabled={isPublishing} className="w-full py-5 bg-red-600 text-white rounded-2xl font-black active:scale-95 transition-all">Add Video</button>
                   
                   <div className="pt-8 space-y-4">
-                    <p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">Current Videos</p>
+                    <p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">Cloud Content</p>
                     {youtubeVideos.map(v => (
-                      <div key={v.id} className="flex items-center justify-between p-4 bg-zinc-50 rounded-2xl">
+                      <div key={v.id} className="flex items-center justify-between p-4 bg-zinc-50 rounded-2xl border border-zinc-100">
                         <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center text-red-600"><i className="fa-brands fa-youtube"></i></div>
+                          <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center text-red-600"><i className="fa-brands fa-youtube"></i></div>
                           <span className="font-bold text-sm line-clamp-1">{v.title}</span>
                         </div>
                         <button onClick={() => handleDeleteVideo(v.id)} className="w-10 h-10 bg-red-50 text-red-600 rounded-xl flex items-center justify-center active:scale-90 transition-all"><i className="fa-solid fa-trash-can"></i></button>
@@ -594,19 +609,19 @@ const App: React.FC = () => {
 
              {isEditing && (
                 <div className="glass-panel p-10 rounded-[3rem] space-y-6 border-white shadow-2xl relative animate-in slide-in-from-top-6">
-                   <div className="flex justify-between items-center mb-4"><h3 className="text-2xl font-black">Asset Editor</h3><button onClick={() => setIsEditing(false)} className="w-10 h-10 bg-zinc-100 rounded-full"><i className="fa-solid fa-xmark"></i></button></div>
+                   <div className="flex justify-between items-center mb-4"><h3 className="text-2xl font-black">Asset Editor</h3><button onClick={() => setIsEditing(false)} className="w-10 h-10 bg-zinc-100 rounded-full active:scale-90 transition-all"><i className="fa-solid fa-xmark"></i></button></div>
                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                      <input placeholder="Asset Name" className="p-5 rounded-2xl bg-zinc-100 font-bold outline-none" value={editProduct.title || ''} onChange={e => setEditProduct({...editProduct, title: e.target.value})} />
-                      <input placeholder="Price (EGP)" type="number" className="p-5 rounded-2xl bg-zinc-100 font-bold outline-none" value={editProduct.price || 0} onChange={e => setEditProduct({...editProduct, price: parseFloat(e.target.value)})} />
+                      <input placeholder="Asset Name" className="p-5 rounded-2xl bg-zinc-100 font-bold outline-none focus:ring-2 ring-blue-500/20" value={editProduct.title || ''} onChange={e => setEditProduct({...editProduct, title: e.target.value})} />
+                      <input placeholder="Price (EGP)" type="number" className="p-5 rounded-2xl bg-zinc-100 font-bold outline-none focus:ring-2 ring-blue-500/20" value={editProduct.price || 0} onChange={e => setEditProduct({...editProduct, price: parseFloat(e.target.value)})} />
                    </div>
                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                      <select className="p-5 rounded-2xl bg-zinc-100 font-bold" value={editProduct.category} onChange={e => setEditProduct({...editProduct, category: e.target.value as Section})}>
+                      <select className="p-5 rounded-2xl bg-zinc-100 font-bold outline-none appearance-none" value={editProduct.category} onChange={e => setEditProduct({...editProduct, category: e.target.value as Section})}>
                         <option value="Themes">Themes</option><option value="Widgets">Widgets</option><option value="Walls">Walls</option>
                       </select>
-                      <input placeholder="Compatibility" className="p-5 rounded-2xl bg-zinc-100 font-bold" value={editProduct.compatibility || ''} onChange={e => setEditProduct({...editProduct, compatibility: e.target.value})} />
+                      <input placeholder="Compatibility" className="p-5 rounded-2xl bg-zinc-100 font-bold outline-none" value={editProduct.compatibility || ''} onChange={e => setEditProduct({...editProduct, compatibility: e.target.value})} />
                    </div>
                    <div onClick={() => fileInputRef.current?.click()} className="h-40 rounded-[2rem] border-4 border-dashed border-zinc-100 flex flex-col items-center justify-center cursor-pointer bg-zinc-50 hover:bg-zinc-100 group transition-all">
-                      {editProduct.image ? <img src={editProduct.image} className="w-full h-full object-cover rounded-[1.8rem]" /> : <p className="text-xs font-black uppercase text-zinc-400 group-hover:text-zinc-600 transition-colors">Select Main Visual</p>}
+                      {editProduct.image ? <img src={editProduct.image} className="w-full h-full object-cover rounded-[1.8rem]" /> : <p className="text-xs font-black uppercase text-zinc-400 group-hover:text-zinc-600 transition-colors">Select Visual</p>}
                       <input ref={fileInputRef} type="file" className="hidden" onChange={async (e) => {
                         const file = e.target.files?.[0];
                         if(file) {
@@ -616,7 +631,7 @@ const App: React.FC = () => {
                         }
                       }} />
                    </div>
-                   <textarea placeholder="Write full description..." className="w-full p-6 rounded-2xl bg-zinc-100 font-medium h-40 outline-none" value={editProduct.description || ''} onChange={e => setEditProduct({...editProduct, description: e.target.value})} />
+                   <textarea placeholder="Description" className="w-full p-6 rounded-2xl bg-zinc-100 font-medium h-40 outline-none resize-none" value={editProduct.description || ''} onChange={e => setEditProduct({...editProduct, description: e.target.value})} />
                    <button onClick={handleSaveProduct} disabled={isPublishing} className="w-full py-6 bg-[#007AFF] text-white rounded-[1.5rem] font-black text-xl shadow-xl shadow-blue-500/20 active:scale-95 transition-all">{isPublishing ? "Publishing..." : "Sync Asset to Cloud"}</button>
                 </div>
              )}
@@ -633,14 +648,14 @@ const App: React.FC = () => {
                         </div>
                       </div>
                       <div className="flex gap-3">
-                        <button onClick={() => {setEditProduct(p); setIsEditing(true);}} className="w-12 h-12 bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center hover:bg-[#007AFF] hover:text-white transition-all"><i className="fa-solid fa-pen"></i></button>
-                        <button onClick={async () => { if(confirm('Delete permanently?')) { await supabase.from('products').delete().eq('id', p.id); setProducts(ps => ps.filter(x => x.id !== p.id)); showNotification("Asset Deleted"); } }} className="w-12 h-12 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center hover:bg-red-500 hover:text-white transition-all"><i className="fa-solid fa-trash"></i></button>
+                        <button onClick={() => {setEditProduct(p); setIsEditing(true);}} className="w-12 h-12 bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center hover:bg-[#007AFF] hover:text-white transition-all active:scale-90"><i className="fa-solid fa-pen"></i></button>
+                        <button onClick={async () => { if(confirm('Delete permanently?')) { await supabase.from('products').delete().eq('id', p.id); setProducts(ps => ps.filter(x => x.id !== p.id)); showNotification("Asset Deleted"); } }} className="w-12 h-12 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center hover:bg-red-500 hover:text-white transition-all active:scale-90"><i className="fa-solid fa-trash"></i></button>
                       </div>
                     </div>
                   ))
                 ) : (
                   <div className="py-20 text-center glass-panel rounded-[3rem]">
-                    <p className="text-zinc-400 font-black uppercase tracking-widest text-xs">No Items in Cloud</p>
+                    <p className="text-zinc-400 font-black uppercase tracking-widest text-[10px]">No Items Managed in Cloud</p>
                   </div>
                 )}
              </div>
@@ -650,7 +665,7 @@ const App: React.FC = () => {
 
       {notification && (
         <div className="fixed top-12 left-1/2 -translate-x-1/2 z-[200] animate-in slide-in-from-top-8">
-           <div className="bg-zinc-900 text-white px-10 py-5 rounded-full font-black text-xs shadow-2xl flex items-center gap-4 uppercase tracking-[0.2em] border border-white/10">
+           <div className="bg-zinc-900 text-white px-10 py-5 rounded-full font-black text-[10px] shadow-2xl flex items-center gap-4 uppercase tracking-[0.2em] border border-white/10">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-ping"></div>
               {notification.message}
            </div>
