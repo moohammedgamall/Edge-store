@@ -379,7 +379,7 @@ const App: React.FC = () => {
             <section className="space-y-8">
               <h2 className="text-2xl font-black tracking-tight flex items-center gap-3 px-2">
                 <div className="w-2 h-8 bg-[#007AFF] rounded-full"></div> 
-                Latest Digital Assets
+                Latest Release
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-8">
                 {products.map(p => (
