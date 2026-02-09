@@ -203,12 +203,13 @@ const App: React.FC = () => {
     try {
       await supabase.from('settings').upsert({ key: 'site_logo', value: siteLogo }, { onConflict: 'key' });
       await supabase.from('settings').upsert({ key: 'loading_logo', value: loadingLogo }, { onConflict: 'key' });
+      await supabase.from('settings').upsert({ key: 'admin_password', value: adminPassword }, { onConflict: 'key' });
       
       localStorage.setItem('site_logo', siteLogo);
       localStorage.setItem('loading_logo', loadingLogo);
       
       setIsEditingIdentity(false);
-      showNotification("Identity Updated");
+      showNotification("Identity & Security Updated");
     } catch (err) { showNotification("Save Failed", "info"); }
     finally { setIsPublishing(false); }
   };
@@ -504,7 +505,7 @@ const App: React.FC = () => {
 
              {isEditingIdentity && (
                <div className="glass-panel p-8 rounded-[3rem] space-y-8 border-white shadow-xl animate-in slide-in-from-top-4">
-                  <h4 className="text-xs font-black uppercase text-zinc-400 border-b pb-4 tracking-widest">Site Identity</h4>
+                  <h4 className="text-xs font-black uppercase text-zinc-400 border-b pb-4 tracking-widest">Site Identity & Security</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-10">
                     <div className="space-y-4">
                       <p className="text-xs font-black text-zinc-500 uppercase">Site Logo (Header)</p>
@@ -521,7 +522,19 @@ const App: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                  <button onClick={handleSaveIdentity} disabled={isPublishing} className="w-full py-5 bg-zinc-900 text-white rounded-2xl font-black disabled:opacity-50">{isPublishing ? "Updating..." : "Save Identity Configuration"}</button>
+                  <div className="space-y-4">
+                    <p className="text-xs font-black text-zinc-500 uppercase ml-2">Admin Security Key (Password)</p>
+                    <input 
+                      type="text" 
+                      placeholder="Enter new master key..." 
+                      className="w-full p-5 rounded-2xl bg-zinc-100 font-black tracking-[0.2em] outline-none border-2 border-transparent focus:border-[#007AFF] transition-all" 
+                      value={adminPassword} 
+                      onChange={e => setAdminPassword(e.target.value)} 
+                    />
+                  </div>
+                  <button onClick={handleSaveIdentity} disabled={isPublishing} className="w-full py-5 bg-zinc-900 text-white rounded-2xl font-black disabled:opacity-50 transition-all active:scale-[0.98]">
+                    {isPublishing ? "Updating Cloud..." : "Save Identity & Security Config"}
+                  </button>
                </div>
              )}
 
