@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 
 interface HeaderProps {
@@ -33,30 +32,29 @@ const Header: React.FC<HeaderProps> = ({ onAdminTrigger, onLogout, logoUrl }) =>
 
   return (
     <header className="sticky top-0 z-40 w-full flex justify-center bg-white/80 backdrop-blur-3xl border-b border-zinc-200/50">
-      <div className="w-full max-w-7xl px-8 py-5 flex items-center justify-between">
+      <div className="w-full max-w-7xl px-8 py-4 flex items-center justify-between">
         <div 
           onClick={handleTitleClick}
           className="flex items-center gap-4 cursor-pointer select-none active:scale-95 transition-transform"
         >
-          {/* حاوية الشعار */}
-          <div className="w-12 h-12 flex items-center justify-center bg-white rounded-xl overflow-hidden shadow-sm border border-zinc-100 p-1 relative">
+          {/* Logo container - Circular with shadow, no white border */}
+          <div className="w-14 h-14 flex items-center justify-center rounded-full overflow-hidden relative shadow-md">
             {!imgError ? (
               <img 
                 src={finalLogo}
-                alt="Edge Store" 
-                className="w-full h-full object-contain block"
+                alt="Mohamed Edge" 
+                className="w-full h-full object-cover rounded-full"
                 onError={() => setImgError(true)}
               />
             ) : (
-              // تصميم بديل احترافي في حال لم تظهر الصورة
-              <div className="w-full h-full bg-zinc-900 flex items-center justify-center rounded-lg">
-                <span className="text-white font-black text-[10px] tracking-tighter">ME</span>
+              <div className="w-full h-full bg-zinc-900 flex items-center justify-center rounded-full">
+                <span className="text-white font-black text-xs tracking-tighter">ME</span>
               </div>
             )}
           </div>
           <div className="flex flex-col">
-            <h1 className="text-2xl font-black tracking-tighter text-zinc-900 leading-none">Edge Store</h1>
-            <span className="text-[9px] font-bold text-[#007AFF] uppercase tracking-[0.2em]">Digital Assets</span>
+            <h1 className="text-2xl font-black tracking-tighter text-zinc-900 leading-none">Mohamed Edge</h1>
+            <span className="text-[9px] font-bold text-[#007AFF] uppercase tracking-[0.2em] mt-1">Solo Entrepreneur</span>
           </div>
         </div>
 
