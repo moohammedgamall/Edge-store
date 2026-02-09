@@ -20,7 +20,6 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeSection, onSectionChange })
         <nav className="flex items-center justify-between relative">
           {ALL_ITEMS.map((item) => {
             const isActive = activeSection === item.id;
-            const isOrder = item.id === 'Order';
             
             return (
               <button
@@ -32,7 +31,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeSection, onSectionChange })
                   ${isActive ? 'z-10' : 'z-0'}
                 `}
               >
-                {/* Active Pill Background - Sleeker and smaller */}
+                {/* Active Pill Background */}
                 {isActive && (
                   <div className="absolute inset-y-0.5 inset-x-1 bg-[#E8F2FF] dark:bg-blue-600/20 rounded-full animate-in fade-in zoom-in-95 duration-300 -z-10 shadow-sm" />
                 )}
@@ -44,13 +43,6 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeSection, onSectionChange })
                   `}>
                     <i className={`${item.icon} ${isActive ? 'text-sm' : 'text-[13px]'}`}></i>
                   </div>
-                  
-                  {/* NEW Badge for Order */}
-                  {isOrder && (
-                    <div className="absolute -top-1.5 -right-4 bg-[#007AFF] text-white text-[6px] font-black px-1 py-0.5 rounded-sm shadow-sm border border-white dark:border-zinc-800">
-                      NEW
-                    </div>
-                  )}
 
                   <span className={`
                     text-[7.5px] font-black tracking-tighter transition-colors duration-300 uppercase
