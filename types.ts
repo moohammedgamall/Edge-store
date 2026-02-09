@@ -23,8 +23,8 @@ export interface Product {
   description: string;
   category: Section | 'Apps'; 
   price: number;
-  image: string;
-  gallery?: string[];
+  image: string;      // This is the Cover Image
+  gallery: string[];  // Array of preview images (up to 20)
   rating: number;
   downloads: string;
   is_premium: boolean;

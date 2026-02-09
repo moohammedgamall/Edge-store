@@ -37,6 +37,8 @@ export const MOCK_PRODUCTS: Product[] = [
     category: 'Themes',
     price: 45,
     image: 'https://images.unsplash.com/photo-1614850523296-d8c1af93d400?auto=format&fit=crop&q=80&w=400',
+    // Added missing gallery property
+    gallery: [],
     rating: 4.8,
     downloads: '2.5k',
     is_premium: true,
@@ -49,6 +51,8 @@ export const MOCK_PRODUCTS: Product[] = [
     category: 'Widgets',
     price: 0,
     image: 'https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?auto=format&fit=crop&q=80&w=400',
+    // Added missing gallery property
+    gallery: [],
     rating: 4.5,
     downloads: '10k',
     is_premium: false,
@@ -61,6 +65,8 @@ export const MOCK_PRODUCTS: Product[] = [
     category: 'Walls',
     price: 15,
     image: 'https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?auto=format&fit=crop&q=80&w=400',
+    // Added missing gallery property
+    gallery: [],
     rating: 5.0,
     downloads: '1.2k',
     is_premium: true,
@@ -73,6 +79,8 @@ export const MOCK_PRODUCTS: Product[] = [
     category: 'Themes',
     price: 35,
     image: 'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&q=80&w=400',
+    // Added missing gallery property
+    gallery: [],
     rating: 4.7,
     downloads: '800',
     is_premium: true,
@@ -85,6 +93,8 @@ export const MOCK_PRODUCTS: Product[] = [
     category: 'Widgets',
     price: 0,
     image: 'https://images.unsplash.com/photo-1508921334172-b68ed3004f2d?auto=format&fit=crop&q=80&w=400',
+    // Added missing gallery property
+    gallery: [],
     rating: 4.2,
     downloads: '5k',
     is_premium: false,
@@ -97,6 +107,8 @@ export const MOCK_PRODUCTS: Product[] = [
     category: 'Themes',
     price: 50,
     image: 'https://images.unsplash.com/photo-1605810230434-7631ac76ec81?auto=format&fit=crop&q=80&w=400',
+    // Added missing gallery property
+    gallery: [],
     rating: 4.9,
     downloads: '1.5k',
     is_premium: true,
