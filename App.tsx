@@ -25,7 +25,6 @@ const App: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [youtubeVideos, setYoutubeVideos] = useState<YoutubeVideo[]>([]);
 
-  // Site Identity State - Initializing from LocalStorage for instant branding
   const [siteLogo, setSiteLogo] = useState<string>(localStorage.getItem('site_logo') || "https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
   const [loadingLogo, setLoadingLogo] = useState<string>(localStorage.getItem('loading_logo') || "https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
   
@@ -37,7 +36,6 @@ const App: React.FC = () => {
   const [adminPassword, setAdminPassword] = useState('1234');
   const [passwordInput, setPasswordInput] = useState('');
   
-  const [selectedPhone, setSelectedPhone] = useState<'Realme' | 'Oppo'>('Realme');
   const [selectedCategory, setSelectedCategory] = useState<Section>('Themes');
   const [selectedProductId, setSelectedProductId] = useState<string>('');
 
@@ -91,12 +89,12 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      // Keep loading screen visible for a minimum time for smooth transition
       const startTime = Date.now();
       
       try {
-        const { data: settingsData } = await supabase.from('settings').select('key, value');
-        if (settingsData) {
+        // Fetch Settings
+        const { data: settingsData, error: settingsError } = await supabase.from('settings').select('key, value');
+        if (!settingsError && settingsData) {
           const pass = settingsData.find(s => s.key === 'admin_password');
           if (pass) setAdminPassword(pass.value);
           
@@ -113,8 +111,9 @@ const App: React.FC = () => {
           }
         }
 
-        const { data: bannerData } = await supabase.from('banner').select('*').eq('id', 1).maybeSingle();
-        if (bannerData) {
+        // Fetch Banner
+        const { data: bannerData, error: bannerError } = await supabase.from('banner').select('*').eq('id', 1).maybeSingle();
+        if (!bannerError && bannerData) {
           setBanner({
             title: bannerData.title,
             highlight: bannerData.highlight,
@@ -125,14 +124,23 @@ const App: React.FC = () => {
           });
         }
 
-        const { data: productsData } = await supabase.from('products').select('*').order('created_at', { ascending: false });
-        if (productsData) setProducts(productsData);
+        // Fetch Products
+        const { data: productsData, error: productsError } = await supabase.from('products').select('*').order('created_at', { ascending: false });
+        if (!productsError && productsData && productsData.length > 0) {
+          setProducts(productsData);
+        } else {
+          setProducts(MOCK_PRODUCTS); // Fallback to mock if empty or error
+        }
 
-        const { data: videosData } = await supabase.from('youtube_videos').select('*').order('created_at', { ascending: false });
-        if (videosData) setYoutubeVideos(videosData);
+        // Fetch Videos
+        const { data: videosData, error: videosError } = await supabase.from('youtube_videos').select('*').order('created_at', { ascending: false });
+        if (!videosError && videosData) {
+          setYoutubeVideos(videosData);
+        }
 
       } catch (error) {
-        console.error(error);
+        console.error("Database initialization failed:", error);
+        setProducts(MOCK_PRODUCTS); // Safety fallback
       } finally {
         const elapsed = Date.now() - startTime;
         const remaining = Math.max(0, 1500 - elapsed);
@@ -241,7 +249,7 @@ const App: React.FC = () => {
         if (target === 'site') setSiteLogo(result);
         else {
           setLoadingLogo(result);
-          setImgLoadError(false); // Reset error state for new logo
+          setImgLoadError(false);
         }
       };
       reader.readAsDataURL(file);
@@ -267,10 +275,10 @@ const App: React.FC = () => {
     try {
       const { error } = await supabase.from('products').upsert(productToSave);
       if (error) throw error;
-      setProducts(prev => {
-        const exists = prev.find(p => p.id === productToSave.id);
-        return exists ? prev.map(p => p.id === productToSave.id ? (productToSave as Product) : p) : [productToSave as Product, ...prev];
-      });
+      
+      const { data: updatedProducts } = await supabase.from('products').select('*').order('created_at', { ascending: false });
+      if (updatedProducts) setProducts(updatedProducts);
+      
       setIsEditing(false);
       showNotification("Asset published!");
     } catch (err) { showNotification("Save Failed", "info"); }
@@ -382,20 +390,44 @@ const App: React.FC = () => {
                 Latest Release
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-8">
-                {products.map(p => (
-                  <ProductCard 
-                    key={p.id} 
-                    product={p} 
-                    onPreview={(id) => { setSelectedProductId(id); setActiveSection('Preview'); window.location.hash = `#/preview/${id}`; }} 
-                    onBuy={(id, cat) => { setSelectedCategory(cat as Section); setSelectedProductId(id); setActiveSection('Order'); window.location.hash = '#/order'; }} 
-                  />
-                ))}
+                {products.length > 0 ? (
+                  products.map(p => (
+                    <ProductCard 
+                      key={p.id} 
+                      product={p} 
+                      onPreview={(id) => { setSelectedProductId(id); setActiveSection('Preview'); window.location.hash = `#/preview/${id}`; }} 
+                      onBuy={(id, cat) => { setSelectedCategory(cat as Section); setSelectedProductId(id); setActiveSection('Order'); window.location.hash = '#/order'; }} 
+                    />
+                  ))
+                ) : (
+                  <div className="col-span-full py-20 text-center">
+                    <p className="text-zinc-400 font-bold">No assets found in store.</p>
+                  </div>
+                )}
               </div>
             </section>
           </div>
         )}
 
-        {/* preview, order, and admin sections follow exactly as before... */}
+        {activeSection === 'Themes' || activeSection === 'Widgets' || activeSection === 'Walls' ? (
+           <div className="space-y-12 pb-32">
+              <div className="flex flex-col gap-2 px-2">
+                 <h2 className="text-4xl font-black tracking-tighter">{activeSection}</h2>
+                 <p className="text-zinc-500 font-medium">Browse our premium {activeSection.toLowerCase()} collection.</p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                 {products.filter(p => p.category === activeSection).map(p => (
+                   <ProductCard 
+                     key={p.id} 
+                     product={p} 
+                     onPreview={(id) => { setSelectedProductId(id); setActiveSection('Preview'); window.location.hash = `#/preview/${id}`; }} 
+                     onBuy={(id, cat) => { setSelectedCategory(cat as Section); setSelectedProductId(id); setActiveSection('Order'); window.location.hash = '#/order'; }} 
+                   />
+                 ))}
+              </div>
+           </div>
+        ) : null}
+
         {activeSection === 'Preview' && selectedProduct && (
            <div className="max-w-5xl mx-auto space-y-6 pb-32 animate-in fade-in">
               <button onClick={() => { setActiveSection('Home'); window.history.back(); }} className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-all"><i className="fa-solid fa-chevron-left"></i></button>
@@ -422,6 +454,37 @@ const App: React.FC = () => {
                        <p className="text-zinc-500 font-medium leading-relaxed">{selectedProduct.description}</p>
                        <button onClick={() => { setActiveSection('Order'); window.location.hash = '#/order'; }} className="w-full py-6 bg-[#007AFF] text-white rounded-[1.5rem] font-black text-xl shadow-xl shadow-blue-500/20 active:scale-95 transition-all">Get Access Now</button>
                     </div>
+                 </div>
+              </div>
+           </div>
+        )}
+
+        {activeSection === 'Order' && (
+           <div className="max-w-xl mx-auto space-y-10 pb-32 animate-in slide-in-from-bottom-10">
+              <div className="text-center space-y-4">
+                 <h2 className="text-5xl font-black tracking-tighter">Instant Checkout</h2>
+                 <p className="text-zinc-500 font-medium">Select your preferred payment method to unlock access.</p>
+              </div>
+              <div className="glass-panel p-10 rounded-[3.5rem] space-y-8 border-white shadow-2xl">
+                 <div className="space-y-4">
+                   <p className="text-xs font-black uppercase text-zinc-400 tracking-widest ml-2">Checkout Method</p>
+                   <div className="grid grid-cols-2 gap-4">
+                      <button className="p-6 bg-zinc-900 text-white rounded-3xl flex flex-col items-center gap-3 shadow-xl active:scale-95 transition-all">
+                        <i className="fa-solid fa-credit-card text-2xl"></i>
+                        <span className="font-black text-[10px] uppercase tracking-widest">Card Pay</span>
+                      </button>
+                      <button onClick={() => window.open('https://wa.me/201021443651')} className="p-6 bg-[#25D366] text-white rounded-3xl flex flex-col items-center gap-3 shadow-xl active:scale-95 transition-all">
+                        <i className="fa-brands fa-whatsapp text-2xl"></i>
+                        <span className="font-black text-[10px] uppercase tracking-widest">WhatsApp</span>
+                      </button>
+                   </div>
+                 </div>
+                 <div className="p-8 bg-zinc-50 rounded-[2.5rem] border border-zinc-100 flex items-center justify-between">
+                    <div>
+                      <p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">Support Line</p>
+                      <p className="font-black text-lg">+20 1021443651</p>
+                    </div>
+                    <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-md"><i className="fa-solid fa-headset text-[#007AFF]"></i></div>
                  </div>
               </div>
            </div>
@@ -546,21 +609,27 @@ const App: React.FC = () => {
              )}
 
              <div className="grid grid-cols-1 gap-6">
-                {products.map(p => (
-                  <div key={p.id} className="p-6 bg-white rounded-[2.5rem] flex justify-between items-center shadow-sm hover:shadow-xl transition-all group">
-                    <div className="flex items-center gap-6">
-                      <img src={p.image} className="w-20 h-20 rounded-[1.5rem] object-cover shadow-lg group-hover:rotate-3 transition-transform" />
-                      <div>
-                        <p className="font-black text-xl">{p.title}</p>
-                        <p className="text-[10px] font-black uppercase text-zinc-400 tracking-[0.2em]">{p.category} • {p.price} EGP</p>
+                {products.length > 0 ? (
+                  products.map(p => (
+                    <div key={p.id} className="p-6 bg-white rounded-[2.5rem] flex justify-between items-center shadow-sm hover:shadow-xl transition-all group">
+                      <div className="flex items-center gap-6">
+                        <img src={p.image} className="w-20 h-20 rounded-[1.5rem] object-cover shadow-lg group-hover:rotate-3 transition-transform" />
+                        <div>
+                          <p className="font-black text-xl">{p.title}</p>
+                          <p className="text-[10px] font-black uppercase text-zinc-400 tracking-[0.2em]">{p.category} • {p.price} EGP</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-3">
+                        <button onClick={() => {setEditProduct(p); setIsEditing(true);}} className="w-12 h-12 bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center hover:bg-[#007AFF] hover:text-white transition-all"><i className="fa-solid fa-pen"></i></button>
+                        <button onClick={async () => { if(confirm('Delete permanently?')) { await supabase.from('products').delete().eq('id', p.id); setProducts(ps => ps.filter(x => x.id !== p.id)); showNotification("Asset Deleted"); } }} className="w-12 h-12 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center hover:bg-red-500 hover:text-white transition-all"><i className="fa-solid fa-trash"></i></button>
                       </div>
                     </div>
-                    <div className="flex gap-3">
-                      <button onClick={() => {setEditProduct(p); setIsEditing(true);}} className="w-12 h-12 bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center hover:bg-[#007AFF] hover:text-white transition-all"><i className="fa-solid fa-pen"></i></button>
-                      <button onClick={async () => { if(confirm('Delete permanently?')) { await supabase.from('products').delete().eq('id', p.id); setProducts(ps => ps.filter(x => x.id !== p.id)); showNotification("Asset Deleted"); } }} className="w-12 h-12 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center hover:bg-red-500 hover:text-white transition-all"><i className="fa-solid fa-trash"></i></button>
-                    </div>
+                  ))
+                ) : (
+                  <div className="py-20 text-center glass-panel rounded-[3rem]">
+                    <p className="text-zinc-400 font-black uppercase tracking-widest text-xs">No Items in Cloud</p>
                   </div>
-                ))}
+                )}
              </div>
           </div>
         )}
