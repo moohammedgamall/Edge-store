@@ -28,12 +28,18 @@ const App: React.FC = () => {
     const stored = localStorage.getItem('deleted_products');
     return stored ? JSON.parse(stored) : [];
   });
+
   const [dbVideos, setDbVideos] = useState<YoutubeVideo[]>([]);
+  const [deletedVideoIds, setDeletedVideoIds] = useState<string[]>(() => {
+    const stored = localStorage.getItem('deleted_videos');
+    return stored ? JSON.parse(stored) : [];
+  });
+
   const [siteLogo, setSiteLogo] = useState<string>("https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
   const [loadingLogo, setLoadingLogo] = useState<string>("https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
   const [adminPassword, setAdminPassword] = useState('1234');
 
-  // Merged products list that filters out deleted ones
+  // Merged lists with filtering
   const products = useMemo(() => {
     const merged = [...dbProducts, ...MOCK_PRODUCTS];
     const unique = Array.from(new Map(merged.map(item => [item.id, item])).values());
@@ -42,28 +48,25 @@ const App: React.FC = () => {
 
   const videos = useMemo(() => {
     const merged = [...dbVideos, ...MOCK_VIDEOS];
-    return Array.from(new Map(merged.map(v => [v.id, v])).values());
-  }, [dbVideos]);
+    const unique = Array.from(new Map(merged.map(v => [v.id, v])).values());
+    return unique.filter(v => !deletedVideoIds.includes(v.id));
+  }, [dbVideos, deletedVideoIds]);
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [passwordInput, setPasswordInput] = useState('');
   const [selectedProductId, setSelectedProductId] = useState<string>('');
   const [orderPhoneType, setOrderPhoneType] = useState<'Realme' | 'Oppo'>('Realme');
   const [orderProductId, setOrderProductId] = useState<string>('');
+  
+  // Admin State
   const [isPublishing, setIsPublishing] = useState(false);
   const [isEditing, setIsEditing] = useState<boolean>(false);
-  const [editProduct, setEditProduct] = useState<Partial<Product>>({ 
-    title: '', 
-    price: 0, 
-    category: 'Themes', 
-    description: '', 
-    image: '', 
-    is_premium: false 
-  });
+  const [editProduct, setEditProduct] = useState<Partial<Product>>({ title: '', price: 0, category: 'Themes', image: '' });
   
+  const [isEditingVideo, setIsEditingVideo] = useState(false);
+  const [editVideo, setEditVideo] = useState<Partial<YoutubeVideo>>({ title: '', url: '' });
+
   const [adminTab, setAdminTab] = useState<'Inventory' | 'Videos' | 'Settings'>('Inventory');
-  const [newVideoUrl, setNewVideoUrl] = useState('');
-  const [newVideoTitle, setNewVideoTitle] = useState('');
 
   useEffect(() => {
     if (isDarkMode) document.documentElement.classList.add('dark');
@@ -74,6 +77,10 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('deleted_products', JSON.stringify(deletedProductIds));
   }, [deletedProductIds]);
+
+  useEffect(() => {
+    localStorage.setItem('deleted_videos', JSON.stringify(deletedVideoIds));
+  }, [deletedVideoIds]);
 
   useEffect(() => {
     const handleRoute = () => {
@@ -110,11 +117,8 @@ const App: React.FC = () => {
             if (s.key === 'loading_logo') setLoadingLogo(s.value);
           });
         }
-      } catch (e) {
-        console.error("DB Fetch Error", e);
-      } finally {
-        setTimeout(() => setIsLoading(false), 200);
-      }
+      } catch (e) { console.error("DB Fetch Error", e); }
+      finally { setTimeout(() => setIsLoading(false), 200); }
     };
     fetchData();
   }, []);
@@ -157,18 +161,11 @@ const App: React.FC = () => {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, target: 'product' | 'siteLogo' | 'loadingLogo') => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
     try {
       const base64 = await fileToBase64(file);
-      if (target === 'product') {
-        setEditProduct(prev => ({ ...prev, image: base64 }));
-      } else if (target === 'siteLogo') {
-        setSiteLogo(base64);
-        await handleUpdateSettings('site_logo', base64);
-      } else if (target === 'loadingLogo') {
-        setLoadingLogo(base64);
-        await handleUpdateSettings('loading_logo', base64);
-      }
+      if (target === 'product') setEditProduct(prev => ({ ...prev, image: base64 }));
+      else if (target === 'siteLogo') { setSiteLogo(base64); await handleUpdateSettings('site_logo', base64); }
+      else if (target === 'loadingLogo') { setLoadingLogo(base64); await handleUpdateSettings('loading_logo', base64); }
       showNotification("Image Uploaded");
     } catch (err) { console.error(err); }
   };
@@ -191,41 +188,51 @@ const App: React.FC = () => {
       const { data } = await supabase.from('products').select('*').order('created_at', { ascending: false });
       if (data) setDbProducts(data);
       setIsEditing(false);
-      setEditProduct({ title: '', price: 0, category: 'Themes', description: '', image: '', is_premium: false });
-      showNotification("Changes Saved Successfully!");
+      setEditProduct({ title: '', price: 0, category: 'Themes', image: '' });
+      showNotification("Product Saved!");
     } catch (err) { console.error(err); }
     finally { setIsPublishing(false); }
   };
 
   const handleDeleteProduct = async (id: string) => {
-    if (!window.confirm("Are you sure you want to delete this product?")) return;
-    
+    if (!window.confirm("Delete this product?")) return;
     try {
-      // Try to delete from DB
       await supabase.from('products').delete().eq('id', id);
       setDbProducts(ps => ps.filter(x => x.id !== id));
-      
-      // Also add to local deleted list to handle Mock products
       setDeletedProductIds(prev => [...prev, id]);
-      
       showNotification("Product Removed");
-    } catch (err) {
-      console.error(err);
-      showNotification("Error removing product");
-    }
+    } catch (err) { showNotification("Error removing product"); }
   };
 
-  const handleAddVideo = async () => {
+  const handleSaveVideo = async () => {
+    if (!editVideo.title || !editVideo.url) return;
+    setIsPublishing(true);
     try {
-      const url = new URL(newVideoUrl);
-      const videoId = url.searchParams.get('v');
-      if (!videoId) return showNotification("Invalid YouTube Link");
-      const newVideo = { id: videoId, title: newVideoTitle || 'Tutorial', url: newVideoUrl };
-      await supabase.from('videos').insert(newVideo);
-      setDbVideos(prev => [...prev, newVideo]);
-      setNewVideoUrl(''); setNewVideoTitle('');
-      showNotification("Video Added");
-    } catch (e) { showNotification("Invalid URL"); }
+      const url = new URL(editVideo.url);
+      const videoId = url.searchParams.get('v') || url.pathname.split('/').pop() || editVideo.id;
+      if (!videoId) throw new Error("Invalid Link");
+
+      const videoToSave = { id: videoId, title: editVideo.title, url: editVideo.url };
+      await supabase.from('videos').upsert(videoToSave);
+      
+      const { data } = await supabase.from('videos').select('*');
+      if (data) setDbVideos(data);
+      
+      setIsEditingVideo(false);
+      setEditVideo({ title: '', url: '' });
+      showNotification("Tutorial Saved!");
+    } catch (e) { showNotification("Invalid YouTube URL"); }
+    finally { setIsPublishing(false); }
+  };
+
+  const handleDeleteVideo = async (id: string) => {
+    if (!window.confirm("Delete this tutorial?")) return;
+    try {
+      await supabase.from('videos').delete().eq('id', id);
+      setDbVideos(vs => vs.filter(x => x.id !== id));
+      setDeletedVideoIds(prev => [...prev, id]);
+      showNotification("Tutorial Removed");
+    } catch (err) { showNotification("Error removing video"); }
   };
 
   const handleUpdateSettings = async (key: string, value: string) => {
@@ -396,35 +403,21 @@ const App: React.FC = () => {
               <div className="space-y-6">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-2xl font-black uppercase">Store Inventory</h3>
-                  <button 
-                    onClick={() => { 
-                      setEditProduct({ title: '', price: 0, category: 'Themes', description: '', image: '', is_premium: false }); 
-                      setIsEditing(true); 
-                    }} 
-                    className="px-6 py-3 bg-[#007AFF] text-white rounded-xl font-black uppercase text-xs"
-                  >
-                    Add New Product
-                  </button>
+                  <button onClick={() => { setEditProduct({ title: '', price: 0, category: 'Themes', image: '' }); setIsEditing(true); }} className="px-6 py-3 bg-[#007AFF] text-white rounded-xl font-black uppercase text-xs">Add New Product</button>
                 </div>
-
                 {isEditing && (
                   <div className="glass-panel p-8 rounded-[2.5rem] space-y-6 border-2 border-[#007AFF]/20">
-                    <h4 className="text-lg font-black uppercase text-[#007AFF]">
-                      {editProduct.id ? 'Edit Product' : 'New Product'}
-                    </h4>
+                    <h4 className="text-lg font-black uppercase text-[#007AFF]">{editProduct.id ? 'Edit Product' : 'New Product'}</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase text-zinc-400">Product Title</label>
-                        <input className="w-full p-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none" placeholder="Title" value={editProduct.title || ''} onChange={e => setEditProduct({...editProduct, title: e.target.value})} />
+                        <label className="text-[10px] font-black uppercase text-zinc-400">Title</label>
+                        <input className="w-full p-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none" value={editProduct.title || ''} onChange={e => setEditProduct({...editProduct, title: e.target.value})} />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase text-zinc-400">Product Image</label>
+                        <label className="text-[10px] font-black uppercase text-zinc-400">Image</label>
                         <div className="flex gap-4 items-center">
-                          <label className="flex-1 p-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 font-bold text-center cursor-pointer text-sm">
-                            {editProduct.image ? 'Change Image' : 'Upload Image'}
-                            <input type="file" accept="image/*" onChange={e => handleImageUpload(e, 'product')} className="hidden" />
-                          </label>
-                          {editProduct.image && <img src={editProduct.image} className="w-12 h-12 rounded-lg object-cover" alt="preview" />}
+                          <label className="flex-1 p-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 font-bold text-center cursor-pointer text-sm">Upload Image<input type="file" accept="image/*" onChange={e => handleImageUpload(e, 'product')} className="hidden" /></label>
+                          {editProduct.image && <img src={editProduct.image} className="w-12 h-12 rounded-lg object-cover" />}
                         </div>
                       </div>
                       <div className="space-y-2">
@@ -438,69 +431,56 @@ const App: React.FC = () => {
                         <input type="number" className="w-full p-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none" value={editProduct.price || 0} onChange={e => setEditProduct({...editProduct, price: parseFloat(e.target.value)})} />
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase text-zinc-400">Description</label>
-                      <textarea className="w-full p-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 font-medium h-32 outline-none" placeholder="Product details..." value={editProduct.description || ''} onChange={e => setEditProduct({...editProduct, description: e.target.value})} />
-                    </div>
+                    <textarea className="w-full p-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 font-medium h-32 outline-none" placeholder="Description" value={editProduct.description || ''} onChange={e => setEditProduct({...editProduct, description: e.target.value})} />
                     <div className="flex gap-4">
                       <button onClick={() => setIsEditing(false)} className="flex-1 py-4 bg-zinc-100 dark:bg-zinc-800 text-zinc-500 rounded-xl font-black uppercase">Cancel</button>
-                      <button onClick={handleSaveProduct} className="flex-[2] py-4 bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 rounded-xl font-black uppercase">
-                        {isPublishing ? "Saving Changes..." : "Save Product"}
-                      </button>
+                      <button onClick={handleSaveProduct} className="flex-[2] py-4 bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 rounded-xl font-black uppercase">{isPublishing ? "Saving..." : "Save Product"}</button>
                     </div>
                   </div>
                 )}
-
                 <div className="grid grid-cols-1 gap-4">
                   {products.map(p => (
                     <div key={p.id} className="p-5 glass-panel rounded-3xl flex justify-between items-center group transition-all hover:border-[#007AFF]/50">
-                      <div className="flex items-center gap-6">
-                        <img src={p.image} className="w-16 h-16 rounded-2xl object-cover shadow-lg" alt="" />
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h4 className="font-black text-lg">{p.title}</h4>
-                            {MOCK_PRODUCTS.some(m => m.id === p.id) && (
-                              <span className="text-[7px] font-black bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-400 uppercase tracking-tighter">Default</span>
-                            )}
-                          </div>
-                          <p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">{p.category} • {p.price} EGP</p>
-                        </div>
-                      </div>
+                      <div className="flex items-center gap-6"><img src={p.image} className="w-16 h-16 rounded-2xl object-cover shadow-lg" /><div><div className="flex items-center gap-2"><h4 className="font-black text-lg">{p.title}</h4>{MOCK_PRODUCTS.some(m => m.id === p.id) && <span className="text-[7px] font-black bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-400 uppercase">Default</span>}</div><p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">{p.category} • {p.price} EGP</p></div></div>
                       <div className="flex gap-2">
-                        <button 
-                          onClick={() => { 
-                            setEditProduct(p); 
-                            setIsEditing(true); 
-                            window.scrollTo({ top: 0, behavior: 'smooth' });
-                          }} 
-                          className="w-12 h-12 bg-blue-50 dark:bg-blue-900/20 text-[#007AFF] rounded-full flex items-center justify-center transition-colors hover:bg-[#007AFF] hover:text-white"
-                        >
-                          <i className="fa-solid fa-pen text-sm"></i>
-                        </button>
-                        <button 
-                          onClick={() => handleDeleteProduct(p.id)} 
-                          className="w-12 h-12 bg-red-50 dark:bg-red-900/20 text-red-500 rounded-full flex items-center justify-center transition-colors hover:bg-red-500 hover:text-white"
-                        >
-                          <i className="fa-solid fa-trash text-sm"></i>
-                        </button>
+                        <button onClick={() => { setEditProduct(p); setIsEditing(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="w-12 h-12 bg-blue-50 dark:bg-blue-900/20 text-[#007AFF] rounded-full flex items-center justify-center transition-all hover:bg-[#007AFF] hover:text-white"><i className="fa-solid fa-pen text-sm"></i></button>
+                        <button onClick={() => handleDeleteProduct(p.id)} className="w-12 h-12 bg-red-50 dark:bg-red-900/20 text-red-500 rounded-full flex items-center justify-center transition-all hover:bg-red-500 hover:text-white"><i className="fa-solid fa-trash text-sm"></i></button>
                       </div>
                     </div>
                   ))}
-                  {products.length === 0 && (
-                    <div className="p-12 text-center text-zinc-400 font-black uppercase tracking-widest text-sm">
-                      No products found. Add your first asset!
-                    </div>
-                  )}
                 </div>
               </div>
             )}
 
             {adminTab === 'Videos' && (
               <div className="space-y-6">
-                <div className="glass-panel p-8 rounded-[2.5rem] space-y-4">
-                  <input className="w-full p-4 rounded-xl bg-zinc-100 dark:bg-zinc-800" placeholder="Tutorial Title" value={newVideoTitle} onChange={e => setNewVideoTitle(e.target.value)} />
-                  <input className="w-full p-4 rounded-xl bg-zinc-100 dark:bg-zinc-800" placeholder="YouTube Link" value={newVideoUrl} onChange={e => setNewVideoUrl(e.target.value)} />
-                  <button onClick={handleAddVideo} className="w-full py-4 bg-red-500 text-white rounded-xl font-black">Add Tutorial</button>
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-2xl font-black uppercase">Video Tutorials</h3>
+                  <button onClick={() => { setEditVideo({ title: '', url: '' }); setIsEditingVideo(true); }} className="px-6 py-3 bg-red-500 text-white rounded-xl font-black uppercase text-xs">Add Tutorial</button>
+                </div>
+                {isEditingVideo && (
+                  <div className="glass-panel p-8 rounded-[2.5rem] space-y-6 border-2 border-red-500/20">
+                    <h4 className="text-lg font-black uppercase text-red-500">{editVideo.id ? 'Edit Tutorial' : 'New Tutorial'}</h4>
+                    <div className="space-y-4">
+                      <input className="w-full p-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none" placeholder="Video Title" value={editVideo.title || ''} onChange={e => setEditVideo({...editVideo, title: e.target.value})} />
+                      <input className="w-full p-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none" placeholder="YouTube Link (e.g. https://youtube.com/watch?v=...)" value={editVideo.url || ''} onChange={e => setEditVideo({...editVideo, url: e.target.value})} />
+                    </div>
+                    <div className="flex gap-4">
+                      <button onClick={() => setIsEditingVideo(false)} className="flex-1 py-4 bg-zinc-100 dark:bg-zinc-800 text-zinc-500 rounded-xl font-black uppercase">Cancel</button>
+                      <button onClick={handleSaveVideo} className="flex-[2] py-4 bg-red-500 text-white rounded-xl font-black uppercase">{isPublishing ? "Saving..." : "Save Tutorial"}</button>
+                    </div>
+                  </div>
+                )}
+                <div className="grid grid-cols-1 gap-4">
+                  {videos.map(v => (
+                    <div key={v.id} className="p-5 glass-panel rounded-3xl flex justify-between items-center group transition-all hover:border-red-500/50">
+                      <div className="flex items-center gap-6"><div className="w-16 h-16 rounded-xl overflow-hidden bg-zinc-100"><img src={`https://img.youtube.com/vi/${v.id}/default.jpg`} className="w-full h-full object-cover" /></div><div><div className="flex items-center gap-2"><h4 className="font-black text-lg">{v.title}</h4>{MOCK_VIDEOS.some(m => m.id === v.id) && <span className="text-[7px] font-black bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-400 uppercase">Default</span>}</div><p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">ID: {v.id}</p></div></div>
+                      <div className="flex gap-2">
+                        <button onClick={() => { setEditVideo(v); setIsEditingVideo(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="w-12 h-12 bg-red-50 dark:bg-red-900/20 text-red-500 rounded-full flex items-center justify-center transition-all hover:bg-red-500 hover:text-white"><i className="fa-solid fa-pen text-sm"></i></button>
+                        <button onClick={() => handleDeleteVideo(v.id)} className="w-12 h-12 bg-zinc-100 dark:bg-zinc-800 text-zinc-400 rounded-full flex items-center justify-center transition-all hover:bg-red-500 hover:text-white"><i className="fa-solid fa-trash text-sm"></i></button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
