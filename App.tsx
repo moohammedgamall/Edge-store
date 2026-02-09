@@ -7,7 +7,6 @@ import BottomNav from './components/BottomNav';
 import Header from './components/Header';
 import ProductCard from './components/ProductCard';
 
-// Supabase Configuration
 const SUPABASE_URL = 'https://nlqnbfvsghlomuugixlk.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5scW5iZnZzZ2hsb211dWdpeGxrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA0Mjk4NzUsImV4cCI6MjA4NjAwNTg3NX0.KXLd6ISgf31DBNaU33fp0ZYLlxyrr62RfrxwYPIMk34';
 
@@ -21,12 +20,19 @@ const App: React.FC = () => {
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => localStorage.getItem('theme') === 'dark');
   
   // Database States
-  const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS);
+  const [dbProducts, setDbProducts] = useState<Product[]>([]);
   const [banner, setBanner] = useState<BannerSettings>(DEFAULT_BANNER);
   const [siteLogo, setSiteLogo] = useState<string>("https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
   const [adminPassword, setAdminPassword] = useState('1234');
 
-  // UI States
+  // Merged Products (Mock + DB)
+  const products = useMemo(() => {
+    // ندمج المنتجات من قاعدة البيانات مع المنتجات التجريبية لضمان وجود محتوى دائماً
+    const merged = [...dbProducts, ...MOCK_PRODUCTS];
+    // نزيل التكرار بناءً على العنوان إذا لزم الأمر
+    return Array.from(new Map(merged.map(item => [item.title, item])).values());
+  }, [dbProducts]);
+
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [passwordInput, setPasswordInput] = useState('');
   const [selectedProductId, setSelectedProductId] = useState<string>('');
@@ -37,14 +43,12 @@ const App: React.FC = () => {
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [editProduct, setEditProduct] = useState<Partial<Product>>({ is_premium: false });
 
-  // Sync Theme
   useEffect(() => {
     if (isDarkMode) document.documentElement.classList.add('dark');
     else document.documentElement.classList.remove('dark');
     localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
   }, [isDarkMode]);
 
-  // Sync Routing (Hash-based)
   useEffect(() => {
     const handleRoute = () => {
       const hash = window.location.hash;
@@ -63,21 +67,12 @@ const App: React.FC = () => {
     return () => window.removeEventListener('hashchange', handleRoute);
   }, [isAdminMode]);
 
-  // Fetch Database Data
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // 1. Fetch Products
-        const { data: prodData, error: prodError } = await supabase
-          .from('products')
-          .select('*')
-          .order('created_at', { ascending: false });
-        
-        if (!prodError && prodData && prodData.length > 0) {
-          setProducts(prodData);
-        }
+        const { data: prodData } = await supabase.from('products').select('*').order('created_at', { ascending: false });
+        if (prodData) setDbProducts(prodData);
 
-        // 2. Fetch Global Settings
         const { data: settingsData } = await supabase.from('settings').select('key, value');
         if (settingsData) {
           const pass = settingsData.find(s => s.key === 'admin_password');
@@ -86,22 +81,14 @@ const App: React.FC = () => {
           if (logo) setSiteLogo(logo.value);
         }
 
-        // 3. Fetch Banner
         const { data: bannerData } = await supabase.from('banner').select('*').eq('id', 1).maybeSingle();
         if (bannerData) {
-          setBanner({
-            title: bannerData.title || DEFAULT_BANNER.title,
-            highlight: bannerData.highlight || DEFAULT_BANNER.highlight,
-            description: DEFAULT_BANNER.description,
-            imageUrl: bannerData.imageUrl || DEFAULT_BANNER.imageUrl,
-            buttonText: DEFAULT_BANNER.buttonText
-          });
+          setBanner(prev => ({ ...prev, title: bannerData.title, highlight: bannerData.highlight, imageUrl: bannerData.imageUrl }));
         }
-
       } catch (e) {
-        console.error("Database connection issue. Using local fallback.", e);
+        console.error("DB Fetch Error", e);
       } finally {
-        setTimeout(() => setIsLoading(false), 500);
+        setTimeout(() => setIsLoading(false), 800);
       }
     };
     fetchData();
@@ -122,17 +109,11 @@ const App: React.FC = () => {
       setIsAuthModalOpen(false);
       setPasswordInput('');
       window.location.hash = '#/admin';
-      showNotification("Welcome Back, Mohamed Edge");
+      showNotification("Welcome Mohamed Edge");
     } else {
       setPasswordInput('');
-      showNotification("Access Denied: Wrong Key");
+      showNotification("Incorrect Key");
     }
-  };
-
-  const handleOrderTelegram = () => {
-    if (!orderProduct) return;
-    const msg = `New Order Request:%0A- Asset: ${orderProduct.title}%0A- Device: ${orderPhoneType}%0A- Price: ${orderProduct.price} EGP`;
-    window.open(`https://t.me/Mohamed_edge?text=${msg}`);
   };
 
   const handleSaveProduct = async () => {
@@ -149,20 +130,13 @@ const App: React.FC = () => {
       compatibility: editProduct.compatibility || 'ColorOS 15'
     };
     try {
-      const { error } = await supabase.from('products').upsert(productToSave);
-      if (error) throw error;
-      
+      await supabase.from('products').upsert(productToSave);
       const { data } = await supabase.from('products').select('*').order('created_at', { ascending: false });
-      if (data) setProducts(data);
-      
+      if (data) setDbProducts(data);
       setIsEditing(false);
-      showNotification("Asset Synced to Cloud Successfully");
-    } catch (err) {
-      console.error(err);
-      showNotification("Error Syncing Asset");
-    } finally {
-      setIsPublishing(false);
-    }
+      showNotification("Cloud Synced!");
+    } catch (err) { console.error(err); }
+    finally { setIsPublishing(false); }
   };
 
   if (isLoading) return (
@@ -170,8 +144,7 @@ const App: React.FC = () => {
       <div className="w-20 h-20 animate-pulse bg-[#007AFF] rounded-full flex items-center justify-center shadow-2xl">
         <span className="text-white font-black text-xl">ME</span>
       </div>
-      <h3 className="mt-5 text-lg font-black tracking-tight text-zinc-900 dark:text-zinc-100 uppercase">Mohamed Edge Store</h3>
-      <div className="w-6 h-0.5 bg-[#007AFF] rounded-full mt-3 animate-bounce"></div>
+      <h3 className="mt-5 text-lg font-black tracking-tight text-zinc-900 dark:text-zinc-100 uppercase">Edge Marketplace</h3>
     </div>
   );
 
@@ -186,24 +159,13 @@ const App: React.FC = () => {
       />
 
       {isAuthModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/50 backdrop-blur-xl">
-           <div className="w-full max-w-[320px] glass-panel p-8 rounded-[2.5rem] space-y-6 shadow-2xl border-white dark:border-zinc-800">
-              <div className="text-center">
-                <h3 className="text-lg font-black uppercase tracking-tight">Cloud Access</h3>
-                <p className="text-zinc-400 text-[10px] font-bold uppercase tracking-widest mt-1">Enter Master Key</p>
-              </div>
-              <input 
-                type="password" 
-                value={passwordInput} 
-                onChange={e => setPasswordInput(e.target.value)} 
-                onKeyDown={e => e.key === 'Enter' && handleAdminAuth()} 
-                className="w-full p-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-center text-2xl font-black tracking-[0.3em] outline-none border-2 border-transparent focus:border-[#007AFF] transition-all" 
-                placeholder="••••" 
-                autoFocus
-              />
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-xl">
+           <div className="w-full max-w-[320px] glass-panel p-8 rounded-[2.5rem] space-y-6 shadow-2xl">
+              <div className="text-center"><h3 className="text-lg font-black uppercase">Admin Login</h3></div>
+              <input type="password" value={passwordInput} onChange={e => setPasswordInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAdminAuth()} className="w-full p-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-center text-2xl font-black outline-none border-2 border-transparent focus:border-[#007AFF]" placeholder="••••" />
               <div className="grid grid-cols-2 gap-3">
-                <button onClick={() => setIsAuthModalOpen(false)} className="py-3 text-[10px] font-black text-zinc-400 uppercase tracking-widest">Cancel</button>
-                <button onClick={handleAdminAuth} className="py-3 bg-[#007AFF] text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg">Login</button>
+                <button onClick={() => setIsAuthModalOpen(false)} className="py-3 text-[10px] font-black text-zinc-400 uppercase">Exit</button>
+                <button onClick={handleAdminAuth} className="py-3 bg-[#007AFF] text-white rounded-xl font-black text-[10px] uppercase">Verify</button>
               </div>
            </div>
         </div>
@@ -212,8 +174,9 @@ const App: React.FC = () => {
       <main className="max-w-7xl mx-auto px-4 py-8">
         {activeSection === 'Home' && (
           <div className="space-y-16 pb-44 animate-in fade-in duration-500">
+            {/* Banner Section */}
             <section className="relative w-full aspect-[4/5] sm:aspect-video rounded-[2.5rem] overflow-hidden shadow-2xl border-[4px] border-white dark:border-zinc-800">
-              <img src={banner.imageUrl} className="absolute inset-0 w-full h-full object-cover transition-transform duration-[4s] hover:scale-105" />
+              <img src={banner.imageUrl} className="absolute inset-0 w-full h-full object-cover transition-transform duration-[5s] hover:scale-110" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent flex flex-col justify-end p-8 md:p-14">
                 <h2 className="text-4xl md:text-7xl font-black text-white leading-tight tracking-tighter">
                   {banner.title} <br/> <span className="text-[#007AFF]">{banner.highlight}</span>
@@ -222,10 +185,13 @@ const App: React.FC = () => {
               </div>
             </section>
             
+            {/* Latest Products Grid */}
             <section className="space-y-8">
-              <h2 className="text-xl font-black tracking-tight flex items-center gap-3 px-2 uppercase">
-                <div className="w-1.5 h-6 bg-[#007AFF] rounded-full"></div> New Additions
-              </h2>
+              <div className="flex justify-between items-end px-2">
+                <h2 className="text-xl font-black tracking-tight flex items-center gap-3 uppercase">
+                  <div className="w-1.5 h-6 bg-[#007AFF] rounded-full"></div> Featured Assets
+                </h2>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {products.map(p => (
                   <ProductCard 
@@ -235,6 +201,21 @@ const App: React.FC = () => {
                     onBuy={(id, cat) => { setOrderProductId(id); setOrderCategory(cat as Section); window.location.hash = '#/order'; }} 
                   />
                 ))}
+              </div>
+            </section>
+
+            {/* Latest Videos Section */}
+            <section className="space-y-8">
+              <h2 className="text-xl font-black tracking-tight flex items-center gap-3 px-2 uppercase">
+                <div className="w-1.5 h-6 bg-red-500 rounded-full"></div> Latest Tutorials
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="aspect-video bg-zinc-200 dark:bg-zinc-800 rounded-[2rem] overflow-hidden shadow-lg border-4 border-white dark:border-zinc-700">
+                   <iframe className="w-full h-full" src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="YouTube video player" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>
+                </div>
+                <div className="aspect-video bg-zinc-200 dark:bg-zinc-800 rounded-[2rem] overflow-hidden shadow-lg border-4 border-white dark:border-zinc-700">
+                   <iframe className="w-full h-full" src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="YouTube video player" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>
+                </div>
               </div>
             </section>
           </div>
@@ -260,12 +241,6 @@ const App: React.FC = () => {
                   </div>
                   <p className="text-4xl font-black text-zinc-900 dark:text-zinc-100">{selectedProduct.price === 0 ? 'FREE' : `${selectedProduct.price} EGP`}</p>
                   <p className="text-zinc-500 dark:text-zinc-400 text-sm leading-relaxed font-medium">{selectedProduct.description}</p>
-                  <div className="pt-4 border-t dark:border-zinc-700">
-                    <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-3">Compatibility</p>
-                    <div className="flex gap-2">
-                       <span className="px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-lg text-[10px] font-bold">{selectedProduct.compatibility}</span>
-                    </div>
-                  </div>
                   <button onClick={() => { setOrderProductId(selectedProduct.id); setOrderCategory(selectedProduct.category as Section); window.location.hash = '#/order'; }} className="w-full py-5 bg-[#007AFF] text-white rounded-2xl font-black text-lg shadow-xl active:scale-95 transition-all">Buy Now</button>
                 </div>
               </div>
@@ -309,14 +284,15 @@ const App: React.FC = () => {
                       <p className="text-xl font-black text-[#007AFF]">{orderProduct.price} EGP</p>
                     </div>
                   </div>
-                  
-                  <div className="pt-4 border-t dark:border-zinc-700">
-                    <p className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 leading-relaxed text-center">
-                      Send payment to Vodafone Cash: <br/> <span className="text-zinc-900 dark:text-white font-black text-lg tracking-tight select-all">01091931466</span>
+                  <div className="pt-4 border-t dark:border-zinc-700 text-center">
+                    <p className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                      Send payment to: <br/> <span className="text-zinc-900 dark:text-white font-black text-lg select-all">01091931466</span>
                     </p>
                   </div>
-
-                  <button onClick={handleOrderTelegram} className="w-full py-5 bg-[#24A1DE] text-white rounded-xl font-black text-sm uppercase tracking-widest shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3">
+                  <button onClick={() => {
+                    const msg = `New Order:%0A- Item: ${orderProduct.title}%0A- Device: ${orderPhoneType}`;
+                    window.open(`https://t.me/Mohamed_edge?text=${msg}`);
+                  }} className="w-full py-5 bg-[#24A1DE] text-white rounded-xl font-black text-sm uppercase tracking-widest shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3">
                     <i className="fa-brands fa-telegram text-xl"></i> Send Screenshot
                   </button>
                 </div>
@@ -329,20 +305,14 @@ const App: React.FC = () => {
           <div className="space-y-10 pb-44">
             <h2 className="text-3xl font-black tracking-tighter px-2 uppercase">{activeSection}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {products.filter(p => p.category === activeSection).length > 0 ? (
-                products.filter(p => p.category === activeSection).map(p => (
-                  <ProductCard 
-                    key={p.id} 
-                    product={p} 
-                    onPreview={(id) => window.location.hash = `#/preview/${id}`} 
-                    onBuy={(id, cat) => { setOrderProductId(id); setOrderCategory(cat as Section); window.location.hash = '#/order'; }} 
-                  />
-                ))
-              ) : (
-                <div className="col-span-full py-20 text-center glass-panel rounded-[2rem]">
-                  <p className="text-zinc-400 font-black tracking-[0.2em] uppercase text-[10px]">No items found in this section</p>
-                </div>
-              )}
+              {products.filter(p => p.category === activeSection).map(p => (
+                <ProductCard 
+                  key={p.id} 
+                  product={p} 
+                  onPreview={(id) => window.location.hash = `#/preview/${id}`} 
+                  onBuy={(id, cat) => { setOrderProductId(id); setOrderCategory(cat as Section); window.location.hash = '#/order'; }} 
+                />
+              ))}
             </div>
           </div>
         )}
@@ -350,44 +320,34 @@ const App: React.FC = () => {
         {activeSection === 'Admin' && isAdminMode && (
           <div className="max-w-4xl mx-auto space-y-10 pb-44 animate-in fade-in">
             <div className="flex justify-between items-center bg-white dark:bg-zinc-900 p-6 rounded-[2rem] shadow-sm border border-zinc-100 dark:border-zinc-800">
-              <div>
-                <h2 className="text-2xl font-black tracking-tight uppercase">Cloud Management</h2>
-                <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Manage your digital inventory</p>
-              </div>
-              <button onClick={() => { setEditProduct({ is_premium: false }); setIsEditing(true); }} className="px-6 py-3 bg-[#007AFF] text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl active:scale-95">Add Asset</button>
+              <h2 className="text-2xl font-black uppercase">Inventory</h2>
+              <button onClick={() => { setEditProduct({ is_premium: false }); setIsEditing(true); }} className="px-6 py-3 bg-[#007AFF] text-white rounded-xl font-black text-[10px] uppercase shadow-xl">Add Asset</button>
             </div>
 
             {isEditing && (
               <div className="glass-panel p-8 rounded-[2.5rem] space-y-6 border-white dark:border-zinc-800 shadow-2xl relative animate-in slide-in-from-top-6">
-                <div className="flex justify-between items-center"><h3 className="text-xl font-black uppercase">Editor</h3><button onClick={() => setIsEditing(false)} className="w-9 h-9 bg-zinc-100 dark:bg-zinc-800 rounded-full text-zinc-500"><i className="fa-solid fa-xmark"></i></button></div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                   <input placeholder="Asset Title" className="p-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none text-sm" value={editProduct.title || ''} onChange={e => setEditProduct({...editProduct, title: e.target.value})} />
-                   <input placeholder="Price (EGP)" type="number" className="p-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none text-sm" value={editProduct.price || 0} onChange={e => setEditProduct({...editProduct, price: parseFloat(e.target.value)})} />
+                <input placeholder="Title" className="w-full p-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 font-bold" value={editProduct.title || ''} onChange={e => setEditProduct({...editProduct, title: e.target.value})} />
+                <input placeholder="Image URL" className="w-full p-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 font-bold" value={editProduct.image || ''} onChange={e => setEditProduct({...editProduct, image: e.target.value})} />
+                <div className="grid grid-cols-2 gap-4">
+                  <input placeholder="Price" type="number" className="p-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 font-bold" value={editProduct.price || 0} onChange={e => setEditProduct({...editProduct, price: parseFloat(e.target.value)})} />
+                  <select className="p-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 font-bold" value={editProduct.category} onChange={e => setEditProduct({...editProduct, category: e.target.value as Section})}>
+                    <option value="Themes">Themes</option><option value="Widgets">Widgets</option><option value="Walls">Walls</option>
+                  </select>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                   <select className="p-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none appearance-none text-sm" value={editProduct.category} onChange={e => setEditProduct({...editProduct, category: e.target.value as Section})}>
-                     <option value="Themes">Themes</option><option value="Widgets">Widgets</option><option value="Walls">Walls</option>
-                   </select>
-                   <input placeholder="Image URL" className="p-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 font-bold outline-none text-sm" value={editProduct.image || ''} onChange={e => setEditProduct({...editProduct, image: e.target.value})} />
-                </div>
-                <textarea placeholder="Description" className="w-full p-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 font-medium h-32 outline-none resize-none text-sm" value={editProduct.description || ''} onChange={e => setEditProduct({...editProduct, description: e.target.value})} />
-                <button onClick={handleSaveProduct} disabled={isPublishing} className="w-full py-5 bg-[#007AFF] text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl disabled:opacity-50">{isPublishing ? "Syncing..." : "Publish to Store"}</button>
+                <button onClick={handleSaveProduct} disabled={isPublishing} className="w-full py-5 bg-[#007AFF] text-white rounded-2xl font-black uppercase tracking-widest">{isPublishing ? "Syncing..." : "Publish Now"}</button>
               </div>
             )}
 
             <div className="grid grid-cols-1 gap-4">
-              {products.map(p => (
-                <div key={p.id} className="p-5 bg-white dark:bg-zinc-900 rounded-[2rem] flex justify-between items-center shadow-sm border border-transparent dark:border-zinc-800">
+              {dbProducts.map(p => (
+                <div key={p.id} className="p-5 bg-white dark:bg-zinc-900 rounded-[2rem] flex justify-between items-center shadow-sm border border-zinc-100 dark:border-zinc-800">
                   <div className="flex items-center gap-5">
-                    <img src={p.image} className="w-14 h-14 rounded-xl object-cover" />
-                    <div>
-                      <p className="font-black text-sm">{p.title}</p>
-                      <p className="text-[9px] font-black uppercase text-zinc-400 tracking-widest">{p.category} • {p.price} EGP</p>
-                    </div>
+                    <img src={p.image} className="w-12 h-12 rounded-xl object-cover" />
+                    <div><p className="font-black text-sm">{p.title}</p><p className="text-[9px] font-black uppercase text-zinc-400">{p.category}</p></div>
                   </div>
                   <div className="flex gap-2">
-                    <button onClick={() => {setEditProduct(p); setIsEditing(true);}} className="w-10 h-10 bg-blue-50 dark:bg-blue-900/20 text-blue-500 rounded-xl flex items-center justify-center"><i className="fa-solid fa-pen text-sm"></i></button>
-                    <button onClick={async () => { if(confirm('Delete from Cloud?')) { await supabase.from('products').delete().eq('id', p.id); setProducts(ps => ps.filter(x => x.id !== p.id)); showNotification("Deleted"); } }} className="w-10 h-10 bg-red-50 dark:bg-red-900/20 text-red-500 rounded-xl flex items-center justify-center"><i className="fa-solid fa-trash text-sm"></i></button>
+                    <button onClick={() => {setEditProduct(p); setIsEditing(true);}} className="w-9 h-9 bg-blue-50 dark:bg-blue-900/20 text-blue-500 rounded-lg flex items-center justify-center"><i className="fa-solid fa-pen text-xs"></i></button>
+                    <button onClick={async () => { if(confirm('Delete?')) { await supabase.from('products').delete().eq('id', p.id); setDbProducts(ps => ps.filter(x => x.id !== p.id)); } }} className="w-9 h-9 bg-red-50 dark:bg-red-900/20 text-red-500 rounded-lg flex items-center justify-center"><i className="fa-solid fa-trash text-xs"></i></button>
                   </div>
                 </div>
               ))}
