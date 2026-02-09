@@ -24,15 +24,21 @@ const App: React.FC = () => {
   });
   
   const [dbProducts, setDbProducts] = useState<Product[]>([]);
+  const [deletedProductIds, setDeletedProductIds] = useState<string[]>(() => {
+    const stored = localStorage.getItem('deleted_products');
+    return stored ? JSON.parse(stored) : [];
+  });
   const [dbVideos, setDbVideos] = useState<YoutubeVideo[]>([]);
   const [siteLogo, setSiteLogo] = useState<string>("https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
   const [loadingLogo, setLoadingLogo] = useState<string>("https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
   const [adminPassword, setAdminPassword] = useState('1234');
 
+  // Merged products list that filters out deleted ones
   const products = useMemo(() => {
     const merged = [...dbProducts, ...MOCK_PRODUCTS];
-    return Array.from(new Map(merged.map(item => [item.id, item])).values());
-  }, [dbProducts]);
+    const unique = Array.from(new Map(merged.map(item => [item.id, item])).values());
+    return unique.filter(p => !deletedProductIds.includes(p.id));
+  }, [dbProducts, deletedProductIds]);
 
   const videos = useMemo(() => {
     const merged = [...dbVideos, ...MOCK_VIDEOS];
@@ -64,6 +70,10 @@ const App: React.FC = () => {
     else document.documentElement.classList.remove('dark');
     localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
   }, [isDarkMode]);
+
+  useEffect(() => {
+    localStorage.setItem('deleted_products', JSON.stringify(deletedProductIds));
+  }, [deletedProductIds]);
 
   useEffect(() => {
     const handleRoute = () => {
@@ -191,12 +201,17 @@ const App: React.FC = () => {
     if (!window.confirm("Are you sure you want to delete this product?")) return;
     
     try {
+      // Try to delete from DB
       await supabase.from('products').delete().eq('id', id);
       setDbProducts(ps => ps.filter(x => x.id !== id));
-      showNotification("Product Deleted");
+      
+      // Also add to local deleted list to handle Mock products
+      setDeletedProductIds(prev => [...prev, id]);
+      
+      showNotification("Product Removed");
     } catch (err) {
       console.error(err);
-      showNotification("Error deleting product");
+      showNotification("Error removing product");
     }
   };
 
@@ -380,7 +395,7 @@ const App: React.FC = () => {
             {adminTab === 'Inventory' && (
               <div className="space-y-6">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-2xl font-black uppercase">Product Inventory</h3>
+                  <h3 className="text-2xl font-black uppercase">Store Inventory</h3>
                   <button 
                     onClick={() => { 
                       setEditProduct({ title: '', price: 0, category: 'Themes', description: '', image: '', is_premium: false }); 
@@ -437,12 +452,17 @@ const App: React.FC = () => {
                 )}
 
                 <div className="grid grid-cols-1 gap-4">
-                  {dbProducts.map(p => (
+                  {products.map(p => (
                     <div key={p.id} className="p-5 glass-panel rounded-3xl flex justify-between items-center group transition-all hover:border-[#007AFF]/50">
                       <div className="flex items-center gap-6">
                         <img src={p.image} className="w-16 h-16 rounded-2xl object-cover shadow-lg" alt="" />
                         <div>
-                          <h4 className="font-black text-lg">{p.title}</h4>
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-black text-lg">{p.title}</h4>
+                            {MOCK_PRODUCTS.some(m => m.id === p.id) && (
+                              <span className="text-[7px] font-black bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-400 uppercase tracking-tighter">Default</span>
+                            )}
+                          </div>
                           <p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">{p.category} • {p.price} EGP</p>
                         </div>
                       </div>
@@ -466,9 +486,9 @@ const App: React.FC = () => {
                       </div>
                     </div>
                   ))}
-                  {dbProducts.length === 0 && (
+                  {products.length === 0 && (
                     <div className="p-12 text-center text-zinc-400 font-black uppercase tracking-widest text-sm">
-                      No cloud products found. Add your first asset!
+                      No products found. Add your first asset!
                     </div>
                   )}
                 </div>
