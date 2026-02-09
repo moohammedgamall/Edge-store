@@ -44,7 +44,7 @@ const Header: React.FC<HeaderProps> = ({ onAdminTrigger, onLogout, onThemeToggle
             {!imgError ? (
               <img 
                 src={finalLogo}
-                alt="Mohamed Edge" 
+                alt="" 
                 className="w-full h-full object-cover rounded-full"
                 onError={() => setImgError(true)}
               />
@@ -55,7 +55,7 @@ const Header: React.FC<HeaderProps> = ({ onAdminTrigger, onLogout, onThemeToggle
             )}
           </div>
           <div className="flex flex-col">
-            <h1 className="text-lg md:text-2xl font-black tracking-tighter text-zinc-900 dark:text-zinc-100 leading-none truncate max-w-[120px] md:max-w-none">Mohamed Edge</h1>
+            <h1 className="text-lg md:text-2xl font-black tracking-tighter text-zinc-900 dark:text-zinc-100 leading-none whitespace-nowrap">Mohamed Edge</h1>
             <span className="text-[7px] md:text-[9px] font-bold text-[#007AFF] uppercase tracking-[0.2em] mt-0.5 md:mt-1">Solo Entrepreneur</span>
           </div>
         </div>

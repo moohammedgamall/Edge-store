@@ -108,6 +108,7 @@ const App: React.FC = () => {
       } catch (e) {
         console.error("DB Fetch Error", e);
       } finally {
+        // Keeping it short but ensuring the logo renders
         setTimeout(() => setIsLoading(false), 400);
       }
     };
@@ -226,14 +227,14 @@ const App: React.FC = () => {
   };
 
   if (isLoading) return (
-    <div className="h-screen w-full flex flex-col items-center justify-center bg-[#F2F2F7] dark:bg-[#2C2C2E]">
+    <div className="h-screen w-full flex flex-col items-center justify-center bg-[#F2F2F7] dark:bg-[#2C2C2E] animate-in fade-in duration-300">
       <div className="relative">
-        <div className="w-24 h-24 rounded-full overflow-hidden shadow-2xl border-4 border-white dark:border-zinc-800 animate-in fade-in duration-300">
-          <img src={loadingLogo} className="w-full h-full object-cover" alt="Loading" loading="eager" />
+        <div className="w-24 h-24 rounded-full overflow-hidden shadow-2xl border-4 border-white dark:border-zinc-800">
+          <img src={loadingLogo} className="w-full h-full object-cover" alt="" loading="eager" />
         </div>
         <div className="absolute -inset-2 rounded-full border-2 border-dashed border-[#007AFF] animate-[spin_10s_linear_infinite]"></div>
       </div>
-      <h3 className="mt-8 text-lg font-black tracking-widest text-zinc-900 dark:text-zinc-100 uppercase animate-in slide-in-from-bottom-2 duration-500">Edge Marketplace</h3>
+      <h3 className="mt-8 text-xl font-black tracking-tighter text-zinc-900 dark:text-zinc-100 uppercase animate-in slide-in-from-bottom-2 duration-700">MOHAMED EDGE</h3>
     </div>
   );
 
@@ -333,7 +334,7 @@ const App: React.FC = () => {
                     <span className="text-[9px] font-black uppercase text-[#007AFF] tracking-widest">{selectedProduct.category}</span>
                     <h2 className="text-3xl font-black tracking-tighter mt-1">{selectedProduct.title}</h2>
                   </div>
-                  <p className="text-4xl font-black text-zinc-900 dark:text-zinc-100">{selectedProduct.price === 0 ? 'FREE' : `${selectedProduct.price} EGP`}</p>
+                  <p className="text-4xl font-black text-zinc-900 dark:text-zinc-100">{selectedProduct.price === 0 ? 'FREE' : `${selectedProduct.price.toFixed(2)} EGP`}</p>
                   <p className="text-zinc-500 dark:text-zinc-400 text-sm leading-relaxed font-medium">{selectedProduct.description}</p>
                   <button onClick={() => { setOrderProductId(selectedProduct.id); setOrderCategory(selectedProduct.category as Section); window.location.hash = '#/order'; }} className="w-full py-5 bg-[#007AFF] text-white rounded-2xl font-black text-lg shadow-xl active:scale-95 transition-all">Buy Now</button>
                 </div>
