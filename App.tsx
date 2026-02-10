@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { Section, Product, YoutubeVideo } from './types';
-import { MOCK_PRODUCTS, MOCK_VIDEOS } from './constants';
+import { NAV_ITEMS } from './constants';
 import BottomNav from './components/BottomNav';
 import Header from './components/Header';
 import ProductCard from './components/ProductCard';
@@ -34,7 +34,6 @@ const App: React.FC = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [passwordInput, setPasswordInput] = useState('');
   const [selectedProductId, setSelectedProductId] = useState<string>('');
-  const [orderProductId, setOrderProductId] = useState<string>('');
   
   // --- Admin Dashboard State ---
   const [adminTab, setAdminTab] = useState<'Inventory' | 'Videos' | 'Settings'>('Inventory');
@@ -91,9 +90,9 @@ const App: React.FC = () => {
       const { error } = await supabase.from('settings').upsert({ key, value }, { onConflict: 'key' });
       if (error) throw error;
       await refreshData();
-      showNotify("System setting updated");
+      showNotify("System updated");
     } catch (err: any) { 
-      showNotify("Security Policy Blocked Update", "error"); 
+      showNotify("Policy Error", "error"); 
     }
   };
 
@@ -106,13 +105,12 @@ const App: React.FC = () => {
   };
 
   const saveVideo = async () => {
-    if (!editVideo.title || !editVideo.url) return showNotify("All fields are required", "error");
+    if (!editVideo.title || !editVideo.url) return showNotify("All fields required", "error");
     const vidId = extractYoutubeId(editVideo.url);
-    if (!vidId) return showNotify("Invalid YouTube Link", "error");
+    if (!vidId) return showNotify("Invalid Link", "error");
     
     setIsPublishing(true);
     try {
-      // Step 1: Attempt the Upsert
       const { error } = await supabase
         .from('videos')
         .upsert({
@@ -121,35 +119,25 @@ const App: React.FC = () => {
           url: `https://www.youtube.com/watch?v=${vidId}`
         }, { onConflict: 'id' });
       
-      if (error) {
-        // Step 2: Specific check for RLS error
-        if (error.message.includes('row-level security')) {
-          throw new Error("Database Permissions Error: You must enable RLS policies in Supabase SQL Editor.");
-        }
-        throw error;
-      }
+      if (error) throw error;
       
       await refreshData();
       setIsEditingVideo(false);
-      showNotify("Tutorial synced to Cloud");
+      showNotify("Tutorial Synced");
     } catch (err: any) { 
-      console.error("Database Error:", err);
-      showNotify(err.message || "Failed to sync video", "error"); 
+      showNotify("Security Policy Blocked Upload", "error"); 
     } finally { 
       setIsPublishing(false); 
     }
   };
 
   const deleteVideo = async (id: string) => {
-    if (!window.confirm("Permanently delete tutorial?")) return;
+    if (!window.confirm("Delete video?")) return;
     try {
-      const { error } = await supabase.from('videos').delete().eq('id', id);
-      if (error) throw error;
+      await supabase.from('videos').delete().eq('id', id);
       await refreshData();
-      showNotify("Video removed from cloud");
-    } catch (err: any) { 
-      showNotify("Database Protection Error", "error"); 
-    }
+      showNotify("Removed");
+    } catch (err: any) { showNotify("Error", "error"); }
   };
 
   const saveProduct = async () => {
@@ -171,25 +159,19 @@ const App: React.FC = () => {
       if (error) throw error;
       await refreshData();
       setIsEditingProduct(false);
-      showNotify("Inventory updated");
-    } catch (err: any) { 
-      showNotify("Inventory Permission Error", "error"); 
-    } finally { setIsPublishing(false); }
+      showNotify("Stock updated");
+    } catch (err: any) { showNotify("Error", "error"); } finally { setIsPublishing(false); }
   };
 
   const deleteProduct = async (id: string) => {
-    if (!window.confirm("Delete item from cloud?")) return;
+    if (!window.confirm("Delete item?")) return;
     try {
-      const { error } = await supabase.from('products').delete().eq('id', id);
-      if (error) throw error;
+      await supabase.from('products').delete().eq('id', id);
       await refreshData();
-      showNotify("Item removed");
-    } catch (err: any) { 
-      showNotify("Operation blocked", "error"); 
-    }
+      showNotify("Deleted");
+    } catch (err: any) { showNotify("Error", "error"); }
   };
 
-  // --- Rest of the component (Navigation & Auth) ---
   useEffect(() => {
     const handleRoute = () => {
       const hash = window.location.hash;
@@ -213,9 +195,9 @@ const App: React.FC = () => {
       setIsAuthModalOpen(false);
       setPasswordInput('');
       window.location.hash = '#/admin';
-      showNotify("Access Granted");
+      showNotify("Welcome Admin");
     } else {
-      showNotify("Invalid Credentials", "error");
+      showNotify("Access Denied", "error");
     }
   };
 
@@ -227,6 +209,7 @@ const App: React.FC = () => {
   });
 
   const products = useMemo(() => dbProducts, [dbProducts]);
+  const videos = useMemo(() => dbVideos, [dbVideos]);
   const selectedProduct = useMemo(() => products.find(p => p.id === selectedProductId), [products, selectedProductId]);
 
   if (isLoading) return null;
@@ -238,7 +221,7 @@ const App: React.FC = () => {
       {isAuthModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-xl animate-in fade-in">
            <div className="w-full max-w-[340px] glass-panel p-8 rounded-[2.5rem] space-y-6">
-              <div className="text-center space-y-2"><i className="fa-solid fa-lock text-[#007AFF] text-2xl"></i><h3 className="font-black uppercase text-xs tracking-widest">Admin Authorization</h3></div>
+              <div className="text-center space-y-2"><i className="fa-solid fa-lock text-[#007AFF] text-2xl"></i><h3 className="font-black uppercase text-xs tracking-widest">Login</h3></div>
               <input type="password" value={passwordInput} onChange={e => setPasswordInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAuth()} className="w-full p-4 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-center text-2xl font-black outline-none border-2 border-transparent focus:border-[#007AFF]" placeholder="••••" autoFocus />
               <div className="grid grid-cols-2 gap-3">
                 <button onClick={() => setIsAuthModalOpen(false)} className="py-4 text-[10px] font-black uppercase text-zinc-400">Cancel</button>
@@ -250,18 +233,52 @@ const App: React.FC = () => {
 
       <main className="max-w-7xl mx-auto px-4 py-8">
         {activeSection === 'Home' && (
-          <div className="space-y-16 animate-in fade-in slide-in-from-bottom-8 duration-700">
+          <div className="space-y-20 animate-in fade-in slide-in-from-bottom-8 duration-700">
+            {/* Products Section */}
             <section className="space-y-8">
-              <h2 className="text-xl font-black tracking-tight uppercase px-1 flex items-center gap-3"><div className="w-1.5 h-6 bg-[#007AFF] rounded-full"></div> Marketplace</h2>
+              <div className="flex justify-between items-end px-1">
+                <h2 className="text-2xl font-black tracking-tighter uppercase flex items-center gap-3">
+                    <div className="w-1.5 h-6 bg-[#007AFF] rounded-full"></div> Marketplace
+                </h2>
+                <span className="text-[9px] font-black text-zinc-400 tracking-widest uppercase">{products.length} Assets</span>
+              </div>
               {products.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {products.map(p => <ProductCard key={p.id} product={p} onPreview={(id) => window.location.hash = `#/preview/${id}`} onBuy={(id) => { setOrderProductId(id); window.location.hash = '#/order'; }} />)}
+                  {products.map(p => <ProductCard key={p.id} product={p} onPreview={(id) => window.location.hash = `#/preview/${id}`} onBuy={(id) => { window.location.hash = '#/order'; }} />)}
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center py-20 text-zinc-400 gap-4">
-                  <i className="fa-solid fa-database text-5xl"></i>
-                  <p className="font-black uppercase text-xs tracking-widest">No data in cloud</p>
+                <div className="p-20 text-center glass-panel rounded-[3rem] text-zinc-400 font-black uppercase text-xs tracking-widest">Waiting for Cloud Sync...</div>
+              )}
+            </section>
+
+            {/* Videos Section */}
+            <section className="space-y-8">
+              <div className="flex justify-between items-end px-1">
+                <h2 className="text-2xl font-black tracking-tighter uppercase flex items-center gap-3">
+                    <div className="w-1.5 h-6 bg-red-500 rounded-full"></div> Tutorials
+                </h2>
+                <span className="text-[9px] font-black text-zinc-400 tracking-widest uppercase">{videos.length} Videos</span>
+              </div>
+              {videos.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {videos.map(v => (
+                    <a key={v.id} href={v.url} target="_blank" rel="noopener noreferrer" className="glass-panel group rounded-[2rem] overflow-hidden hover:scale-[1.03] transition-all duration-500 border-2 border-transparent hover:border-red-500/30">
+                        <div className="aspect-video relative overflow-hidden bg-zinc-800">
+                            <img src={`https://img.youtube.com/vi/${v.id}/maxresdefault.jpg`} className="w-full h-full object-cover transition-transform group-hover:scale-110" onError={(e) => (e.currentTarget.src = `https://img.youtube.com/vi/${v.id}/mqdefault.jpg`)} />
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors">
+                                <div className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center shadow-2xl group-hover:scale-125 transition-transform">
+                                    <i className="fa-solid fa-play text-white text-lg ml-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="p-5">
+                            <h3 className="font-black text-sm line-clamp-2 leading-tight group-hover:text-red-600 transition-colors">{v.title}</h3>
+                        </div>
+                    </a>
+                  ))}
                 </div>
+              ) : (
+                <div className="p-16 text-center border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-[3rem] text-zinc-400 font-black uppercase text-[10px] tracking-widest">No tutorials available yet</div>
               )}
             </section>
           </div>
@@ -285,11 +302,11 @@ const App: React.FC = () => {
                </div>
                <div className="lg:col-span-5">
                  <div className="glass-panel p-8 sm:p-12 rounded-[2.5rem] space-y-6 sticky top-28">
-                    <h2 className="text-4xl font-black tracking-tight">{selectedProduct.title}</h2>
+                    <h2 className="text-4xl font-black tracking-tight leading-tight">{selectedProduct.title}</h2>
                     <p className="text-5xl font-black text-[#007AFF] tracking-tighter">{selectedProduct.price === 0 ? 'FREE' : `${selectedProduct.price.toFixed(2)} EGP`}</p>
                     <div className="h-px bg-zinc-100 dark:bg-zinc-800 w-full my-6"></div>
                     <p className="text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed">{selectedProduct.description}</p>
-                    <button onClick={() => { setOrderProductId(selectedProduct.id); window.location.hash = '#/order'; }} className="w-full py-6 bg-[#007AFF] text-white rounded-[2rem] font-black text-xl shadow-2xl active:scale-95 transition-all">Order License</button>
+                    <button onClick={() => { window.location.hash = '#/order'; }} className="w-full py-6 bg-[#007AFF] text-white rounded-[2rem] font-black text-xl shadow-2xl active:scale-95 transition-all">Order License</button>
                  </div>
                </div>
              </div>
@@ -315,7 +332,7 @@ const App: React.FC = () => {
                   <button onClick={() => { setEditProduct({ title: '', price: 0, category: 'Themes', image: '', description: '', gallery: [] }); setIsEditingProduct(true); }} className="px-8 py-3.5 bg-[#007AFF] text-white rounded-xl font-black uppercase text-[9px] shadow-lg">New Item</button>
                 </div>
                 {isEditingProduct && (
-                  <div className="glass-panel p-8 rounded-[2.5rem] space-y-6 animate-in zoom-in">
+                  <div className="glass-panel p-8 rounded-[2.5rem] space-y-6 animate-in zoom-in border-2 border-blue-500/20">
                     <input className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none" value={editProduct.title || ''} onChange={e => setEditProduct({...editProduct, title: e.target.value})} placeholder="Product Title" />
                     <textarea className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-medium h-32 outline-none" placeholder="Description" value={editProduct.description || ''} onChange={e => setEditProduct({...editProduct, description: e.target.value})} />
                     <div className="flex gap-4">
@@ -348,13 +365,11 @@ const App: React.FC = () => {
                 </div>
                 {isEditingVideo && (
                   <div className="glass-panel p-8 rounded-[2.5rem] space-y-6 border-2 border-red-500/20 animate-in zoom-in">
-                    <div className="space-y-4">
-                      <input className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none border-2 border-transparent focus:border-red-500" value={editVideo.title || ''} onChange={e => setEditVideo({...editVideo, title: e.target.value})} placeholder="Video Headline" />
-                      <input className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none border-2 border-transparent focus:border-red-500" value={editVideo.url || ''} onChange={e => setEditVideo({...editVideo, url: e.target.value})} placeholder="Paste YouTube Link Here" />
-                    </div>
+                    <input className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none" value={editVideo.title || ''} onChange={e => setEditVideo({...editVideo, title: e.target.value})} placeholder="Video Headline" />
+                    <input className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none" value={editVideo.url || ''} onChange={e => setEditVideo({...editVideo, url: e.target.value})} placeholder="Paste YouTube Link" />
                     <div className="flex gap-4">
                       <button onClick={() => setIsEditingVideo(false)} className="flex-1 py-5 bg-zinc-100 dark:bg-zinc-800 font-black text-[10px] uppercase rounded-2xl">Cancel</button>
-                      <button onClick={saveVideo} className="flex-[3] py-5 bg-red-500 text-white font-black text-[10px] uppercase rounded-2xl shadow-xl transition-all active:scale-[0.98]">
+                      <button onClick={saveVideo} className="flex-[3] py-5 bg-red-500 text-white font-black text-[10px] uppercase rounded-2xl shadow-xl">
                         {isPublishing ? 'Establishing Connection...' : 'Push to Cloud'}
                       </button>
                     </div>
