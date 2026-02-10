@@ -90,8 +90,8 @@ const App: React.FC = () => {
     } catch (err) {
       console.error("Critical Sync Failure:", err);
     } finally {
-      // Delaying slightly for a smoother transition from loader
-      setTimeout(() => setIsLoading(false), 800);
+      // Reduced delay to 100ms for much faster transition after data sync
+      setTimeout(() => setIsLoading(false), 100);
     }
   };
 
@@ -115,23 +115,16 @@ const App: React.FC = () => {
     
     setIsPublishing(true);
     try {
-      const payload = {
-        id: vidId,
-        title: editVideo.title,
-        url: `https://www.youtube.com/watch?v=${vidId}`
-      };
-
+      const payload = { id: vidId, title: editVideo.title, url: `https://www.youtube.com/watch?v=${vidId}` };
       const { error } = await supabase.from('videos').upsert(payload);
       if (error) {
         const { error: error2 } = await supabase.from('tutorials').upsert(payload);
         if (error2) throw error2;
       }
-      
       await refreshData();
       setIsEditingVideo(false);
       showNotify("Tutorial Synced Successfully");
     } catch (err: any) { 
-      console.error("Save Video Error:", err.message);
       showNotify(`Database Error: ${err.message}`, "error"); 
     } finally { 
       setIsPublishing(false); 
@@ -169,12 +162,17 @@ const App: React.FC = () => {
 
   const updateSetting = async (key: string, value: string) => {
     try {
-      await supabase.from('settings').upsert({ key, value });
-      if (key === 'site_logo') localStorage.setItem('cached_loading_logo', value);
+      const { error } = await supabase.from('settings').upsert({ key, value });
+      if (error) throw error;
+      
+      if (key === 'site_logo') {
+        setSiteLogo(value);
+        localStorage.setItem('cached_loading_logo', value);
+      }
       await refreshData();
-      showNotify("Setting updated in cloud");
-    } catch (err) { 
-      showNotify("Failed to save settings", "error"); 
+      showNotify("Settings updated successfully");
+    } catch (err: any) { 
+      showNotify("Failed to save settings: " + err.message, "error"); 
     }
   };
 
@@ -222,7 +220,7 @@ const App: React.FC = () => {
   const orderedProduct = useMemo(() => dbProducts.find(p => p.id === orderProductId), [dbProducts, orderProductId]);
 
   if (isLoading) return (
-      <div className="h-screen w-full flex flex-col items-center justify-center bg-[#F2F2F7] dark:bg-[#2C2C2E] animate-in fade-in duration-500">
+      <div className="h-screen w-full flex flex-col items-center justify-center bg-[#F2F2F7] dark:bg-[#2C2C2E] animate-in fade-in duration-300">
           <div className="relative mb-8">
               <div className="w-24 h-24 md:w-32 md:h-32 border-4 border-white dark:border-zinc-800 rounded-full overflow-hidden shadow-2xl relative z-10 bg-white">
                   <img src={siteLogo} className="w-full h-full object-cover" alt="Logo" />
@@ -231,7 +229,6 @@ const App: React.FC = () => {
           </div>
           <div className="text-center space-y-2">
               <h3 className="font-black text-xl md:text-2xl tracking-tighter uppercase dark:text-white">Mohamed Edge</h3>
-              <p className="font-black text-[9px] uppercase tracking-[0.4em] text-zinc-400">Syncing Marketplace...</p>
           </div>
       </div>
   );
@@ -498,17 +495,47 @@ const App: React.FC = () => {
 
             {adminTab === 'Settings' && (
               <div className="glass-panel p-12 rounded-[4rem] space-y-12 shadow-3xl">
-                <div className="space-y-5">
-                   <label className="text-[10px] font-black uppercase text-zinc-400 tracking-[0.3em] px-4">Master Password</label>
-                   <input type="password" placeholder="New Admin Pass" className="w-full p-8 rounded-[2.5rem] bg-zinc-100 dark:bg-zinc-800 font-black border-2 border-transparent focus:border-[#007AFF] outline-none text-xl" onBlur={e => e.target.value && updateSetting('admin_password', e.target.value)} />
-                </div>
-                <div className="space-y-5">
-                   <label className="text-[10px] font-black uppercase text-zinc-400 tracking-[0.3em] px-4">Branding Logo (URL)</label>
-                   <div className="flex gap-5">
-                     <input type="text" placeholder="https://..." className="flex-1 p-8 rounded-[2.5rem] bg-zinc-100 dark:bg-zinc-800 font-black border-2 border-transparent focus:border-[#007AFF] outline-none" value={siteLogo} onChange={e => setSiteLogo(e.target.value)} />
-                     <button onClick={() => updateSetting('site_logo', siteLogo)} className="px-12 bg-[#007AFF] text-white rounded-[2.5rem] font-black uppercase text-[10px] shadow-2xl active:scale-95 transition-all">Update</button>
-                   </div>
-                </div>
+                <section className="space-y-8">
+                    <h4 className="text-lg font-black uppercase tracking-tighter flex items-center gap-3">
+                        <div className="w-1.5 h-4 bg-[#007AFF] rounded-full"></div> Visual Identity
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
+                        <div className="space-y-4">
+                            <label className="text-[10px] font-black uppercase text-zinc-400 px-4">Site & Loading Logo</label>
+                            <div className="flex items-center gap-6 p-6 bg-zinc-100 dark:bg-zinc-800 rounded-[2rem] border-2 border-dashed border-zinc-300 dark:border-zinc-700 relative overflow-hidden group">
+                                <img src={siteLogo} className="w-20 h-20 rounded-full object-cover shadow-xl border-2 border-white" />
+                                <div className="flex flex-col">
+                                    <span className="font-black text-xs">Update Branding</span>
+                                    <span className="text-[9px] text-zinc-400 font-bold uppercase">PNG/JPG Preferred</span>
+                                </div>
+                                <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={async e => {
+                                    if(e.target.files?.[0]) {
+                                        const b64 = await fileToBase64(e.target.files[0]);
+                                        updateSetting('site_logo', b64);
+                                    }
+                                }} />
+                            </div>
+                        </div>
+                        <div className="space-y-4">
+                            <label className="text-[10px] font-black uppercase text-zinc-400 px-4">Manual Logo URL (Optional)</label>
+                            <div className="flex gap-3">
+                                <input type="text" className="flex-1 p-6 rounded-[1.5rem] bg-zinc-100 dark:bg-zinc-800 font-bold outline-none border-2 border-transparent focus:border-[#007AFF]" placeholder="Paste URL here..." onBlur={e => e.target.value && updateSetting('site_logo', e.target.value)} />
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <div className="h-px bg-zinc-100 dark:bg-zinc-800 w-full"></div>
+
+                <section className="space-y-6">
+                    <h4 className="text-lg font-black uppercase tracking-tighter flex items-center gap-3">
+                        <div className="w-1.5 h-4 bg-red-600 rounded-full"></div> Security
+                    </h4>
+                    <div className="space-y-5">
+                       <label className="text-[10px] font-black uppercase text-zinc-400 tracking-[0.3em] px-4">Master Admin Password</label>
+                       <input type="password" placeholder="••••" className="w-full p-8 rounded-[2.5rem] bg-zinc-100 dark:bg-zinc-800 font-black border-2 border-transparent focus:border-[#007AFF] outline-none text-xl" onBlur={e => e.target.value && updateSetting('admin_password', e.target.value)} />
+                    </div>
+                </section>
               </div>
             )}
           </div>
