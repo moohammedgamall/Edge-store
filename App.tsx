@@ -111,11 +111,8 @@ const App: React.FC = () => {
   useEffect(() => { refreshData(); }, []);
 
   const handleAuth = () => {
-    // التحقق من كلمة المرور بدقة مع إزالة الفراغات الزائدة
     const inputClean = passwordInput.trim();
     const targetClean = adminPassword.trim();
-    
-    // محاولة الدخول إما بكلمة المرور من القاعدة أو بكلمة المرور الافتراضية كخيار أمان إضافي
     if (inputClean === targetClean || inputClean === '1234') {
       setIsAdminMode(true);
       setIsAuthModalOpen(false);
@@ -203,7 +200,6 @@ const App: React.FC = () => {
     } catch (err: any) { showNotify(err.message, "error"); } finally { setIsPublishing(false); }
   };
 
-  // Fix: Added missing handleOrderRedirect function to redirect user to Telegram with order details
   const handleOrderRedirect = () => {
     if (!currentOrderedProduct) return;
     const message = `طلب جديد من متجر Mohamed Edge:
@@ -295,25 +291,43 @@ const App: React.FC = () => {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   {dbVideos.map((video) => (
-                    <div key={video.id} className="glass-panel overflow-hidden rounded-[2.5rem] shadow-xl group hover:scale-[1.01] transition-all duration-500 border border-white/20 dark:border-white/5">
+                    <a 
+                      key={video.id} 
+                      href={video.url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="glass-panel overflow-hidden rounded-[2.5rem] shadow-xl group hover:scale-[1.02] active:scale-95 transition-all duration-500 border border-white/20 dark:border-white/5 block"
+                    >
                       <div className="aspect-video w-full bg-zinc-900 relative">
-                        <iframe 
-                          className="w-full h-full"
-                          src={`https://www.youtube.com/embed/${video.id}?rel=0&modestbranding=1`}
-                          title={video.title}
-                          frameBorder="0"
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          allowFullScreen
+                        {/* YouTube Thumbnail Image */}
+                        <img 
+                          src={`https://img.youtube.com/vi/${video.id}/maxresdefault.jpg`} 
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                          alt={video.title}
+                          onError={(e) => {
+                            // Fallback if maxresdefault doesn't exist
+                            (e.target as HTMLImageElement).src = `https://img.youtube.com/vi/${video.id}/hqdefault.jpg`;
+                          }}
                         />
+                        {/* Play Button Overlay */}
+                        <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                           <div className="w-20 h-20 bg-red-600 text-white rounded-full flex items-center justify-center shadow-2xl shadow-red-600/50 transform group-hover:scale-125 transition-transform duration-500">
+                             <i className="fa-solid fa-play text-3xl ml-1"></i>
+                           </div>
+                        </div>
+                        {/* Youtube Badge */}
+                        <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 flex items-center gap-2">
+                           <i className="fa-brands fa-youtube text-red-500 text-sm"></i>
+                           <span className="text-[10px] font-black text-white uppercase tracking-widest">YouTube</span>
+                        </div>
                       </div>
                       <div className="p-6 bg-white dark:bg-zinc-900/50 backdrop-blur-md">
                         <div className="flex items-center gap-3 mb-2">
-                           <i className="fa-brands fa-youtube text-red-600 text-lg"></i>
-                           <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Video Guide</span>
+                           <span className="text-[10px] font-black uppercase tracking-widest text-[#007AFF]">Tutorial Guide</span>
                         </div>
-                        <h4 className="font-black text-lg tracking-tight uppercase line-clamp-2 leading-tight">{video.title}</h4>
+                        <h4 className="font-black text-lg tracking-tight uppercase line-clamp-2 leading-tight group-hover:text-red-600 transition-colors">{video.title}</h4>
                       </div>
-                    </div>
+                    </a>
                   ))}
                 </div>
               </section>
