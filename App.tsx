@@ -46,7 +46,7 @@ const App: React.FC = () => {
 
   const showNotify = (message: string, type: 'success' | 'error' = 'success') => {
     setNotification({ message, type });
-    setTimeout(() => setNotification(null), 3000);
+    setTimeout(() => setNotification(null), 4000);
   };
 
   useEffect(() => {
@@ -55,7 +55,6 @@ const App: React.FC = () => {
     localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
   }, [isDarkMode]);
 
-  // --- Core Database Synchronization ---
   const refreshData = async () => {
     try {
       const [prodRes, vidRes, setRes] = await Promise.all([
@@ -66,7 +65,6 @@ const App: React.FC = () => {
 
       if (prodRes.data) setDbProducts(prodRes.data.map(p => ({ ...p, gallery: p.gallery || [] })));
       if (vidRes.data) setDbVideos(vidRes.data);
-      
       if (setRes.data) {
         setRes.data.forEach(s => {
           if (s.key === 'admin_password') setAdminPassword(s.value);
@@ -88,9 +86,74 @@ const App: React.FC = () => {
     refreshData();
   }, []);
 
-  // --- CRUD Operations ---
+  const updateSetting = async (key: string, value: string) => {
+    try {
+      const { error } = await supabase.from('settings').upsert({ key, value }, { onConflict: 'key' });
+      if (error) throw error;
+      await refreshData();
+      showNotify("System setting updated");
+    } catch (err: any) { 
+      showNotify("Security Policy Blocked Update", "error"); 
+    }
+  };
+
+  const extractYoutubeId = (url: string): string | null => {
+    const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts|live)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+    const match = url.trim().match(regex);
+    if (match) return match[1];
+    if (url.trim().length === 11 && !url.includes('/') && !url.includes('.')) return url.trim();
+    return null;
+  };
+
+  const saveVideo = async () => {
+    if (!editVideo.title || !editVideo.url) return showNotify("All fields are required", "error");
+    const vidId = extractYoutubeId(editVideo.url);
+    if (!vidId) return showNotify("Invalid YouTube Link", "error");
+    
+    setIsPublishing(true);
+    try {
+      // Step 1: Attempt the Upsert
+      const { error } = await supabase
+        .from('videos')
+        .upsert({
+          id: vidId,
+          title: editVideo.title,
+          url: `https://www.youtube.com/watch?v=${vidId}`
+        }, { onConflict: 'id' });
+      
+      if (error) {
+        // Step 2: Specific check for RLS error
+        if (error.message.includes('row-level security')) {
+          throw new Error("Database Permissions Error: You must enable RLS policies in Supabase SQL Editor.");
+        }
+        throw error;
+      }
+      
+      await refreshData();
+      setIsEditingVideo(false);
+      showNotify("Tutorial synced to Cloud");
+    } catch (err: any) { 
+      console.error("Database Error:", err);
+      showNotify(err.message || "Failed to sync video", "error"); 
+    } finally { 
+      setIsPublishing(false); 
+    }
+  };
+
+  const deleteVideo = async (id: string) => {
+    if (!window.confirm("Permanently delete tutorial?")) return;
+    try {
+      const { error } = await supabase.from('videos').delete().eq('id', id);
+      if (error) throw error;
+      await refreshData();
+      showNotify("Video removed from cloud");
+    } catch (err: any) { 
+      showNotify("Database Protection Error", "error"); 
+    }
+  };
+
   const saveProduct = async () => {
-    if (!editProduct.title || !editProduct.image) return showNotify("Title and Cover are mandatory", "error");
+    if (!editProduct.title || !editProduct.image) return showNotify("Title & Image required", "error");
     setIsPublishing(true);
     try {
       const payload = {
@@ -108,80 +171,25 @@ const App: React.FC = () => {
       if (error) throw error;
       await refreshData();
       setIsEditingProduct(false);
-      showNotify("Product Saved Successfully");
+      showNotify("Inventory updated");
     } catch (err: any) { 
-      console.error("Product Save Error:", err);
-      showNotify(`Error: ${err.message || 'Database Write Failed'}`, "error"); 
+      showNotify("Inventory Permission Error", "error"); 
     } finally { setIsPublishing(false); }
   };
 
   const deleteProduct = async (id: string) => {
-    if (!window.confirm("Remove this asset from cloud storage?")) return;
+    if (!window.confirm("Delete item from cloud?")) return;
     try {
       const { error } = await supabase.from('products').delete().eq('id', id);
       if (error) throw error;
       await refreshData();
-      showNotify("Asset Deleted Successfully");
+      showNotify("Item removed");
     } catch (err: any) { 
-      showNotify("Operation Failed", "error"); 
+      showNotify("Operation blocked", "error"); 
     }
   };
 
-  const updateSetting = async (key: string, value: string) => {
-    try {
-      const { error } = await supabase.from('settings').upsert({ key, value }, { onConflict: 'key' });
-      if (error) throw error;
-      await refreshData();
-      showNotify("Settings Updated");
-    } catch (err: any) { 
-      showNotify("Settings Sync Failed", "error"); 
-    }
-  };
-
-  const extractYoutubeId = (url: string): string | null => {
-    const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts|live)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
-    const match = url.trim().match(regex);
-    if (match) return match[1];
-    if (url.trim().length === 11 && !url.includes('/') && !url.includes('.')) return url.trim();
-    return null;
-  };
-
-  const saveVideo = async () => {
-    if (!editVideo.title || !editVideo.url) return showNotify("Required fields missing", "error");
-    const vidId = extractYoutubeId(editVideo.url);
-    if (!vidId) return showNotify("Invalid YouTube link format", "error");
-    
-    setIsPublishing(true);
-    try {
-      const { error } = await supabase.from('videos').upsert({
-        id: vidId,
-        title: editVideo.title,
-        url: `https://www.youtube.com/watch?v=${vidId}`
-      }, { onConflict: 'id' });
-      
-      if (error) throw error;
-      
-      await refreshData();
-      setIsEditingVideo(false);
-      showNotify("Tutorial Synced Successfully");
-    } catch (err: any) { 
-      console.error("Video Sync Error Detail:", err);
-      // More descriptive notification
-      showNotify(`Sync Error: ${err.message || 'Check Supabase Permissions'}`, "error"); 
-    }
-    finally { setIsPublishing(false); }
-  };
-
-  const deleteVideo = async (id: string) => {
-    if (!window.confirm("Delete tutorial from cloud?")) return;
-    try {
-      await supabase.from('videos').delete().eq('id', id);
-      await refreshData();
-      showNotify("Video Removed");
-    } catch (err: any) { showNotify("Delete Failed", "error"); }
-  };
-
-  // --- Navigation & Auth ---
+  // --- Rest of the component (Navigation & Auth) ---
   useEffect(() => {
     const handleRoute = () => {
       const hash = window.location.hash;
@@ -205,9 +213,9 @@ const App: React.FC = () => {
       setIsAuthModalOpen(false);
       setPasswordInput('');
       window.location.hash = '#/admin';
-      showNotify("Admin Authenticated");
+      showNotify("Access Granted");
     } else {
-      showNotify("Access Denied", "error");
+      showNotify("Invalid Credentials", "error");
     }
   };
 
@@ -230,11 +238,11 @@ const App: React.FC = () => {
       {isAuthModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-xl animate-in fade-in">
            <div className="w-full max-w-[340px] glass-panel p-8 rounded-[2.5rem] space-y-6">
-              <div className="text-center space-y-2"><i className="fa-solid fa-shield-halved text-[#007AFF] text-2xl"></i><h3 className="font-black uppercase text-xs tracking-widest">Admin Portal</h3></div>
+              <div className="text-center space-y-2"><i className="fa-solid fa-lock text-[#007AFF] text-2xl"></i><h3 className="font-black uppercase text-xs tracking-widest">Admin Authorization</h3></div>
               <input type="password" value={passwordInput} onChange={e => setPasswordInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAuth()} className="w-full p-4 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-center text-2xl font-black outline-none border-2 border-transparent focus:border-[#007AFF]" placeholder="••••" autoFocus />
               <div className="grid grid-cols-2 gap-3">
                 <button onClick={() => setIsAuthModalOpen(false)} className="py-4 text-[10px] font-black uppercase text-zinc-400">Cancel</button>
-                <button onClick={handleAuth} className="py-4 bg-[#007AFF] text-white rounded-2xl font-black uppercase text-[10px] shadow-lg shadow-blue-500/30 transition-all active:scale-95">Verify</button>
+                <button onClick={handleAuth} className="py-4 bg-[#007AFF] text-white rounded-2xl font-black uppercase text-[10px] shadow-lg transition-all active:scale-95">Verify</button>
               </div>
            </div>
         </div>
@@ -244,15 +252,15 @@ const App: React.FC = () => {
         {activeSection === 'Home' && (
           <div className="space-y-16 animate-in fade-in slide-in-from-bottom-8 duration-700">
             <section className="space-y-8">
-              <h2 className="text-xl font-black tracking-tight uppercase px-1 flex items-center gap-3"><div className="w-1.5 h-6 bg-[#007AFF] rounded-full"></div> New Release</h2>
+              <h2 className="text-xl font-black tracking-tight uppercase px-1 flex items-center gap-3"><div className="w-1.5 h-6 bg-[#007AFF] rounded-full"></div> Marketplace</h2>
               {products.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                   {products.map(p => <ProductCard key={p.id} product={p} onPreview={(id) => window.location.hash = `#/preview/${id}`} onBuy={(id) => { setOrderProductId(id); window.location.hash = '#/order'; }} />)}
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-20 text-zinc-400 gap-4">
-                  <i className="fa-solid fa-cloud-moon text-5xl"></i>
-                  <p className="font-black uppercase text-xs tracking-widest">Connect to Cloud Database</p>
+                  <i className="fa-solid fa-database text-5xl"></i>
+                  <p className="font-black uppercase text-xs tracking-widest">No data in cloud</p>
                 </div>
               )}
             </section>
@@ -261,7 +269,7 @@ const App: React.FC = () => {
 
         {activeSection === 'Preview' && selectedProduct && (
            <div className="max-w-6xl mx-auto animate-in fade-in duration-500">
-             <button onClick={() => window.history.back()} className="mb-8 w-12 h-12 bg-white dark:bg-zinc-800 rounded-full shadow-lg flex items-center justify-center"><i className="fa-solid fa-chevron-left"></i></button>
+             <button onClick={() => window.history.back()} className="mb-8 w-12 h-12 bg-white dark:bg-zinc-800 rounded-full shadow-lg flex items-center justify-center hover:scale-110 transition-transform"><i className="fa-solid fa-chevron-left"></i></button>
              <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
                <div className="lg:col-span-7 space-y-6">
                   <div className="glass-panel p-2 rounded-[2.5rem] overflow-hidden border-4 border-white dark:border-zinc-800 shadow-2xl">
@@ -269,19 +277,19 @@ const App: React.FC = () => {
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                     {(selectedProduct.gallery || []).map((img, idx) => (
-                      <div key={idx} className="aspect-[9/16] rounded-3xl overflow-hidden border-2 border-white dark:border-zinc-800 shadow-lg group">
-                        <img src={img} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                      <div key={idx} className="aspect-[9/16] rounded-3xl overflow-hidden border-2 border-white dark:border-zinc-800 shadow-lg">
+                        <img src={img} className="w-full h-full object-cover" />
                       </div>
                     ))}
                   </div>
                </div>
                <div className="lg:col-span-5">
                  <div className="glass-panel p-8 sm:p-12 rounded-[2.5rem] space-y-6 sticky top-28">
-                    <h2 className="text-4xl font-black tracking-tight leading-none">{selectedProduct.title}</h2>
+                    <h2 className="text-4xl font-black tracking-tight">{selectedProduct.title}</h2>
                     <p className="text-5xl font-black text-[#007AFF] tracking-tighter">{selectedProduct.price === 0 ? 'FREE' : `${selectedProduct.price.toFixed(2)} EGP`}</p>
                     <div className="h-px bg-zinc-100 dark:bg-zinc-800 w-full my-6"></div>
                     <p className="text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed">{selectedProduct.description}</p>
-                    <button onClick={() => { setOrderProductId(selectedProduct.id); window.location.hash = '#/order'; }} className="w-full py-6 bg-[#007AFF] text-white rounded-[2rem] font-black text-xl shadow-2xl shadow-blue-500/40 active:scale-95 transition-all">Order License</button>
+                    <button onClick={() => { setOrderProductId(selectedProduct.id); window.location.hash = '#/order'; }} className="w-full py-6 bg-[#007AFF] text-white rounded-[2rem] font-black text-xl shadow-2xl active:scale-95 transition-all">Order License</button>
                  </div>
                </div>
              </div>
@@ -303,84 +311,29 @@ const App: React.FC = () => {
             {adminTab === 'Inventory' && (
               <div className="space-y-8">
                 <div className="glass-panel p-6 rounded-[2.5rem] flex justify-between items-center">
-                  <h3 className="text-xl font-black uppercase tracking-tight">Stock Management</h3>
-                  <button onClick={() => { setEditProduct({ title: '', price: 0, category: 'Themes', image: '', description: '', gallery: [] }); setIsEditingProduct(true); }} className="px-8 py-3.5 bg-[#007AFF] text-white rounded-xl font-black uppercase text-[9px] shadow-lg">Add Stock</button>
+                  <h3 className="text-xl font-black uppercase tracking-tight">Stock</h3>
+                  <button onClick={() => { setEditProduct({ title: '', price: 0, category: 'Themes', image: '', description: '', gallery: [] }); setIsEditingProduct(true); }} className="px-8 py-3.5 bg-[#007AFF] text-white rounded-xl font-black uppercase text-[9px] shadow-lg">New Item</button>
                 </div>
-
                 {isEditingProduct && (
-                  <div className="glass-panel p-8 sm:p-12 rounded-[3.5rem] space-y-8 border-2 border-[#007AFF]/30 animate-in zoom-in">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      <div className="space-y-4">
-                        <label className="text-[10px] font-black uppercase text-zinc-400">Database Entry</label>
-                        <input className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none border-2 border-transparent focus:border-[#007AFF]" value={editProduct.title || ''} onChange={e => setEditProduct({...editProduct, title: e.target.value})} placeholder="Item Name" />
-                        <select className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black text-xs outline-none" value={editProduct.category} onChange={e => setEditProduct({...editProduct, category: e.target.value as any})}>
-                          <option value="Themes">Themes</option><option value="Widgets">Widgets</option><option value="Walls">Wallpapers</option>
-                        </select>
-                        <input type="number" className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black text-xs outline-none" value={editProduct.price || 0} onChange={e => setEditProduct({...editProduct, price: parseFloat(e.target.value)})} placeholder="Value in EGP" />
-                      </div>
-                      <div className="space-y-4">
-                        <label className="text-[10px] font-black uppercase text-zinc-400">Primary Visual</label>
-                        <label className="w-full flex items-center gap-4 p-5 bg-zinc-100 dark:bg-zinc-800 rounded-2xl border-2 border-dashed border-zinc-300 cursor-pointer overflow-hidden">
-                          <input type="file" className="hidden" accept="image/*" onChange={async e => { if(e.target.files?.[0]) setEditProduct({...editProduct, image: await fileToBase64(e.target.files[0])}) }} />
-                          {editProduct.image ? <img src={editProduct.image} className="w-16 h-16 rounded-xl object-cover" /> : <div className="w-16 h-16 bg-zinc-200 dark:bg-zinc-700 rounded-xl flex items-center justify-center"><i className="fa-solid fa-plus"></i></div>}
-                          <span className="text-xs font-bold uppercase">{editProduct.image ? 'Replace Artwork' : 'Attach Cover'}</span>
-                        </label>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-4">
-                        <div className="flex justify-between items-center">
-                            <label className="text-[10px] font-black uppercase text-zinc-400">Cloud Previews ({(editProduct.gallery || []).length}/20)</label>
-                            {(editProduct.gallery || []).length < 20 && (
-                                <label className="text-[10px] font-black uppercase text-[#007AFF] cursor-pointer hover:underline">
-                                    + Multi-Upload
-                                    <input type="file" multiple className="hidden" accept="image/*" onChange={async e => {
-                                        if (e.target.files) {
-                                            const newImages = [...(editProduct.gallery || [])];
-                                            for (let i = 0; i < Math.min(e.target.files.length, 20 - newImages.length); i++) {
-                                                newImages.push(await fileToBase64(e.target.files[i]));
-                                            }
-                                            setEditProduct({ ...editProduct, gallery: newImages });
-                                        }
-                                    }} />
-                                </label>
-                            )}
-                        </div>
-                        <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-10 gap-2">
-                            {(editProduct.gallery || []).map((img, idx) => (
-                                <div key={idx} className="relative aspect-[9/16] rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-700 group">
-                                    <img src={img} className="w-full h-full object-cover" />
-                                    <button onClick={() => setEditProduct({...editProduct, gallery: editProduct.gallery?.filter((_, i) => i !== idx)})} className="absolute inset-0 bg-red-500/80 text-white opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"><i className="fa-solid fa-xmark"></i></button>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    <textarea className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-medium text-sm h-32 outline-none" placeholder="Cloud Description..." value={editProduct.description || ''} onChange={e => setEditProduct({...editProduct, description: e.target.value})} />
-                    
+                  <div className="glass-panel p-8 rounded-[2.5rem] space-y-6 animate-in zoom-in">
+                    <input className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none" value={editProduct.title || ''} onChange={e => setEditProduct({...editProduct, title: e.target.value})} placeholder="Product Title" />
+                    <textarea className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-medium h-32 outline-none" placeholder="Description" value={editProduct.description || ''} onChange={e => setEditProduct({...editProduct, description: e.target.value})} />
                     <div className="flex gap-4">
-                       <button onClick={() => setIsEditingProduct(false)} className="flex-1 py-5 bg-zinc-100 dark:bg-zinc-800 font-black text-[10px] uppercase rounded-2xl">Discard</button>
-                       <button onClick={saveProduct} className="flex-[3] py-5 bg-[#007AFF] text-white font-black text-[10px] uppercase rounded-2xl shadow-xl transition-all active:scale-[0.98]">
-                        {isPublishing ? 'Pushing Data...' : 'Commit to Cloud'}
-                       </button>
+                      <button onClick={() => setIsEditingProduct(false)} className="flex-1 py-5 bg-zinc-100 dark:bg-zinc-800 font-black text-[10px] uppercase rounded-2xl">Discard</button>
+                      <button onClick={saveProduct} className="flex-[3] py-5 bg-[#007AFF] text-white font-black text-[10px] uppercase rounded-2xl shadow-xl">
+                        {isPublishing ? 'Updating...' : 'Save Product'}
+                      </button>
                     </div>
                   </div>
                 )}
-
                 <div className="grid grid-cols-1 gap-4">
                   {dbProducts.map(p => (
-                    <div key={p.id} className="p-5 glass-panel rounded-[2.5rem] flex items-center justify-between group">
-                      <div className="flex items-center gap-5 flex-1">
-                        <img src={p.image} className="w-16 h-16 rounded-2xl object-cover border-2 border-white dark:border-zinc-800 shadow-sm" />
-                        <div>
-                            <h4 className="font-black text-base tracking-tight">{p.title}</h4>
-                            <p className="text-[9px] font-black uppercase text-zinc-400">{p.category} • {p.price.toFixed(2)} EGP</p>
-                        </div>
+                    <div key={p.id} className="p-5 glass-panel rounded-[2rem] flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <img src={p.image} className="w-12 h-12 rounded-xl object-cover" />
+                        <span className="font-black">{p.title}</span>
                       </div>
-                      <div className="flex gap-3">
-                        <button onClick={() => { setEditProduct({ ...p, gallery: p.gallery || [] }); setIsEditingProduct(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="w-11 h-11 bg-blue-500/10 text-blue-500 rounded-full flex items-center justify-center hover:bg-blue-500 hover:text-white transition-all"><i className="fa-solid fa-edit"></i></button>
-                        <button onClick={() => deleteProduct(p.id)} className="w-11 h-11 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center hover:bg-red-500 hover:text-white transition-all"><i className="fa-solid fa-trash"></i></button>
-                      </div>
+                      <button onClick={() => deleteProduct(p.id)} className="text-red-500 p-3"><i className="fa-solid fa-trash"></i></button>
                     </div>
                   ))}
                 </div>
@@ -391,16 +344,18 @@ const App: React.FC = () => {
               <div className="space-y-8">
                 <div className="glass-panel p-6 rounded-[2.5rem] flex justify-between items-center">
                   <h3 className="text-xl font-black uppercase tracking-tight">Cloud Tutorials</h3>
-                  <button onClick={() => { setEditVideo({ title: '', url: '' }); setIsEditingVideo(true); }} className="px-8 py-3.5 bg-red-500 text-white rounded-xl font-black uppercase text-[9px] shadow-lg">Sync Video</button>
+                  <button onClick={() => { setEditVideo({ title: '', url: '' }); setIsEditingVideo(true); }} className="px-8 py-3.5 bg-red-500 text-white rounded-xl font-black uppercase text-[9px] shadow-lg">Add Tutorial</button>
                 </div>
                 {isEditingVideo && (
-                  <div className="glass-panel p-8 rounded-[2.5rem] space-y-6 border-2 border-red-500/30 animate-in zoom-in">
-                    <input className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none" value={editVideo.title || ''} onChange={e => setEditVideo({...editVideo, title: e.target.value})} placeholder="Tutorial Name" />
-                    <input className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none" value={editVideo.url || ''} onChange={e => setEditVideo({...editVideo, url: e.target.value})} placeholder="YouTube Link (Shorts/Normal)" />
+                  <div className="glass-panel p-8 rounded-[2.5rem] space-y-6 border-2 border-red-500/20 animate-in zoom-in">
+                    <div className="space-y-4">
+                      <input className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none border-2 border-transparent focus:border-red-500" value={editVideo.title || ''} onChange={e => setEditVideo({...editVideo, title: e.target.value})} placeholder="Video Headline" />
+                      <input className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none border-2 border-transparent focus:border-red-500" value={editVideo.url || ''} onChange={e => setEditVideo({...editVideo, url: e.target.value})} placeholder="Paste YouTube Link Here" />
+                    </div>
                     <div className="flex gap-4">
                       <button onClick={() => setIsEditingVideo(false)} className="flex-1 py-5 bg-zinc-100 dark:bg-zinc-800 font-black text-[10px] uppercase rounded-2xl">Cancel</button>
                       <button onClick={saveVideo} className="flex-[3] py-5 bg-red-500 text-white font-black text-[10px] uppercase rounded-2xl shadow-xl transition-all active:scale-[0.98]">
-                        {isPublishing ? 'Synchronizing...' : 'Upload Tutorial'}
+                        {isPublishing ? 'Establishing Connection...' : 'Push to Cloud'}
                       </button>
                     </div>
                   </div>
@@ -409,15 +364,12 @@ const App: React.FC = () => {
                   {dbVideos.map(v => (
                     <div key={v.id} className="p-4 glass-panel rounded-[2rem] flex items-center justify-between group">
                       <div className="flex items-center gap-4">
-                        <div className="w-20 h-12 rounded-lg overflow-hidden border-2 border-white dark:border-zinc-800 shadow-sm">
+                        <div className="w-20 h-12 rounded-lg overflow-hidden border-2 border-white dark:border-zinc-800">
                           <img src={`https://img.youtube.com/vi/${v.id}/mqdefault.jpg`} className="w-full h-full object-cover" />
                         </div>
                         <span className="font-black text-sm">{v.title}</span>
                       </div>
-                      <div className="flex gap-2">
-                         <button onClick={() => { setEditVideo(v); setIsEditingVideo(true); }} className="w-10 h-10 bg-blue-500/10 text-blue-500 rounded-full flex items-center justify-center hover:bg-blue-500 hover:text-white transition-all"><i className="fa-solid fa-edit text-xs"></i></button>
-                         <button onClick={() => deleteVideo(v.id)} className="w-10 h-10 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center hover:bg-red-500 hover:text-white transition-all"><i className="fa-solid fa-trash-can text-xs"></i></button>
-                      </div>
+                      <button onClick={() => deleteVideo(v.id)} className="w-10 h-10 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center hover:bg-red-500 hover:text-white transition-all"><i className="fa-solid fa-xmark"></i></button>
                     </div>
                   ))}
                 </div>
@@ -425,30 +377,11 @@ const App: React.FC = () => {
             )}
             
             {adminTab === 'Settings' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="glass-panel p-10 rounded-[3.5rem] space-y-8">
-                  <h3 className="font-black text-xl uppercase tracking-tighter">Site Identity</h3>
-                  <div className="space-y-4">
-                    <label className="block p-5 bg-zinc-100 dark:bg-zinc-800 rounded-3xl cursor-pointer hover:bg-zinc-200 transition-colors">
-                      <span className="text-[10px] font-black uppercase text-zinc-400 block mb-2">Primary Icon</span>
-                      <input type="file" className="hidden" onChange={async e => { if(e.target.files?.[0]) updateSetting('site_logo', await fileToBase64(e.target.files[0])) }} />
-                      <div className="flex items-center gap-4"><img src={siteLogo} className="w-12 h-12 rounded-full border-2 border-white shadow-md" /><span className="text-[10px] font-black uppercase">Change Logo</span></div>
-                    </label>
-                    <label className="block p-5 bg-zinc-100 dark:bg-zinc-800 rounded-3xl cursor-pointer hover:bg-zinc-200 transition-colors">
-                      <span className="text-[10px] font-black uppercase text-zinc-400 block mb-2">Splash Screen</span>
-                      <input type="file" className="hidden" onChange={async e => { if(e.target.files?.[0]) updateSetting('loading_logo', await fileToBase64(e.target.files[0])) }} />
-                      <div className="flex items-center gap-4"><img src={loadingLogo} className="w-12 h-12 rounded-full border-2 border-white shadow-md" /><span className="text-[10px] font-black uppercase">Change Splash</span></div>
-                    </label>
-                  </div>
-                </div>
-                <div className="glass-panel p-10 rounded-[3.5rem] space-y-8">
-                  <h3 className="font-black text-xl uppercase tracking-tighter">Cloud Security</h3>
-                  <div className="space-y-6">
-                    <div className="space-y-3">
-                      <label className="text-[10px] font-black uppercase text-zinc-400 block">System Password</label>
-                      <input type="password" placeholder="••••••••" className="w-full p-6 rounded-[2rem] bg-zinc-100 dark:bg-zinc-800 font-black border-2 border-transparent focus:border-[#007AFF] outline-none" onBlur={e => e.target.value && updateSetting('admin_password', e.target.value)} />
-                    </div>
-                  </div>
+              <div className="glass-panel p-10 rounded-[3rem] space-y-8">
+                <h3 className="font-black text-xl uppercase tracking-tighter">Security Settings</h3>
+                <div className="space-y-4">
+                   <label className="text-[10px] font-black uppercase text-zinc-400">Admin Password</label>
+                   <input type="password" placeholder="New Password" className="w-full p-6 rounded-[2rem] bg-zinc-100 dark:bg-zinc-800 font-black border-2 border-transparent focus:border-[#007AFF] outline-none" onBlur={e => e.target.value && updateSetting('admin_password', e.target.value)} />
                 </div>
               </div>
             )}
