@@ -74,9 +74,10 @@
     </div>
 
     <script>
-        // Execute logo and theme logic IMMEDIATELY to prevent delay
+        // Execute loader logic IMMEDIATELY
         (function() {
-            const cachedLogo = localStorage.getItem('cached_loading_logo') || "https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa";
+            // Using a specific key for loader logo
+            const cachedLoaderLogo = localStorage.getItem('cached_loader_logo') || localStorage.getItem('cached_loading_logo') || "https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa";
             const isDark = localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
             
             const loaderImg = document.getElementById('loader-img');
@@ -90,8 +91,7 @@
             }
 
             if (loaderImg) {
-                loaderImg.src = cachedLogo;
-                // Force opacity to 1 immediately if data is available
+                loaderImg.src = cachedLoaderLogo;
                 loaderImg.style.opacity = '1';
             }
         })();

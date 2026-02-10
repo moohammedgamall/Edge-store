@@ -34,7 +34,8 @@ const App: React.FC = () => {
   // --- Database State ---
   const [dbProducts, setDbProducts] = useState<Product[]>([]);
   const [dbVideos, setDbVideos] = useState<any[]>([]); 
-  const [siteLogo, setSiteLogo] = useState<string>(() => localStorage.getItem('cached_loading_logo') || "https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
+  const [siteLogo, setSiteLogo] = useState<string>(() => localStorage.getItem('cached_site_logo') || "https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
+  const [loaderLogo, setLoaderLogo] = useState<string>(() => localStorage.getItem('cached_loader_logo') || "https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
   const [adminPassword, setAdminPassword] = useState('1234');
 
   // --- UI Flow State ---
@@ -83,14 +84,17 @@ const App: React.FC = () => {
           if (s.key === 'admin_password') setAdminPassword(s.value);
           if (s.key === 'site_logo') {
             setSiteLogo(s.value);
-            localStorage.setItem('cached_loading_logo', s.value);
+            localStorage.setItem('cached_site_logo', s.value);
+          }
+          if (s.key === 'loader_logo') {
+            setLoaderLogo(s.value);
+            localStorage.setItem('cached_loader_logo', s.value);
           }
         });
       }
     } catch (err) {
       console.error("Critical Sync Failure:", err);
     } finally {
-      // Transition immediately to content
       setIsLoading(false);
     }
   };
@@ -167,7 +171,11 @@ const App: React.FC = () => {
       
       if (key === 'site_logo') {
         setSiteLogo(value);
-        localStorage.setItem('cached_loading_logo', value);
+        localStorage.setItem('cached_site_logo', value);
+      }
+      if (key === 'loader_logo') {
+        setLoaderLogo(value);
+        localStorage.setItem('cached_loader_logo', value);
       }
       await refreshData();
       showNotify("Settings updated successfully");
@@ -223,7 +231,7 @@ const App: React.FC = () => {
       <div className="h-screen w-full flex flex-col items-center justify-center bg-[#F2F2F7] dark:bg-[#2C2C2E] animate-in fade-in duration-150">
           <div className="relative mb-8">
               <div className="w-24 h-24 md:w-32 md:h-32 border-4 border-white dark:border-zinc-800 rounded-full overflow-hidden shadow-2xl relative z-10 bg-white">
-                  <img src={siteLogo} className="w-full h-full object-cover" alt="Logo" />
+                  <img src={loaderLogo} className="w-full h-full object-cover" alt="Loading Logo" />
               </div>
               <div className="absolute -inset-4 border-2 border-dashed border-[#007AFF] rounded-full animate-[spin_8s_linear_infinite]"></div>
           </div>
@@ -495,18 +503,21 @@ const App: React.FC = () => {
 
             {adminTab === 'Settings' && (
               <div className="glass-panel p-12 rounded-[4rem] space-y-12 shadow-3xl">
-                <section className="space-y-8">
-                    <h4 className="text-lg font-black uppercase tracking-tighter flex items-center gap-3">
-                        <div className="w-1.5 h-4 bg-[#007AFF] rounded-full"></div> الهوية البصرية (الشعار)
+                <section className="space-y-10">
+                    <h4 className="text-xl font-black uppercase tracking-tighter flex items-center gap-3">
+                        <div className="w-1.5 h-6 bg-[#007AFF] rounded-full"></div> Site Branding
                     </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
-                        <div className="space-y-4">
-                            <label className="text-[10px] font-black uppercase text-zinc-400 px-4">شعار الموقع والتحميل</label>
-                            <div className="flex items-center gap-6 p-6 bg-zinc-100 dark:bg-zinc-800 rounded-[2rem] border-2 border-dashed border-zinc-300 dark:border-zinc-700 relative overflow-hidden group">
-                                <img src={siteLogo} className="w-20 h-20 rounded-full object-cover shadow-xl border-2 border-white" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
+                        {/* Header Logo Setting */}
+                        <div className="space-y-6">
+                            <label className="text-[11px] font-black uppercase text-zinc-400 px-4 tracking-[0.2em]">Site Logo (Header)</label>
+                            <div className="flex items-center gap-6 p-6 bg-zinc-100 dark:bg-zinc-800 rounded-[2.5rem] border-2 border-dashed border-zinc-300 dark:border-zinc-700 relative overflow-hidden group">
+                                <div className="w-20 h-20 rounded-full overflow-hidden shadow-xl border-2 border-white bg-white shrink-0">
+                                  <img src={siteLogo} className="w-full h-full object-cover" />
+                                </div>
                                 <div className="flex flex-col">
-                                    <span className="font-black text-xs">تغيير الشعار</span>
-                                    <span className="text-[9px] text-zinc-400 font-bold uppercase">سيتم تحديثه في شاشة التحميل فوراً</span>
+                                    <span className="font-black text-xs">Update Site Logo</span>
+                                    <span className="text-[9px] text-zinc-400 font-bold uppercase mt-1">Appears in Header</span>
                                 </div>
                                 <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={async e => {
                                     if(e.target.files?.[0]) {
@@ -516,10 +527,24 @@ const App: React.FC = () => {
                                 }} />
                             </div>
                         </div>
-                        <div className="space-y-4">
-                            <label className="text-[10px] font-black uppercase text-zinc-400 px-4">رابط الشعار المباشر (اختياري)</label>
-                            <div className="flex gap-3">
-                                <input type="text" className="flex-1 p-6 rounded-[1.5rem] bg-zinc-100 dark:bg-zinc-800 font-bold outline-none border-2 border-transparent focus:border-[#007AFF]" placeholder="ضع الرابط هنا..." onBlur={e => e.target.value && updateSetting('site_logo', e.target.value)} />
+
+                        {/* Loader Logo Setting */}
+                        <div className="space-y-6">
+                            <label className="text-[11px] font-black uppercase text-zinc-400 px-4 tracking-[0.2em]">Loading Screen Logo</label>
+                            <div className="flex items-center gap-6 p-6 bg-zinc-100 dark:bg-zinc-800 rounded-[2.5rem] border-2 border-dashed border-zinc-300 dark:border-zinc-700 relative overflow-hidden group">
+                                <div className="w-20 h-20 rounded-full overflow-hidden shadow-xl border-2 border-white bg-white shrink-0">
+                                  <img src={loaderLogo} className="w-full h-full object-cover" />
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="font-black text-xs">Update Loader Logo</span>
+                                    <span className="text-[9px] text-zinc-400 font-bold uppercase mt-1">Appears during Loading</span>
+                                </div>
+                                <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={async e => {
+                                    if(e.target.files?.[0]) {
+                                        const b64 = await fileToBase64(e.target.files[0]);
+                                        updateSetting('loader_logo', b64);
+                                    }
+                                }} />
                             </div>
                         </div>
                     </div>
@@ -529,10 +554,10 @@ const App: React.FC = () => {
 
                 <section className="space-y-6">
                     <h4 className="text-lg font-black uppercase tracking-tighter flex items-center gap-3">
-                        <div className="w-1.5 h-4 bg-red-600 rounded-full"></div> الأمان
+                        <div className="w-1.5 h-4 bg-red-600 rounded-full"></div> Security
                     </h4>
                     <div className="space-y-5">
-                       <label className="text-[10px] font-black uppercase text-zinc-400 tracking-[0.3em] px-4">كلمة مرور لوحة التحكم</label>
+                       <label className="text-[10px] font-black uppercase text-zinc-400 tracking-[0.3em] px-4">Master Admin Password</label>
                        <input type="password" placeholder="••••" className="w-full p-8 rounded-[2.5rem] bg-zinc-100 dark:bg-zinc-800 font-black border-2 border-transparent focus:border-[#007AFF] outline-none text-xl" onBlur={e => e.target.value && updateSetting('admin_password', e.target.value)} />
                     </div>
                 </section>
