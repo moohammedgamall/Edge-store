@@ -90,8 +90,8 @@ const App: React.FC = () => {
     } catch (err) {
       console.error("Critical Sync Failure:", err);
     } finally {
-      // Reduced delay to 100ms for much faster transition after data sync
-      setTimeout(() => setIsLoading(false), 100);
+      // Immediate transition
+      setIsLoading(false);
     }
   };
 
@@ -220,7 +220,7 @@ const App: React.FC = () => {
   const orderedProduct = useMemo(() => dbProducts.find(p => p.id === orderProductId), [dbProducts, orderProductId]);
 
   if (isLoading) return (
-      <div className="h-screen w-full flex flex-col items-center justify-center bg-[#F2F2F7] dark:bg-[#2C2C2E] animate-in fade-in duration-300">
+      <div className="h-screen w-full flex flex-col items-center justify-center bg-[#F2F2F7] dark:bg-[#2C2C2E] animate-in fade-in duration-200">
           <div className="relative mb-8">
               <div className="w-24 h-24 md:w-32 md:h-32 border-4 border-white dark:border-zinc-800 rounded-full overflow-hidden shadow-2xl relative z-10 bg-white">
                   <img src={siteLogo} className="w-full h-full object-cover" alt="Logo" />

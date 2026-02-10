@@ -59,11 +59,11 @@
 </head>
 <body class="bg-[#F2F2F7] dark:bg-[#2C2C2E] text-zinc-900 dark:text-zinc-100 selection:bg-blue-500/30">
     <div id="root">
-        <!-- Static Pre-loader with dynamic logo check -->
-        <div id="static-loader" style="height: 100vh; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: #F2F2F7; transition: background-color 0.5s;">
+        <!-- Static Pre-loader -->
+        <div id="static-loader" style="height: 100vh; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: #F2F2F7; transition: background-color 0.3s ease;">
             <div style="position: relative;">
                 <div style="width: 100px; height: 100px; border-radius: 50%; overflow: hidden; border: 4px solid white; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); background: white;">
-                    <img id="loader-img" fetchpriority="high" src="https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa" style="width: 100%; height: 100%; object-fit: cover;" alt="">
+                    <img id="loader-img" fetchpriority="high" style="width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.1s ease;" alt="">
                 </div>
                 <div class="spinner-ring" style="position: absolute; top: -16px; left: -16px; right: -16px; bottom: -16px; border-radius: 50%; border: 2px dashed #007AFF;"></div>
             </div>
@@ -74,19 +74,31 @@
     </div>
 
     <script>
-        // Check for cached logo and theme immediately
-        const cachedLogo = localStorage.getItem('cached_loading_logo');
-        if (cachedLogo) {
-            document.getElementById('loader-img').src = cachedLogo;
-        }
+        // Execute logo and theme logic IMMEDIATELY
+        (function() {
+            const cachedLogo = localStorage.getItem('cached_loading_logo') || "https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa";
+            const isDark = localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            
+            const loaderImg = document.getElementById('loader-img');
+            const loaderDiv = document.getElementById('static-loader');
+            const loaderText = document.getElementById('loader-text');
 
-        if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-            const loader = document.getElementById('static-loader');
-            if (loader) loader.style.backgroundColor = '#2C2C2E';
-            const text = document.getElementById('loader-text');
-            if (text) text.style.color = '#f4f4f5';
-        }
+            if (isDark) {
+                document.documentElement.classList.add('dark');
+                if (loaderDiv) loaderDiv.style.backgroundColor = '#2C2C2E';
+                if (loaderText) loaderText.style.color = '#f4f4f5';
+            }
+
+            if (loaderImg) {
+                loaderImg.src = cachedLogo;
+                // Make visible immediately if cached
+                if (loaderImg.complete) {
+                    loaderImg.style.opacity = '1';
+                } else {
+                    loaderImg.onload = function() { loaderImg.style.opacity = '1'; };
+                }
+            }
+        })();
     </script>
     <script type="module" src="index.tsx"></script>
 </body>
