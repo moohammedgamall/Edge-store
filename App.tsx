@@ -79,7 +79,6 @@ const App: React.FC = () => {
       }
     } catch (err) {
       console.error("Critical Sync Error:", err);
-      showNotify("Offline Mode: Data not synced", "error");
     } finally {
       setIsLoading(false);
     }
@@ -105,13 +104,14 @@ const App: React.FC = () => {
         is_premium: (editProduct.price || 0) > 0,
         compatibility: 'Realme UI / ColorOS'
       };
-      const { error } = await supabase.from('products').upsert(payload);
+      const { error } = await supabase.from('products').upsert(payload, { onConflict: 'id' });
       if (error) throw error;
       await refreshData();
       setIsEditingProduct(false);
-      showNotify("Product Database Updated");
-    } catch (err) { 
-      showNotify("Database Write Failed", "error"); 
+      showNotify("Product Saved Successfully");
+    } catch (err: any) { 
+      console.error("Product Save Error:", err);
+      showNotify(`Error: ${err.message || 'Database Write Failed'}`, "error"); 
     } finally { setIsPublishing(false); }
   };
 
@@ -122,18 +122,18 @@ const App: React.FC = () => {
       if (error) throw error;
       await refreshData();
       showNotify("Asset Deleted Successfully");
-    } catch (err) { 
+    } catch (err: any) { 
       showNotify("Operation Failed", "error"); 
     }
   };
 
   const updateSetting = async (key: string, value: string) => {
     try {
-      const { error } = await supabase.from('settings').upsert({ key, value });
+      const { error } = await supabase.from('settings').upsert({ key, value }, { onConflict: 'key' });
       if (error) throw error;
       await refreshData();
-      showNotify("System Preferences Synced");
-    } catch (err) { 
+      showNotify("Settings Updated");
+    } catch (err: any) { 
       showNotify("Settings Sync Failed", "error"); 
     }
   };
@@ -142,26 +142,33 @@ const App: React.FC = () => {
     const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts|live)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
     const match = url.trim().match(regex);
     if (match) return match[1];
-    if (url.trim().length === 11) return url.trim();
+    if (url.trim().length === 11 && !url.includes('/') && !url.includes('.')) return url.trim();
     return null;
   };
 
   const saveVideo = async () => {
     if (!editVideo.title || !editVideo.url) return showNotify("Required fields missing", "error");
     const vidId = extractYoutubeId(editVideo.url);
-    if (!vidId) return showNotify("Invalid YouTube format", "error");
+    if (!vidId) return showNotify("Invalid YouTube link format", "error");
+    
     setIsPublishing(true);
     try {
       const { error } = await supabase.from('videos').upsert({
         id: vidId,
         title: editVideo.title,
         url: `https://www.youtube.com/watch?v=${vidId}`
-      });
+      }, { onConflict: 'id' });
+      
       if (error) throw error;
+      
       await refreshData();
       setIsEditingVideo(false);
-      showNotify("Tutorial Synced");
-    } catch (err) { showNotify("Video Sync Error", "error"); }
+      showNotify("Tutorial Synced Successfully");
+    } catch (err: any) { 
+      console.error("Video Sync Error Detail:", err);
+      // More descriptive notification
+      showNotify(`Sync Error: ${err.message || 'Check Supabase Permissions'}`, "error"); 
+    }
     finally { setIsPublishing(false); }
   };
 
@@ -171,7 +178,7 @@ const App: React.FC = () => {
       await supabase.from('videos').delete().eq('id', id);
       await refreshData();
       showNotify("Video Removed");
-    } catch (err) { showNotify("Delete Failed", "error"); }
+    } catch (err: any) { showNotify("Delete Failed", "error"); }
   };
 
   // --- Navigation & Auth ---
@@ -214,7 +221,7 @@ const App: React.FC = () => {
   const products = useMemo(() => dbProducts, [dbProducts]);
   const selectedProduct = useMemo(() => products.find(p => p.id === selectedProductId), [products, selectedProductId]);
 
-  if (isLoading) return null; // Handled by static loader in index.html
+  if (isLoading) return null;
 
   return (
     <div className="min-h-screen pb-32">
@@ -227,7 +234,7 @@ const App: React.FC = () => {
               <input type="password" value={passwordInput} onChange={e => setPasswordInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAuth()} className="w-full p-4 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-center text-2xl font-black outline-none border-2 border-transparent focus:border-[#007AFF]" placeholder="••••" autoFocus />
               <div className="grid grid-cols-2 gap-3">
                 <button onClick={() => setIsAuthModalOpen(false)} className="py-4 text-[10px] font-black uppercase text-zinc-400">Cancel</button>
-                <button onClick={handleAuth} className="py-4 bg-[#007AFF] text-white rounded-2xl font-black uppercase text-[10px] shadow-lg shadow-blue-500/30">Verify</button>
+                <button onClick={handleAuth} className="py-4 bg-[#007AFF] text-white rounded-2xl font-black uppercase text-[10px] shadow-lg shadow-blue-500/30 transition-all active:scale-95">Verify</button>
               </div>
            </div>
         </div>
@@ -245,7 +252,7 @@ const App: React.FC = () => {
               ) : (
                 <div className="flex flex-col items-center justify-center py-20 text-zinc-400 gap-4">
                   <i className="fa-solid fa-cloud-moon text-5xl"></i>
-                  <p className="font-black uppercase text-xs tracking-widest">Database is empty</p>
+                  <p className="font-black uppercase text-xs tracking-widest">Connect to Cloud Database</p>
                 </div>
               )}
             </section>
@@ -364,15 +371,15 @@ const App: React.FC = () => {
                   {dbProducts.map(p => (
                     <div key={p.id} className="p-5 glass-panel rounded-[2.5rem] flex items-center justify-between group">
                       <div className="flex items-center gap-5 flex-1">
-                        <img src={p.image} className="w-16 h-16 rounded-2xl object-cover border-2 border-white dark:border-zinc-800" />
+                        <img src={p.image} className="w-16 h-16 rounded-2xl object-cover border-2 border-white dark:border-zinc-800 shadow-sm" />
                         <div>
                             <h4 className="font-black text-base tracking-tight">{p.title}</h4>
-                            <p className="text-[9px] font-black uppercase text-zinc-400">{p.category} • {p.price} EGP</p>
+                            <p className="text-[9px] font-black uppercase text-zinc-400">{p.category} • {p.price.toFixed(2)} EGP</p>
                         </div>
                       </div>
                       <div className="flex gap-3">
-                        <button onClick={() => { setEditProduct({ ...p, gallery: p.gallery || [] }); setIsEditingProduct(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="w-11 h-11 bg-blue-500/10 text-blue-500 rounded-full flex items-center justify-center"><i className="fa-solid fa-edit"></i></button>
-                        <button onClick={() => deleteProduct(p.id)} className="w-11 h-11 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center"><i className="fa-solid fa-trash"></i></button>
+                        <button onClick={() => { setEditProduct({ ...p, gallery: p.gallery || [] }); setIsEditingProduct(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="w-11 h-11 bg-blue-500/10 text-blue-500 rounded-full flex items-center justify-center hover:bg-blue-500 hover:text-white transition-all"><i className="fa-solid fa-edit"></i></button>
+                        <button onClick={() => deleteProduct(p.id)} className="w-11 h-11 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center hover:bg-red-500 hover:text-white transition-all"><i className="fa-solid fa-trash"></i></button>
                       </div>
                     </div>
                   ))}
@@ -392,20 +399,25 @@ const App: React.FC = () => {
                     <input className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none" value={editVideo.url || ''} onChange={e => setEditVideo({...editVideo, url: e.target.value})} placeholder="YouTube Link (Shorts/Normal)" />
                     <div className="flex gap-4">
                       <button onClick={() => setIsEditingVideo(false)} className="flex-1 py-5 bg-zinc-100 dark:bg-zinc-800 font-black text-[10px] uppercase rounded-2xl">Cancel</button>
-                      <button onClick={saveVideo} className="flex-[3] py-5 bg-red-500 text-white font-black text-[10px] uppercase rounded-2xl shadow-xl transition-all">Upload Tutorial</button>
+                      <button onClick={saveVideo} className="flex-[3] py-5 bg-red-500 text-white font-black text-[10px] uppercase rounded-2xl shadow-xl transition-all active:scale-[0.98]">
+                        {isPublishing ? 'Synchronizing...' : 'Upload Tutorial'}
+                      </button>
                     </div>
                   </div>
                 )}
                 <div className="grid grid-cols-1 gap-4">
                   {dbVideos.map(v => (
-                    <div key={v.id} className="p-4 glass-panel rounded-[2rem] flex items-center justify-between">
+                    <div key={v.id} className="p-4 glass-panel rounded-[2rem] flex items-center justify-between group">
                       <div className="flex items-center gap-4">
-                        <div className="w-20 h-12 rounded-lg overflow-hidden border-2 border-white dark:border-zinc-800">
+                        <div className="w-20 h-12 rounded-lg overflow-hidden border-2 border-white dark:border-zinc-800 shadow-sm">
                           <img src={`https://img.youtube.com/vi/${v.id}/mqdefault.jpg`} className="w-full h-full object-cover" />
                         </div>
                         <span className="font-black text-sm">{v.title}</span>
                       </div>
-                      <button onClick={() => deleteVideo(v.id)} className="w-10 h-10 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center"><i className="fa-solid fa-xmark"></i></button>
+                      <div className="flex gap-2">
+                         <button onClick={() => { setEditVideo(v); setIsEditingVideo(true); }} className="w-10 h-10 bg-blue-500/10 text-blue-500 rounded-full flex items-center justify-center hover:bg-blue-500 hover:text-white transition-all"><i className="fa-solid fa-edit text-xs"></i></button>
+                         <button onClick={() => deleteVideo(v.id)} className="w-10 h-10 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center hover:bg-red-500 hover:text-white transition-all"><i className="fa-solid fa-trash-can text-xs"></i></button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -433,7 +445,7 @@ const App: React.FC = () => {
                   <h3 className="font-black text-xl uppercase tracking-tighter">Cloud Security</h3>
                   <div className="space-y-6">
                     <div className="space-y-3">
-                      <label className="text-[10px] font-black uppercase text-zinc-400 block">System Keyphrase</label>
+                      <label className="text-[10px] font-black uppercase text-zinc-400 block">System Password</label>
                       <input type="password" placeholder="••••••••" className="w-full p-6 rounded-[2rem] bg-zinc-100 dark:bg-zinc-800 font-black border-2 border-transparent focus:border-[#007AFF] outline-none" onBlur={e => e.target.value && updateSetting('admin_password', e.target.value)} />
                     </div>
                   </div>
