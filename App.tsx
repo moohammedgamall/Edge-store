@@ -70,7 +70,7 @@ const App: React.FC = () => {
         });
       }
     } catch (err) {
-      console.error("Critical Sync Error:", err);
+      console.error("Sync Error:", err);
     } finally {
       setIsLoading(false);
     }
@@ -86,17 +86,19 @@ const App: React.FC = () => {
   });
 
   const extractYoutubeId = (url: string): string | null => {
+    if (!url) return null;
     const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts|live)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
     const match = url.trim().match(regex);
     if (match) return match[1];
-    if (url.trim().length === 11 && !url.includes('/') && !url.includes('.')) return url.trim();
+    // If it's just the ID (11 chars)
+    if (url.trim().length === 11) return url.trim();
     return null;
   };
 
   const saveVideo = async () => {
     if (!editVideo.title || !editVideo.url) return showNotify("All fields required", "error");
     const vidId = extractYoutubeId(editVideo.url);
-    if (!vidId) return showNotify("Invalid YouTube link", "error");
+    if (!vidId) return showNotify("Invalid YouTube Link", "error");
     
     setIsPublishing(true);
     try {
@@ -108,9 +110,9 @@ const App: React.FC = () => {
       if (error) throw error;
       await refreshData();
       setIsEditingVideo(false);
-      showNotify("Tutorial Synced Successfully");
+      showNotify("Tutorial Added Successfully");
     } catch (err) { 
-      showNotify("Failed to save video", "error"); 
+      showNotify("Error Saving Video", "error"); 
     } finally { 
       setIsPublishing(false); 
     }
@@ -135,7 +137,7 @@ const App: React.FC = () => {
       if (error) throw error;
       await refreshData();
       setIsEditingProduct(false);
-      showNotify("Product Saved Successfully");
+      showNotify("Product Published");
     } catch (err) { 
       showNotify("Database Error", "error"); 
     } finally { 
@@ -147,9 +149,9 @@ const App: React.FC = () => {
     try {
       await supabase.from('settings').upsert({ key, value });
       await refreshData();
-      showNotify("Settings Updated");
+      showNotify("Setting Updated");
     } catch (err) { 
-      showNotify("Update Failed", "error"); 
+      showNotify("Failed to Update", "error"); 
     }
   };
 
@@ -180,13 +182,13 @@ const App: React.FC = () => {
       setIsAuthModalOpen(false);
       setPasswordInput('');
       window.location.hash = '#/admin';
-      showNotify("Admin Access Granted");
+      showNotify("Access Granted");
     } else {
-      showNotify("Wrong Password", "error");
+      showNotify("Invalid Password", "error");
     }
   };
 
-  const products = useMemo(() => {
+  const filteredProducts = useMemo(() => {
     if (activeSection === 'Home') return dbProducts;
     if (activeSection === 'Themes' || activeSection === 'Widgets' || activeSection === 'Walls') {
         return dbProducts.filter(p => p.category === activeSection);
@@ -216,7 +218,7 @@ const App: React.FC = () => {
            <div className="w-full max-w-[340px] glass-panel p-8 rounded-[2.5rem] space-y-6">
               <div className="text-center space-y-2">
                 <i className="fa-solid fa-lock text-[#007AFF] text-2xl"></i>
-                <h3 className="font-black uppercase text-xs tracking-widest">Master Admin</h3>
+                <h3 className="font-black uppercase text-xs tracking-widest">Admin Access</h3>
               </div>
               <input 
                 type="password" 
@@ -229,7 +231,7 @@ const App: React.FC = () => {
               />
               <div className="grid grid-cols-2 gap-3">
                 <button onClick={() => setIsAuthModalOpen(false)} className="py-4 text-[10px] font-black uppercase text-zinc-400">Cancel</button>
-                <button onClick={handleAuth} className="py-4 bg-[#007AFF] text-white rounded-2xl font-black uppercase text-[10px]">Login</button>
+                <button onClick={handleAuth} className="py-4 bg-[#007AFF] text-white rounded-2xl font-black uppercase text-[10px] shadow-lg">Verify</button>
               </div>
            </div>
         </div>
@@ -238,16 +240,17 @@ const App: React.FC = () => {
       <main className="max-w-7xl mx-auto px-4 py-8">
         {(activeSection === 'Home' || activeSection === 'Themes' || activeSection === 'Widgets' || activeSection === 'Walls') && (
           <div className="space-y-20 animate-in fade-in slide-in-from-bottom-8 duration-700">
+            {/* Products Listing */}
             <section className="space-y-8">
               <div className="flex justify-between items-end px-1">
                 <h2 className="text-2xl font-black tracking-tighter uppercase flex items-center gap-3">
                   <div className="w-1.5 h-6 bg-[#007AFF] rounded-full"></div> {activeSection === 'Home' ? 'Marketplace' : activeSection}
                 </h2>
-                <span className="text-[9px] font-black text-zinc-400 tracking-widest uppercase">{products.length} Items</span>
+                <span className="text-[9px] font-black text-zinc-400 tracking-widest uppercase">{filteredProducts.length} Items</span>
               </div>
-              {products.length > 0 ? (
+              {filteredProducts.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {products.map(p => (
+                  {filteredProducts.map(p => (
                     <ProductCard 
                       key={p.id} 
                       product={p} 
@@ -262,37 +265,50 @@ const App: React.FC = () => {
                 </div>
               ) : (
                 <div className="p-20 text-center border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-[3rem] text-zinc-400 font-black uppercase text-xs tracking-widest">
-                  No products found in this category
+                  No assets available here yet
                 </div>
               )}
             </section>
             
+            {/* Tutorials Section (Home Only) */}
             {activeSection === 'Home' && (
-              <section className="space-y-8">
+              <section className="space-y-10">
                 <div className="flex justify-between items-end px-1">
                   <h2 className="text-2xl font-black tracking-tighter uppercase flex items-center gap-3">
-                    <div className="w-1.5 h-6 bg-red-500 rounded-full"></div> Tutorials
+                    <div className="w-1.5 h-6 bg-red-600 rounded-full"></div> Video Tutorials
                   </h2>
                 </div>
                 {videos.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     {videos.map(v => (
-                      <a key={v.id} href={v.url} target="_blank" rel="noopener noreferrer" className="glass-panel group rounded-[2rem] overflow-hidden hover:scale-[1.03] transition-all">
-                        <div className="aspect-video relative bg-zinc-800">
-                          <img src={`https://img.youtube.com/vi/${v.id}/maxresdefault.jpg`} className="w-full h-full object-cover" />
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors">
-                            <div className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center shadow-2xl transition-transform group-hover:scale-110">
-                              <i className="fa-solid fa-play text-white ml-1"></i>
+                      <a key={v.id} href={v.url} target="_blank" rel="noopener noreferrer" className="glass-panel group rounded-[2.5rem] overflow-hidden hover:scale-[1.03] transition-all border-2 border-transparent hover:border-red-600/20">
+                        <div className="aspect-video relative bg-zinc-900">
+                          <img 
+                            src={`https://img.youtube.com/vi/${v.id}/maxresdefault.jpg`} 
+                            className="w-full h-full object-cover" 
+                            onError={(e) => {
+                                e.currentTarget.onerror = null;
+                                e.currentTarget.src = `https://img.youtube.com/vi/${v.id}/hqdefault.jpg`;
+                            }}
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/50 transition-colors">
+                            <div className="w-12 h-12 bg-red-600 text-white rounded-full flex items-center justify-center shadow-2xl group-hover:scale-125 transition-transform">
+                              <i className="fa-solid fa-play ml-1"></i>
                             </div>
                           </div>
+                          <div className="absolute top-3 left-3 px-3 py-1 bg-black/60 backdrop-blur-md rounded-full text-[8px] font-black text-white uppercase tracking-widest">
+                            Tutorial
+                          </div>
                         </div>
-                        <div className="p-5 font-black text-sm line-clamp-2 leading-tight">{v.title}</div>
+                        <div className="p-5">
+                            <h4 className="font-black text-sm line-clamp-2 leading-tight group-hover:text-red-600 transition-colors">{v.title}</h4>
+                        </div>
                       </a>
                     ))}
                   </div>
                 ) : (
                   <div className="p-16 text-center border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-[3rem] text-zinc-400 font-black uppercase text-[10px] tracking-widest">
-                    Tutorials are coming soon
+                    Tutorials list is empty
                   </div>
                 )}
               </section>
@@ -300,87 +316,105 @@ const App: React.FC = () => {
           </div>
         )}
 
+        {/* Order Page */}
         {activeSection === 'Order' && (
           <div className="max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-500">
-            <div className="glass-panel p-8 sm:p-12 rounded-[3rem] space-y-10">
+            <div className="glass-panel p-8 sm:p-12 rounded-[3.5rem] space-y-10 relative overflow-hidden">
+               <div className="absolute -top-10 -right-10 w-40 h-40 bg-[#007AFF]/10 blur-[80px]"></div>
                <div className="text-center space-y-2">
-                 <h2 className="text-4xl font-black tracking-tight uppercase">Order Details</h2>
-                 <p className="text-zinc-400 font-black text-[10px] tracking-[0.3em] uppercase">Complete your purchase</p>
+                 <h2 className="text-4xl font-black tracking-tight uppercase leading-none">Order Page</h2>
+                 <p className="text-zinc-400 font-black text-[10px] tracking-[0.4em] uppercase">Confirm & Download</p>
                </div>
 
                {orderedProduct ? (
                  <div className="space-y-8">
-                   <div className="flex items-center gap-6 p-6 bg-zinc-100 dark:bg-zinc-800/50 rounded-[2.5rem] border border-white/40 dark:border-white/5 shadow-inner">
-                      <div className="w-24 h-24 rounded-2xl overflow-hidden shadow-2xl">
+                   <div className="flex items-center gap-6 p-6 bg-zinc-100 dark:bg-zinc-800/50 rounded-[2.5rem] border border-white dark:border-zinc-700 shadow-inner">
+                      <div className="w-28 h-28 rounded-3xl overflow-hidden shadow-2xl shrink-0 border-2 border-white dark:border-zinc-600">
                         <img src={orderedProduct.image} className="w-full h-full object-cover" />
                       </div>
                       <div className="flex-1">
-                        <h3 className="font-black text-xl tracking-tight">{orderedProduct.title}</h3>
-                        <p className="text-[#007AFF] font-black text-xl mt-1">{orderedProduct.price === 0 ? 'FREE' : `${orderedProduct.price.toFixed(2)} EGP`}</p>
+                        <h3 className="font-black text-2xl tracking-tighter leading-none">{orderedProduct.title}</h3>
+                        <p className="text-[#007AFF] font-black text-2xl mt-2">{orderedProduct.price === 0 ? 'FREE' : `${orderedProduct.price.toFixed(2)} EGP`}</p>
+                        <span className="inline-block mt-3 px-3 py-1 bg-zinc-200 dark:bg-zinc-700 rounded-full text-[8px] font-black uppercase tracking-widest">{orderedProduct.category}</span>
                       </div>
                    </div>
 
-                   <div className="space-y-4 px-2">
+                   <div className="space-y-4 px-4">
                       <div className="flex justify-between font-black text-xs text-zinc-400 uppercase tracking-widest"><span>Subtotal</span><span className="text-zinc-900 dark:text-zinc-100">{orderedProduct.price.toFixed(2)} EGP</span></div>
-                      <div className="flex justify-between font-black text-xs text-zinc-400 uppercase tracking-widest"><span>Tax / Fees</span><span className="text-zinc-900 dark:text-zinc-100">0.00 EGP</span></div>
+                      <div className="flex justify-between font-black text-xs text-zinc-400 uppercase tracking-widest"><span>License Fee</span><span className="text-zinc-900 dark:text-zinc-100">0.00 EGP</span></div>
                       <div className="h-px bg-zinc-200 dark:bg-zinc-800 w-full my-4"></div>
-                      <div className="flex justify-between font-black text-3xl uppercase tracking-tighter"><span>Total</span><span className="text-[#007AFF]">{orderedProduct.price.toFixed(2)} EGP</span></div>
+                      <div className="flex justify-between font-black text-4xl uppercase tracking-tighter items-baseline">
+                        <span className="text-sm text-zinc-400">Total Price</span>
+                        <span className="text-[#007AFF]">{orderedProduct.price.toFixed(2)} EGP</span>
+                      </div>
                    </div>
 
-                   <div className="grid grid-cols-1 gap-4">
-                     <a href={`https://wa.me/201026419747?text=I want to buy: ${orderedProduct.title}`} target="_blank" rel="noopener noreferrer" className="w-full py-6 bg-[#25D366] text-white rounded-[2rem] font-black text-lg shadow-xl shadow-green-500/20 text-center flex items-center justify-center gap-3">
-                       <i className="fa-brands fa-whatsapp text-2xl"></i> WhatsApp Confirm
+                   <div className="grid grid-cols-1 gap-4 pt-4">
+                     <a href={`https://wa.me/201026419747?text=I'd like to order: ${orderedProduct.title}`} target="_blank" rel="noopener noreferrer" className="w-full py-6 bg-[#25D366] text-white rounded-[2rem] font-black text-xl shadow-xl shadow-green-500/20 text-center flex items-center justify-center gap-3 transition-transform active:scale-95">
+                       <i className="fa-brands fa-whatsapp text-3xl"></i> WhatsApp Confirm
                      </a>
-                     <a href="https://t.me/Mohamed_Edge" target="_blank" rel="noopener noreferrer" className="w-full py-6 bg-[#0088CC] text-white rounded-[2rem] font-black text-lg shadow-xl shadow-blue-500/20 text-center flex items-center justify-center gap-3">
-                       <i className="fa-brands fa-telegram text-2xl"></i> Telegram Order
+                     <a href="https://t.me/Mohamed_Edge" target="_blank" rel="noopener noreferrer" className="w-full py-6 bg-[#0088CC] text-white rounded-[2rem] font-black text-xl shadow-xl shadow-blue-500/20 text-center flex items-center justify-center gap-3 transition-transform active:scale-95">
+                       <i className="fa-brands fa-telegram text-3xl"></i> Telegram Order
                      </a>
                    </div>
                  </div>
                ) : (
-                 <div className="text-center p-20 space-y-4">
-                    <i className="fa-solid fa-cart-arrow-down text-5xl text-zinc-200 dark:text-zinc-800"></i>
-                    <p className="text-zinc-400 font-black uppercase text-xs tracking-widest">Your cart is empty</p>
-                    <button onClick={() => window.location.hash = '#/'} className="px-8 py-3 bg-[#007AFF] text-white rounded-full font-black text-[10px] uppercase">Browse Store</button>
+                 <div className="text-center p-20 space-y-6">
+                    <i className="fa-solid fa-cart-plus text-7xl text-zinc-200 dark:text-zinc-800"></i>
+                    <p className="text-zinc-400 font-black uppercase text-xs tracking-widest">No product selected</p>
+                    <button onClick={() => window.location.hash = '#/'} className="px-10 py-4 bg-[#007AFF] text-white rounded-full font-black text-[10px] uppercase shadow-lg transition-transform active:scale-95">Browse Marketplace</button>
                  </div>
                )}
             </div>
           </div>
         )}
 
+        {/* Preview Page */}
         {activeSection === 'Preview' && selectedProduct && (
            <div className="max-w-6xl mx-auto animate-in fade-in duration-500">
-             <button onClick={() => window.history.back()} className="mb-8 w-12 h-12 bg-white dark:bg-zinc-800 rounded-full shadow-lg flex items-center justify-center hover:scale-110 transition-transform"><i className="fa-solid fa-chevron-left"></i></button>
+             <button onClick={() => window.history.back()} className="mb-8 w-14 h-14 bg-white dark:bg-zinc-800 rounded-full shadow-xl flex items-center justify-center hover:scale-110 transition-transform"><i className="fa-solid fa-chevron-left text-lg"></i></button>
              <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-               <div className="lg:col-span-7 space-y-6">
-                  <div className="glass-panel p-2 rounded-[2.5rem] overflow-hidden border-4 border-white dark:border-zinc-800 shadow-2xl">
-                    <img src={selectedProduct.image} className="w-full rounded-[2rem]" />
+               <div className="lg:col-span-7 space-y-8">
+                  <div className="glass-panel p-2 rounded-[3rem] overflow-hidden border-4 border-white dark:border-zinc-800 shadow-2xl">
+                    <img src={selectedProduct.image} className="w-full rounded-[2.5rem]" />
                   </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-5">
                     {selectedProduct.gallery?.map((img, idx) => (
-                      <div key={idx} className="aspect-[9/16] rounded-3xl overflow-hidden shadow-lg border-2 border-white dark:border-zinc-800">
+                      <div key={idx} className="aspect-[9/16] rounded-[2rem] overflow-hidden shadow-xl border-4 border-white dark:border-zinc-800 hover:scale-105 transition-transform duration-500">
                         <img src={img} className="w-full h-full object-cover" />
                       </div>
                     ))}
                   </div>
                </div>
                <div className="lg:col-span-5">
-                 <div className="glass-panel p-8 sm:p-12 rounded-[2.5rem] space-y-6 sticky top-28">
-                    <h2 className="text-4xl font-black tracking-tight leading-tight">{selectedProduct.title}</h2>
-                    <p className="text-5xl font-black text-[#007AFF] tracking-tighter">{selectedProduct.price === 0 ? 'FREE' : `${selectedProduct.price.toFixed(2)} EGP`}</p>
-                    <div className="h-px bg-zinc-100 dark:bg-zinc-800 w-full my-6"></div>
-                    <p className="text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed">{selectedProduct.description}</p>
-                    <button onClick={() => { setOrderProductId(selectedProduct.id); window.location.hash = '#/order'; }} className="w-full py-6 bg-[#007AFF] text-white rounded-[2rem] font-black text-xl shadow-2xl active:scale-95 transition-all mt-4">Get it Now</button>
+                 <div className="glass-panel p-10 sm:p-14 rounded-[3.5rem] space-y-8 sticky top-28 border-2 border-white/50">
+                    <div>
+                        <span className="px-3 py-1 bg-[#007AFF]/10 text-[#007AFF] rounded-full text-[9px] font-black uppercase tracking-widest">{selectedProduct.category}</span>
+                        <h2 className="text-5xl font-black tracking-tighter leading-none mt-4">{selectedProduct.title}</h2>
+                    </div>
+                    <div className="flex items-baseline gap-2">
+                        <p className="text-6xl font-black text-[#007AFF] tracking-tighter">{selectedProduct.price === 0 ? 'FREE' : `${selectedProduct.price.toFixed(0)}`}</p>
+                        <span className="text-xl font-black text-zinc-400">EGP</span>
+                    </div>
+                    <div className="h-px bg-zinc-100 dark:bg-zinc-800 w-full"></div>
+                    <p className="text-zinc-500 dark:text-zinc-400 font-medium text-lg leading-relaxed">{selectedProduct.description}</p>
+                    <div className="space-y-4 py-4">
+                        <div className="flex items-center gap-4 text-xs font-black uppercase tracking-widest text-zinc-500"><i className="fa-solid fa-shield-check text-[#007AFF] text-lg"></i> Official Support</div>
+                        <div className="flex items-center gap-4 text-xs font-black uppercase tracking-widest text-zinc-500"><i className="fa-solid fa-bolt text-[#007AFF] text-lg"></i> Instant Delivery</div>
+                    </div>
+                    <button onClick={() => { setOrderProductId(selectedProduct.id); window.location.hash = '#/order'; }} className="w-full py-7 bg-[#007AFF] text-white rounded-[2.5rem] font-black text-2xl shadow-2xl shadow-blue-500/40 active:scale-95 transition-all">Order License</button>
                  </div>
                </div>
              </div>
            </div>
         )}
 
+        {/* Admin Section */}
         {activeSection === 'Admin' && isAdminMode && (
-          <div className="max-w-5xl mx-auto space-y-8 animate-in slide-in-from-right-10 duration-500">
-            <div className="flex p-1.5 bg-zinc-200/50 dark:bg-zinc-900/50 backdrop-blur-3xl rounded-[2rem] border border-white/40 dark:border-white/5 max-w-md mx-auto">
+          <div className="max-w-5xl mx-auto space-y-10 animate-in slide-in-from-right-10 duration-500">
+            <div className="flex p-2 bg-zinc-200/50 dark:bg-zinc-900/50 backdrop-blur-3xl rounded-[2.5rem] border border-white/40 dark:border-white/5 max-w-lg mx-auto shadow-2xl">
               {['Inventory', 'Videos', 'Settings'].map(tab => (
-                <button key={tab} onClick={() => setAdminTab(tab as any)} className={`flex-1 py-3 px-2 rounded-[1.6rem] transition-all duration-300 ${adminTab === tab ? 'bg-white dark:bg-zinc-800 shadow-xl text-[#007AFF] font-black' : 'text-zinc-400 font-bold'} text-[10px] uppercase tracking-tighter`}>
+                <button key={tab} onClick={() => setAdminTab(tab as any)} className={`flex-1 py-4 px-2 rounded-[2rem] transition-all duration-500 ${adminTab === tab ? 'bg-white dark:bg-zinc-800 shadow-xl text-[#007AFF] font-black scale-105' : 'text-zinc-400 font-bold'} text-[10px] uppercase tracking-widest`}>
                   {tab}
                 </button>
               ))}
@@ -388,24 +422,24 @@ const App: React.FC = () => {
 
             {adminTab === 'Inventory' && (
               <div className="space-y-8">
-                <div className="glass-panel p-6 rounded-[2.5rem] flex justify-between items-center">
-                  <h3 className="text-xl font-black uppercase tracking-tight">Products Cloud</h3>
-                  <button onClick={() => { setEditProduct({ title: '', price: 0, category: 'Themes', image: '', description: '', gallery: [] }); setIsEditingProduct(true); }} className="px-8 py-3.5 bg-[#007AFF] text-white rounded-xl font-black uppercase text-[9px] shadow-lg">New Product</button>
+                <div className="glass-panel p-8 rounded-[3rem] flex justify-between items-center shadow-2xl">
+                  <h3 className="text-2xl font-black uppercase tracking-tighter">Products Cloud</h3>
+                  <button onClick={() => { setEditProduct({ title: '', price: 0, category: 'Themes', image: '', description: '', gallery: [] }); setIsEditingProduct(true); }} className="px-10 py-4 bg-[#007AFF] text-white rounded-2xl font-black uppercase text-[10px] shadow-xl shadow-blue-500/20 active:scale-95 transition-all">New Item</button>
                 </div>
 
                 {isEditingProduct && (
-                  <div className="glass-panel p-8 rounded-[2.5rem] space-y-8 animate-in zoom-in border-2 border-[#007AFF]/20">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                       <div className="space-y-6">
-                          <div className="space-y-2">
-                             <label className="text-[10px] font-black uppercase text-zinc-400">Main Cover</label>
-                             <div className="aspect-video bg-zinc-100 dark:bg-zinc-800 rounded-3xl overflow-hidden relative group border-2 border-dashed border-zinc-300 dark:border-zinc-700">
+                  <div className="glass-panel p-10 rounded-[3.5rem] space-y-10 animate-in zoom-in border-4 border-[#007AFF]/10 shadow-3xl">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                       <div className="space-y-8">
+                          <div className="space-y-3">
+                             <label className="text-[10px] font-black uppercase text-zinc-400 tracking-widest px-2">Main Cover Image</label>
+                             <div className="aspect-video bg-zinc-100 dark:bg-zinc-800 rounded-[2.5rem] overflow-hidden relative group border-4 border-dashed border-zinc-200 dark:border-zinc-700 hover:border-[#007AFF] transition-colors">
                                 {editProduct.image ? (
                                   <img src={editProduct.image} className="w-full h-full object-cover" />
                                 ) : (
-                                  <div className="w-full h-full flex flex-col items-center justify-center text-zinc-400 p-4 text-center">
-                                    <i className="fa-solid fa-cloud-arrow-up text-3xl mb-2"></i>
-                                    <span className="text-[9px] font-black uppercase">Upload Cover</span>
+                                  <div className="w-full h-full flex flex-col items-center justify-center text-zinc-400 p-6 text-center">
+                                    <i className="fa-solid fa-cloud-arrow-up text-4xl mb-3"></i>
+                                    <span className="text-[10px] font-black uppercase tracking-widest">Select Main Preview</span>
                                   </div>
                                 )}
                                 <input type="file" accept="image/*" onChange={async e => { 
@@ -417,18 +451,18 @@ const App: React.FC = () => {
                              </div>
                           </div>
                           
-                          <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase text-zinc-400">Gallery (Up to 20 images)</label>
-                            <div className="grid grid-cols-5 gap-2 min-h-[100px] p-2 bg-zinc-50 dark:bg-zinc-900/50 rounded-2xl">
+                          <div className="space-y-3">
+                            <label className="text-[10px] font-black uppercase text-zinc-400 tracking-widest px-2">Gallery (20 Slots)</label>
+                            <div className="grid grid-cols-5 gap-3 min-h-[120px] p-4 bg-zinc-50 dark:bg-zinc-900/50 rounded-[2.5rem]">
                                {editProduct.gallery?.map((img, idx) => (
-                                 <div key={idx} className="aspect-[9/16] rounded-lg overflow-hidden relative group">
+                                 <div key={idx} className="aspect-[9/16] rounded-xl overflow-hidden relative group shadow-md">
                                     <img src={img} className="w-full h-full object-cover" />
-                                    <button onClick={() => setEditProduct({...editProduct, gallery: editProduct.gallery?.filter((_, i) => i !== idx)})} className="absolute inset-0 bg-red-500/80 text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"><i className="fa-solid fa-trash-can"></i></button>
+                                    <button onClick={() => setEditProduct({...editProduct, gallery: editProduct.gallery?.filter((_, i) => i !== idx)})} className="absolute inset-0 bg-red-600/80 text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"><i className="fa-solid fa-xmark text-xl"></i></button>
                                  </div>
                                ))}
                                {(!editProduct.gallery || editProduct.gallery.length < 20) && (
-                                 <div className="aspect-[9/16] rounded-lg border-2 border-dashed border-zinc-300 dark:border-zinc-700 flex items-center justify-center text-zinc-400 relative">
-                                    <i className="fa-solid fa-plus text-xs"></i>
+                                 <div className="aspect-[9/16] rounded-xl border-2 border-dashed border-zinc-300 dark:border-zinc-700 flex items-center justify-center text-zinc-400 relative hover:border-[#007AFF] transition-colors">
+                                    <i className="fa-solid fa-plus"></i>
                                     <input type="file" multiple accept="image/*" onChange={async e => {
                                       if(e.target.files) {
                                         const files = Array.from(e.target.files).slice(0, 20 - (editProduct.gallery?.length || 0));
@@ -442,39 +476,42 @@ const App: React.FC = () => {
                           </div>
                        </div>
 
-                       <div className="space-y-5">
-                          <input className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none border-2 border-transparent focus:border-[#007AFF]" value={editProduct.title || ''} onChange={e => setEditProduct({...editProduct, title: e.target.value})} placeholder="Title" />
+                       <div className="space-y-6">
+                          <input className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none border-2 border-transparent focus:border-[#007AFF] text-xl" value={editProduct.title || ''} onChange={e => setEditProduct({...editProduct, title: e.target.value})} placeholder="Asset Name" />
                           <div className="flex gap-4">
-                             <input type="number" className="flex-1 p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none" value={editProduct.price || ''} onChange={e => setEditProduct({...editProduct, price: Number(e.target.value)})} placeholder="EGP" />
-                             <select className="flex-1 p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none" value={editProduct.category} onChange={e => setEditProduct({...editProduct, category: e.target.value as any})}>
+                             <div className="flex-1 relative">
+                                <input type="number" className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none border-2 border-transparent focus:border-[#007AFF]" value={editProduct.price || ''} onChange={e => setEditProduct({...editProduct, price: Number(e.target.value)})} placeholder="Price" />
+                                <span className="absolute right-6 top-6 text-zinc-400 font-black text-[10px]">EGP</span>
+                             </div>
+                             <select className="flex-1 p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none border-2 border-transparent focus:border-[#007AFF]" value={editProduct.category} onChange={e => setEditProduct({...editProduct, category: e.target.value as any})}>
                                 <option value="Themes">Themes</option>
                                 <option value="Widgets">Widgets</option>
                                 <option value="Walls">Wallpapers</option>
                              </select>
                           </div>
-                          <textarea className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-medium h-32 outline-none border-2 border-transparent focus:border-[#007AFF]" placeholder="Description" value={editProduct.description || ''} onChange={e => setEditProduct({...editProduct, description: e.target.value})} />
-                          <div className="flex gap-4 pt-4">
-                            <button onClick={() => setIsEditingProduct(false)} className="flex-1 py-5 bg-zinc-100 dark:bg-zinc-800 font-black text-[10px] uppercase rounded-2xl">Discard</button>
-                            <button onClick={saveProduct} disabled={isPublishing} className="flex-[3] py-5 bg-[#007AFF] text-white font-black text-[10px] uppercase rounded-2xl shadow-xl">{isPublishing ? 'Saving...' : 'Publish'}</button>
+                          <textarea className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-medium h-40 outline-none border-2 border-transparent focus:border-[#007AFF] resize-none" placeholder="Features & Compatibility..." value={editProduct.description || ''} onChange={e => setEditProduct({...editProduct, description: e.target.value})} />
+                          <div className="flex gap-4 pt-6">
+                            <button onClick={() => setIsEditingProduct(false)} className="flex-1 py-6 bg-zinc-100 dark:bg-zinc-800 font-black text-[10px] uppercase rounded-3xl active:scale-95 transition-all">Cancel</button>
+                            <button onClick={saveProduct} disabled={isPublishing} className="flex-[3] py-6 bg-[#007AFF] text-white font-black text-[10px] uppercase rounded-3xl shadow-2xl shadow-blue-500/30 active:scale-95 transition-all">{isPublishing ? 'Pushing Data...' : 'Save & Sync'}</button>
                           </div>
                        </div>
                     </div>
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 gap-4">
+                <div className="grid grid-cols-1 gap-5">
                   {dbProducts.map(p => (
-                    <div key={p.id} className="p-5 glass-panel rounded-[2rem] flex items-center justify-between group">
-                      <div className="flex items-center gap-4">
-                        <img src={p.image} className="w-16 h-16 rounded-xl object-cover shadow-lg border-2 border-white dark:border-zinc-700" />
+                    <div key={p.id} className="p-6 glass-panel rounded-[2.5rem] flex items-center justify-between group shadow-xl hover:border-[#007AFF]/40 transition-all">
+                      <div className="flex items-center gap-6">
+                        <img src={p.image} className="w-20 h-20 rounded-2xl object-cover shadow-2xl border-2 border-white dark:border-zinc-700" />
                         <div>
-                          <p className="font-black leading-tight">{p.title}</p>
-                          <p className="text-[9px] font-black text-[#007AFF] uppercase mt-1 tracking-widest">{p.category} • {p.price} EGP</p>
+                          <p className="font-black text-xl leading-none">{p.title}</p>
+                          <p className="text-[10px] font-black text-[#007AFF] uppercase mt-2 tracking-[0.2em]">{p.category} • {p.price} EGP</p>
                         </div>
                       </div>
-                      <div className="flex gap-2">
-                        <button onClick={() => { setEditProduct(p); setIsEditingProduct(true); }} className="w-10 h-10 bg-blue-500/10 text-blue-500 rounded-full flex items-center justify-center hover:bg-[#007AFF] hover:text-white transition-all"><i className="fa-solid fa-pen"></i></button>
-                        <button onClick={async () => { if(window.confirm("Delete product?")) { await supabase.from('products').delete().eq('id', p.id); refreshData(); showNotify("Removed"); } }} className="w-10 h-10 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center hover:bg-red-500 hover:text-white transition-all"><i className="fa-solid fa-trash-can"></i></button>
+                      <div className="flex gap-3">
+                        <button onClick={() => { setEditProduct(p); setIsEditingProduct(true); }} className="w-12 h-12 bg-blue-500/10 text-blue-500 rounded-full flex items-center justify-center hover:bg-[#007AFF] hover:text-white transition-all"><i className="fa-solid fa-pen-nib text-lg"></i></button>
+                        <button onClick={async () => { if(window.confirm("Delete this asset permanently?")) { await supabase.from('products').delete().eq('id', p.id); refreshData(); showNotify("Deleted"); } }} className="w-12 h-12 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center hover:bg-red-500 hover:text-white transition-all"><i className="fa-solid fa-trash-can text-lg"></i></button>
                       </div>
                     </div>
                   ))}
@@ -484,30 +521,33 @@ const App: React.FC = () => {
 
             {adminTab === 'Videos' && (
               <div className="space-y-8">
-                <div className="glass-panel p-6 rounded-[2.5rem] flex justify-between items-center">
-                  <h3 className="text-xl font-black uppercase tracking-tight">Cloud Videos</h3>
-                  <button onClick={() => { setEditVideo({ title: '', url: '' }); setIsEditingVideo(true); }} className="px-8 py-3.5 bg-red-500 text-white rounded-xl font-black uppercase text-[9px] shadow-lg">Add Tutorial</button>
+                <div className="glass-panel p-8 rounded-[3rem] flex justify-between items-center shadow-2xl">
+                  <h3 className="text-2xl font-black uppercase tracking-tighter">Tutorials Hub</h3>
+                  <button onClick={() => { setEditVideo({ title: '', url: '' }); setIsEditingVideo(true); }} className="px-10 py-4 bg-red-600 text-white rounded-2xl font-black uppercase text-[10px] shadow-xl shadow-red-500/20 active:scale-95 transition-all">Add Video</button>
                 </div>
                 {isEditingVideo && (
-                  <div className="glass-panel p-8 rounded-[2.5rem] space-y-6 animate-in zoom-in border-2 border-red-500/20">
-                    <input className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none" value={editVideo.title || ''} onChange={e => setEditVideo({...editVideo, title: e.target.value})} placeholder="Video Title" />
-                    <input className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none" value={editVideo.url || ''} onChange={e => setEditVideo({...editVideo, url: e.target.value})} placeholder="YouTube URL" />
+                  <div className="glass-panel p-10 rounded-[3rem] space-y-8 animate-in zoom-in border-4 border-red-600/10 shadow-3xl">
+                    <input className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none border-2 border-transparent focus:border-red-600" value={editVideo.title || ''} onChange={e => setEditVideo({...editVideo, title: e.target.value})} placeholder="Video Headline" />
+                    <input className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none border-2 border-transparent focus:border-red-600" value={editVideo.url || ''} onChange={e => setEditVideo({...editVideo, url: e.target.value})} placeholder="YouTube URL or Video ID" />
                     <div className="flex gap-4">
-                      <button onClick={() => setIsEditingVideo(false)} className="flex-1 py-4 bg-zinc-100 dark:bg-zinc-800 font-black text-[10px] uppercase rounded-xl">Cancel</button>
-                      <button onClick={saveVideo} className="flex-[3] py-4 bg-red-500 text-white font-black text-[10px] uppercase rounded-xl shadow-xl">{isPublishing ? 'Saving...' : 'Add Video'}</button>
+                      <button onClick={() => setIsEditingVideo(false)} className="flex-1 py-5 bg-zinc-100 dark:bg-zinc-800 font-black text-[10px] uppercase rounded-2xl">Cancel</button>
+                      <button onClick={saveVideo} className="flex-[3] py-5 bg-red-600 text-white font-black text-[10px] uppercase rounded-2xl shadow-xl active:scale-95 transition-all">{isPublishing ? 'Linking...' : 'Add Tutorial'}</button>
                     </div>
                   </div>
                 )}
-                <div className="grid grid-cols-1 gap-4">
+                <div className="grid grid-cols-1 gap-5">
                   {dbVideos.map(v => (
-                    <div key={v.id} className="p-4 glass-panel rounded-[2rem] flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="w-20 h-12 rounded-lg overflow-hidden">
-                          <img src={`https://img.youtube.com/vi/${v.id}/mqdefault.jpg`} className="w-full h-full object-cover" />
+                    <div key={v.id} className="p-5 glass-panel rounded-[2.5rem] flex items-center justify-between shadow-xl">
+                      <div className="flex items-center gap-6">
+                        <div className="w-24 h-14 rounded-2xl overflow-hidden shadow-2xl border-2 border-white dark:border-zinc-800">
+                          <img 
+                            src={`https://img.youtube.com/vi/${v.id}/mqdefault.jpg`} 
+                            className="w-full h-full object-cover" 
+                          />
                         </div>
-                        <span className="font-black text-sm">{v.title}</span>
+                        <span className="font-black text-lg tracking-tight">{v.title}</span>
                       </div>
-                      <button onClick={async () => { if(window.confirm("Remove video?")) { await supabase.from('videos').delete().eq('id', v.id); refreshData(); showNotify("Deleted"); } }} className="w-10 h-10 text-red-500"><i className="fa-solid fa-trash-can"></i></button>
+                      <button onClick={async () => { if(window.confirm("Remove video?")) { await supabase.from('videos').delete().eq('id', v.id); refreshData(); showNotify("Deleted"); } }} className="w-12 h-12 text-red-600 hover:bg-red-600/10 rounded-full transition-all flex items-center justify-center"><i className="fa-solid fa-trash-can text-xl"></i></button>
                     </div>
                   ))}
                 </div>
@@ -515,16 +555,16 @@ const App: React.FC = () => {
             )}
 
             {adminTab === 'Settings' && (
-              <div className="glass-panel p-10 rounded-[3rem] space-y-10">
-                <div className="space-y-4">
-                   <label className="text-[10px] font-black uppercase text-zinc-400 px-2">Admin Password</label>
-                   <input type="password" placeholder="New Password" className="w-full p-6 rounded-[2rem] bg-zinc-100 dark:bg-zinc-800 font-black border-2 border-transparent focus:border-[#007AFF] outline-none" onBlur={e => e.target.value && updateSetting('admin_password', e.target.value)} />
+              <div className="glass-panel p-12 rounded-[4rem] space-y-12 shadow-3xl">
+                <div className="space-y-5">
+                   <label className="text-[10px] font-black uppercase text-zinc-400 tracking-[0.3em] px-4">Master Security Password</label>
+                   <input type="password" placeholder="Set New Admin Password" className="w-full p-8 rounded-[2.5rem] bg-zinc-100 dark:bg-zinc-800 font-black border-2 border-transparent focus:border-[#007AFF] outline-none text-xl" onBlur={e => e.target.value && updateSetting('admin_password', e.target.value)} />
                 </div>
-                <div className="space-y-4">
-                   <label className="text-[10px] font-black uppercase text-zinc-400 px-2">Site Logo (URL)</label>
-                   <div className="flex gap-4">
-                     <input type="text" placeholder="https://..." className="flex-1 p-6 rounded-[2rem] bg-zinc-100 dark:bg-zinc-800 font-black border-2 border-transparent focus:border-[#007AFF] outline-none" value={siteLogo} onChange={e => setSiteLogo(e.target.value)} />
-                     <button onClick={() => updateSetting('site_logo', siteLogo)} className="px-8 bg-[#007AFF] text-white rounded-[2rem] font-black uppercase text-[10px]">Update</button>
+                <div className="space-y-5">
+                   <label className="text-[10px] font-black uppercase text-zinc-400 tracking-[0.3em] px-4">Global Branding Logo (URL)</label>
+                   <div className="flex gap-5">
+                     <input type="text" placeholder="https://..." className="flex-1 p-8 rounded-[2.5rem] bg-zinc-100 dark:bg-zinc-800 font-black border-2 border-transparent focus:border-[#007AFF] outline-none" value={siteLogo} onChange={e => setSiteLogo(e.target.value)} />
+                     <button onClick={() => updateSetting('site_logo', siteLogo)} className="px-12 bg-[#007AFF] text-white rounded-[2.5rem] font-black uppercase text-[10px] shadow-2xl active:scale-95 transition-all">Update</button>
                    </div>
                 </div>
               </div>
@@ -533,13 +573,15 @@ const App: React.FC = () => {
         )}
       </main>
 
+      {/* Floating Notification */}
       {notification && (
-        <div className={`fixed top-12 left-1/2 -translate-x-1/2 z-[200] px-8 py-5 rounded-[2rem] font-black text-[10px] uppercase shadow-2xl animate-in fade-in slide-in-from-top-12 flex items-center gap-4 border-2 ${notification.type === 'success' ? 'bg-[#007AFF] text-white border-blue-400' : 'bg-red-500 text-white border-red-400'}`}>
-          <i className={`fa-solid ${notification.type === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation'} text-xl`}></i>
-          <span>{notification.message}</span>
+        <div className={`fixed top-12 left-1/2 -translate-x-1/2 z-[200] px-10 py-6 rounded-full font-black text-[10px] uppercase shadow-3xl animate-in fade-in slide-in-from-top-12 flex items-center gap-5 border-2 ${notification.type === 'success' ? 'bg-[#007AFF] text-white border-blue-400' : 'bg-red-600 text-white border-red-400'}`}>
+          <i className={`fa-solid ${notification.type === 'success' ? 'fa-circle-check' : 'fa-circle-exclamation'} text-2xl`}></i>
+          <span className="tracking-widest">{notification.message}</span>
         </div>
       )}
 
+      {/* Bottom Navigation (User View) */}
       {!isAdminMode && activeSection !== 'Preview' && (
         <BottomNav 
           activeSection={activeSection} 
