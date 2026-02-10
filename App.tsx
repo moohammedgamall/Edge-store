@@ -79,15 +79,12 @@ const App: React.FC = () => {
       // Products
       const prodRes = await supabase.from('products').select('*').order('created_at', { ascending: false });
       if (!prodRes.error && prodRes.data) {
-        // Fix: Don't fallback to Mock Data if database has been initialized even if empty
         if (prodRes.data.length > 0) {
           setDbProducts(prodRes.data.map(p => ({ ...p, gallery: Array.isArray(p.gallery) ? p.gallery : [] })));
         } else {
-          // If explicitly empty, set empty array (this fixes the "delete not working" UI bug)
           setDbProducts([]);
         }
       } else {
-        // Fallback only on error
         setDbProducts(MOCK_PRODUCTS);
       }
 
@@ -121,9 +118,9 @@ const App: React.FC = () => {
       setIsAuthModalOpen(false);
       setPasswordInput('');
       window.location.hash = '#/admin';
-      showNotify("تم الدخول بنجاح");
+      showNotify("Logged in successfully");
     } else {
-      showNotify("كلمة المرور غير صحيحة", "error");
+      showNotify("Incorrect password", "error");
     }
   };
 
@@ -163,8 +160,8 @@ const App: React.FC = () => {
       if (key === 'admin_password') setAdminPassword(value.trim());
       if (key === 'site_logo') setSiteLogo(value);
       if (key === 'loader_logo') setLoaderLogo(value);
-      showNotify("تم التحديث");
-    } catch (err) { showNotify("خطأ في المزامنة", "error"); }
+      showNotify("Settings updated");
+    } catch (err) { showNotify("Sync error", "error"); }
   };
 
   const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -173,7 +170,7 @@ const App: React.FC = () => {
     
     const currentGallery = editProduct.gallery || [];
     if (currentGallery.length + files.length > 20) {
-      showNotify("بحد أقصى 20 صورة فقط للمنتج", "error");
+      showNotify("Maximum 20 images allowed", "error");
       return;
     }
 
@@ -188,7 +185,7 @@ const App: React.FC = () => {
   };
 
   const saveProduct = async () => {
-    if (!editProduct.title || !editProduct.image) return showNotify("أكمل البيانات", "error");
+    if (!editProduct.title || !editProduct.image) return showNotify("Please complete all fields", "error");
     setIsPublishing(true);
     try {
       const payload = {
@@ -206,12 +203,12 @@ const App: React.FC = () => {
       await refreshData();
       setIsEditingProduct(false);
       setEditProduct({ title: '', price: 0, category: 'Themes', image: '', description: '', gallery: [] });
-      showNotify("تم حفظ المنتج بنجاح");
-    } catch (err) { showNotify("فشل الحفظ", "error"); } finally { setIsPublishing(false); }
+      showNotify("Product saved successfully");
+    } catch (err) { showNotify("Failed to save product", "error"); } finally { setIsPublishing(false); }
   };
 
   const saveVideo = async () => {
-    if (!editVideo.title || !editVideo.url) return showNotify("أكمل البيانات", "error");
+    if (!editVideo.title || !editVideo.url) return showNotify("Please complete all fields", "error");
     
     // Extract YouTube ID
     let vidId = '';
@@ -221,7 +218,7 @@ const App: React.FC = () => {
     else if (url.includes('shorts/')) vidId = url.split('shorts/')[1].split('?')[0];
     else vidId = url.split('/').pop() || '';
 
-    if (!vidId) return showNotify("رابط يوتيوب غير صالح", "error");
+    if (!vidId) return showNotify("Invalid YouTube URL", "error");
 
     setIsPublishing(true);
     try {
@@ -233,58 +230,55 @@ const App: React.FC = () => {
       await refreshData();
       setIsEditingVideo(false);
       setEditVideo({ title: '', url: '' });
-      showNotify("تم حفظ الفيديو بنجاح");
+      showNotify("Video saved successfully");
     } catch (err) { 
-      showNotify("خطأ في حفظ الفيديو", "error"); 
+      showNotify("Error saving video", "error"); 
     } finally { 
       setIsPublishing(false); 
     }
   };
 
   const handleDeleteProduct = async (id: string) => {
-    if (window.confirm("هل أنت متأكد من حذف هذا المنتج؟ لا يمكن التراجع عن هذا الإجراء.")) {
+    if (window.confirm("Are you sure you want to delete this product? This action cannot be undone.")) {
       try {
         const { error } = await supabase.from('products').delete().eq('id', id);
         if (error) {
           console.error("Delete error:", error);
           throw error;
         }
-        showNotify("تم حذف المنتج بنجاح");
-        // Update local state immediately for faster feel
+        showNotify("Product deleted successfully");
         setDbProducts(prev => prev.filter(p => p.id !== id));
-        // Then refresh to ensure sync
         refreshData();
       } catch (err) {
-        showNotify("خطأ في حذف المنتج", "error");
+        showNotify("Error deleting product", "error");
       }
     }
   };
 
   const handleDeleteVideo = async (id: string) => {
-    if (window.confirm("هل أنت متأكد من حذف هذا الفيديو؟")) {
+    if (window.confirm("Are you sure you want to delete this video?")) {
       try {
         const { error } = await supabase.from('videos').delete().eq('id', id);
         if (error) throw error;
-        showNotify("تم حذف الفيديو بنجاح");
+        showNotify("Video deleted successfully");
         setDbVideos(prev => prev.filter(v => v.id !== id));
         refreshData();
       } catch (err) {
-        showNotify("خطأ في حذف الفيديو", "error");
+        showNotify("Error deleting video", "error");
       }
     }
   };
 
   const handleOrderRedirect = () => {
     if (!currentOrderedProduct) return;
-    const message = `طلب جديد من متجر Mohamed Edge:
-- المنتج: ${currentOrderedProduct.title}
-- القسم: ${currentOrderedProduct.category}
-- الجهاز: ${orderDevice}
-- السعر: ${currentOrderedProduct.price} EGP`;
+    const message = `New Order from Mohamed Edge:
+- Product: ${currentOrderedProduct.title}
+- Category: ${currentOrderedProduct.category}
+- Device: ${orderDevice}
+- Price: ${currentOrderedProduct.price} EGP`;
     window.open(`https://t.me/Mohamed_edge?text=${encodeURIComponent(message)}`, '_blank');
   };
 
-  // Only render app content if loaded, but splash logic is handled by effect
   if (isLoading && dbProducts.length === 0) return null;
 
   return (
@@ -497,7 +491,7 @@ const App: React.FC = () => {
                 {isEditingProduct && (
                   <div id="product-form" className="glass-panel p-10 rounded-[3rem] space-y-8 border-4 border-[#007AFF]/10 animate-in slide-in-from-top-4 duration-300">
                     <div className="flex justify-between items-center">
-                      <h3 className="font-black text-xl uppercase">{editProduct.id ? 'تعديل المنتج' : 'إضافة منتج جديد'}</h3>
+                      <h3 className="font-black text-xl uppercase">{editProduct.id ? 'Edit Product' : 'Add New Product'}</h3>
                       <button onClick={() => setIsEditingProduct(false)} className="text-zinc-400 hover:text-red-600"><i className="fa-solid fa-xmark text-xl"></i></button>
                     </div>
                     
@@ -559,7 +553,7 @@ const App: React.FC = () => {
                     <div className="flex gap-4 pt-4">
                       <button onClick={() => setIsEditingProduct(false)} className="flex-1 py-5 bg-zinc-200 dark:bg-zinc-800 rounded-2xl font-black uppercase text-[10px]">Cancel</button>
                       <button onClick={saveProduct} disabled={isPublishing} className="flex-[3] py-5 bg-[#007AFF] text-white rounded-2xl font-black uppercase text-[10px] shadow-lg">
-                        {isPublishing ? 'جارِ الحفظ...' : 'Save Asset'}
+                        {isPublishing ? 'Saving...' : 'Save Asset'}
                       </button>
                     </div>
                   </div>
@@ -599,7 +593,7 @@ const App: React.FC = () => {
                   ))}
                   {dbProducts.length === 0 && !isLoading && (
                     <div className="p-10 text-center border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-3xl text-zinc-400 font-bold">
-                       قائمة المنتجات فارغة حالياً
+                       Product list is currently empty
                     </div>
                   )}
                 </div>
@@ -618,7 +612,7 @@ const App: React.FC = () => {
                 {isEditingVideo && (
                   <div id="video-form" className="glass-panel p-10 rounded-[3rem] space-y-8 border-4 border-red-600/10 animate-in slide-in-from-top-4 duration-300">
                     <div className="flex justify-between items-center">
-                      <h3 className="font-black text-xl uppercase">إعداد فيديو يوتيوب</h3>
+                      <h3 className="font-black text-xl uppercase">Configure YouTube Video</h3>
                       <button onClick={() => setIsEditingVideo(false)} className="text-zinc-400 hover:text-red-600"><i className="fa-solid fa-xmark text-xl"></i></button>
                     </div>
                     <div className="space-y-2">
@@ -639,7 +633,7 @@ const App: React.FC = () => {
                     <div className="flex gap-4">
                       <button onClick={() => setIsEditingVideo(false)} className="flex-1 py-5 bg-zinc-200 dark:bg-zinc-800 rounded-2xl font-black uppercase text-[10px]">Cancel</button>
                       <button onClick={saveVideo} disabled={isPublishing} className="flex-[3] py-5 bg-red-600 text-white rounded-2xl font-black uppercase text-[10px] shadow-lg">
-                        {isPublishing ? 'جارِ الحفظ...' : 'Save Video'}
+                        {isPublishing ? 'Saving...' : 'Save Video'}
                       </button>
                     </div>
                   </div>
