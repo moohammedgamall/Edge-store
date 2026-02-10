@@ -190,7 +190,8 @@ const App: React.FC = () => {
       await supabase.from('products').upsert(payload);
       await refreshData();
       setIsEditingProduct(false);
-      showNotify("تم الحفظ بنجاح");
+      setEditProduct({ title: '', price: 0, category: 'Themes', image: '', description: '', gallery: [] });
+      showNotify("تم حفظ المنتج بنجاح");
     } catch (err) { showNotify("فشل الحفظ", "error"); } finally { setIsPublishing(false); }
   };
 
@@ -222,6 +223,32 @@ const App: React.FC = () => {
       showNotify("خطأ في حفظ الفيديو", "error"); 
     } finally { 
       setIsPublishing(false); 
+    }
+  };
+
+  const handleDeleteProduct = async (id: string) => {
+    if (window.confirm("هل أنت متأكد من حذف هذا المنتج؟ لا يمكن التراجع عن هذا الإجراء.")) {
+      try {
+        const { error } = await supabase.from('products').delete().eq('id', id);
+        if (error) throw error;
+        showNotify("تم حذف المنتج بنجاح");
+        refreshData();
+      } catch (err) {
+        showNotify("خطأ في حذف المنتج", "error");
+      }
+    }
+  };
+
+  const handleDeleteVideo = async (id: string) => {
+    if (window.confirm("هل أنت متأكد من حذف هذا الفيديو؟")) {
+      try {
+        const { error } = await supabase.from('videos').delete().eq('id', id);
+        if (error) throw error;
+        showNotify("تم حذف الفيديو بنجاح");
+        refreshData();
+      } catch (err) {
+        showNotify("خطأ في حذف الفيديو", "error");
+      }
     }
   };
 
@@ -341,7 +368,7 @@ const App: React.FC = () => {
                    <div className="flex flex-col bg-zinc-100 dark:bg-zinc-800">
                       <div className="aspect-[3/4] overflow-hidden relative">
                         <img 
-                          src={previewImageIndex === 0 ? selectedProduct.image : selectedProduct.gallery[previewImageIndex - 1]} 
+                          src={previewImageIndex === 0 ? selectedProduct.image : (selectedProduct.gallery && selectedProduct.gallery[previewImageIndex - 1])} 
                           className="w-full h-full object-cover transition-all duration-500" 
                           alt={selectedProduct.title}
                         />
@@ -439,7 +466,12 @@ const App: React.FC = () => {
               <div className="space-y-8">
                 <button onClick={() => { setEditProduct({ title: '', price: 0, category: 'Themes', image: '', description: '', gallery: [] }); setIsEditingProduct(true); }} className="w-full py-6 bg-[#007AFF] text-white rounded-3xl font-black uppercase text-xs shadow-xl">Add New Product</button>
                 {isEditingProduct && (
-                  <div className="glass-panel p-10 rounded-[3rem] space-y-8 border-4 border-[#007AFF]/10">
+                  <div id="product-form" className="glass-panel p-10 rounded-[3rem] space-y-8 border-4 border-[#007AFF]/10 animate-in slide-in-from-top-4 duration-300">
+                    <div className="flex justify-between items-center">
+                      <h3 className="font-black text-xl uppercase">{editProduct.id ? 'تعديل المنتج' : 'إضافة منتج جديد'}</h3>
+                      <button onClick={() => setIsEditingProduct(false)} className="text-zinc-400 hover:text-red-600"><i className="fa-solid fa-xmark text-xl"></i></button>
+                    </div>
+                    
                     <div className="space-y-2">
                       <label className="text-[10px] font-black uppercase text-zinc-400 ml-4">Product Info</label>
                       <input className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black" value={editProduct.title} onChange={e => setEditProduct({...editProduct, title: e.target.value})} placeholder="Title" />
@@ -497,13 +529,15 @@ const App: React.FC = () => {
 
                     <div className="flex gap-4 pt-4">
                       <button onClick={() => setIsEditingProduct(false)} className="flex-1 py-5 bg-zinc-200 dark:bg-zinc-800 rounded-2xl font-black uppercase text-[10px]">Cancel</button>
-                      <button onClick={saveProduct} disabled={isPublishing} className="flex-[3] py-5 bg-[#007AFF] text-white rounded-2xl font-black uppercase text-[10px] shadow-lg">Save Asset</button>
+                      <button onClick={saveProduct} disabled={isPublishing} className="flex-[3] py-5 bg-[#007AFF] text-white rounded-2xl font-black uppercase text-[10px] shadow-lg">
+                        {isPublishing ? 'جارِ الحفظ...' : 'Save Asset'}
+                      </button>
                     </div>
                   </div>
                 )}
                 <div className="grid grid-cols-1 gap-4">
                   {dbProducts.map(p => (
-                    <div key={p.id} className="p-5 glass-panel rounded-3xl flex items-center justify-between">
+                    <div key={p.id} className="p-5 glass-panel rounded-3xl flex items-center justify-between group hover:border-[#007AFF]/30 transition-all">
                       <div className="flex items-center gap-4">
                         <img src={p.image} className="w-16 h-16 rounded-2xl object-cover" />
                         <div>
@@ -515,8 +549,22 @@ const App: React.FC = () => {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <button onClick={() => { setEditProduct(p); setIsEditingProduct(true); }} className="text-[#007AFF] p-4"><i className="fa-solid fa-pen-to-square"></i></button>
-                        <button onClick={async () => { if(window.confirm("Delete?")) { await supabase.from('products').delete().eq('id', p.id); refreshData(); } }} className="text-red-600 p-4"><i className="fa-solid fa-trash"></i></button>
+                        <button 
+                          onClick={() => { 
+                            setEditProduct(p); 
+                            setIsEditingProduct(true); 
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                          }} 
+                          className="w-10 h-10 flex items-center justify-center bg-blue-500/10 text-[#007AFF] rounded-full hover:bg-[#007AFF] hover:text-white transition-all"
+                        >
+                          <i className="fa-solid fa-pen-to-square text-xs"></i>
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteProduct(p.id)} 
+                          className="w-10 h-10 flex items-center justify-center bg-red-500/10 text-red-600 rounded-full hover:bg-red-600 hover:text-white transition-all"
+                        >
+                          <i className="fa-solid fa-trash text-xs"></i>
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -534,7 +582,11 @@ const App: React.FC = () => {
                 </button>
 
                 {isEditingVideo && (
-                  <div className="glass-panel p-10 rounded-[3rem] space-y-8 border-4 border-red-600/10 animate-in zoom-in-95 duration-300">
+                  <div id="video-form" className="glass-panel p-10 rounded-[3rem] space-y-8 border-4 border-red-600/10 animate-in slide-in-from-top-4 duration-300">
+                    <div className="flex justify-between items-center">
+                      <h3 className="font-black text-xl uppercase">إعداد فيديو يوتيوب</h3>
+                      <button onClick={() => setIsEditingVideo(false)} className="text-zinc-400 hover:text-red-600"><i className="fa-solid fa-xmark text-xl"></i></button>
+                    </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-black uppercase text-zinc-400 ml-4">Video Info</label>
                       <input 
@@ -552,14 +604,16 @@ const App: React.FC = () => {
                     </div>
                     <div className="flex gap-4">
                       <button onClick={() => setIsEditingVideo(false)} className="flex-1 py-5 bg-zinc-200 dark:bg-zinc-800 rounded-2xl font-black uppercase text-[10px]">Cancel</button>
-                      <button onClick={saveVideo} disabled={isPublishing} className="flex-[3] py-5 bg-red-600 text-white rounded-2xl font-black uppercase text-[10px] shadow-lg">Save Video</button>
+                      <button onClick={saveVideo} disabled={isPublishing} className="flex-[3] py-5 bg-red-600 text-white rounded-2xl font-black uppercase text-[10px] shadow-lg">
+                        {isPublishing ? 'جارِ الحفظ...' : 'Save Video'}
+                      </button>
                     </div>
                   </div>
                 )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {dbVideos.map(vid => (
-                    <div key={vid.id} className="p-5 glass-panel rounded-3xl flex items-center justify-between group">
+                    <div key={vid.id} className="p-5 glass-panel rounded-3xl flex items-center justify-between group hover:border-red-600/30 transition-all">
                       <div className="flex items-center gap-4 flex-1 min-w-0">
                         <div className="w-24 aspect-video rounded-xl overflow-hidden shrink-0 bg-zinc-900">
                            <img src={`https://img.youtube.com/vi/${vid.id}/mqdefault.jpg`} className="w-full h-full object-cover" alt={vid.title} />
@@ -569,12 +623,24 @@ const App: React.FC = () => {
                           <p className="text-[10px] font-bold text-red-600 uppercase tracking-widest mt-1">YouTube Video</p>
                         </div>
                       </div>
-                      <button 
-                        onClick={async () => { if(window.confirm("Delete this video?")) { await supabase.from('videos').delete().eq('id', vid.id); refreshData(); } }} 
-                        className="text-red-600 p-4 hover:scale-110 active:scale-90 transition-transform"
-                      >
-                        <i className="fa-solid fa-trash"></i>
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button 
+                          onClick={() => {
+                            setEditVideo(vid);
+                            setIsEditingVideo(true);
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                          }} 
+                          className="w-10 h-10 flex items-center justify-center bg-blue-500/10 text-blue-600 rounded-full hover:bg-blue-600 hover:text-white transition-all"
+                        >
+                          <i className="fa-solid fa-pen-to-square text-xs"></i>
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteVideo(vid.id)} 
+                          className="w-10 h-10 flex items-center justify-center bg-red-500/10 text-red-600 rounded-full hover:bg-red-600 hover:text-white transition-all"
+                        >
+                          <i className="fa-solid fa-trash text-xs"></i>
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
