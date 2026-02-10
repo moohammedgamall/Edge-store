@@ -74,7 +74,7 @@ const App: React.FC = () => {
       if (prodRes.error) console.error("Products Fetch Error:", prodRes.error.message);
       else setDbProducts(prodRes.data.map(p => ({ ...p, gallery: Array.isArray(p.gallery) ? p.gallery : [] })));
 
-      // Videos - Robust Check (Try both 'videos' and 'tutorials' tables)
+      // Videos - Check both possible tables
       let finalVideos: any[] = [];
       const vidRes = await supabase.from('videos').select('*');
       if (!vidRes.error && vidRes.data && vidRes.data.length > 0) {
@@ -162,7 +162,6 @@ const App: React.FC = () => {
     if (!editVideo.title || !vidId) return showNotify("Invalid video info", "error");
     setIsPublishing(true);
     try {
-      // Upsert into both possible tables to be safe for legacy reasons or just 'videos'
       const { error } = await supabase.from('videos').upsert({ id: vidId, title: editVideo.title, url: editVideo.url });
       if (error) throw error;
       await refreshData();
@@ -288,9 +287,9 @@ const App: React.FC = () => {
               </div>
             </section>
 
-            {/* --- Improved Videos Section (Home Only) --- */}
+            {/* --- Improved Videos Section (Home Only) - Positioned under New Release --- */}
             {activeSection === 'Home' && dbVideos.length > 0 && (
-              <section className="space-y-8 animate-in fade-in slide-in-from-bottom-8 delay-150">
+              <section className="space-y-8 animate-in fade-in slide-in-from-bottom-8 delay-150 pb-10">
                 <div className="flex justify-between items-end px-1">
                   <h2 className="text-2xl font-black tracking-tighter uppercase flex items-center gap-3">
                     <div className="w-1.5 h-6 bg-red-600 rounded-full shadow-[0_0_10px_rgba(220,38,38,0.5)]"></div> Latest Tutorials
