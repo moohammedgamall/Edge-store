@@ -12,7 +12,6 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Fixed: Ensured file is correctly typed as File
 const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -153,7 +152,6 @@ const App: React.FC = () => {
     } catch (err) { showNotify("خطأ في المزامنة", "error"); }
   };
 
-  // Fixed: Explicitly cast files to File[] to resolve line 165 unknown error
   const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []) as File[];
     if (files.length === 0) return;
@@ -194,6 +192,37 @@ const App: React.FC = () => {
       setIsEditingProduct(false);
       showNotify("تم الحفظ بنجاح");
     } catch (err) { showNotify("فشل الحفظ", "error"); } finally { setIsPublishing(false); }
+  };
+
+  const saveVideo = async () => {
+    if (!editVideo.title || !editVideo.url) return showNotify("أكمل البيانات", "error");
+    
+    // Extract YouTube ID
+    let vidId = '';
+    const url = editVideo.url;
+    if (url.includes('v=')) vidId = url.split('v=')[1].split('&')[0];
+    else if (url.includes('youtu.be/')) vidId = url.split('youtu.be/')[1].split('?')[0];
+    else if (url.includes('shorts/')) vidId = url.split('shorts/')[1].split('?')[0];
+    else vidId = url.split('/').pop() || '';
+
+    if (!vidId) return showNotify("رابط يوتيوب غير صالح", "error");
+
+    setIsPublishing(true);
+    try {
+      await supabase.from('videos').upsert({ 
+        id: vidId, 
+        title: editVideo.title, 
+        url: editVideo.url 
+      });
+      await refreshData();
+      setIsEditingVideo(false);
+      setEditVideo({ title: '', url: '' });
+      showNotify("تم حفظ الفيديو بنجاح");
+    } catch (err) { 
+      showNotify("خطأ في حفظ الفيديو", "error"); 
+    } finally { 
+      setIsPublishing(false); 
+    }
   };
 
   const handleOrderRedirect = () => {
@@ -317,7 +346,6 @@ const App: React.FC = () => {
                           alt={selectedProduct.title}
                         />
                       </div>
-                      {/* Thumbnail Gallery in Preview */}
                       {selectedProduct.gallery && selectedProduct.gallery.length > 0 && (
                         <div className="p-4 flex gap-2 overflow-x-auto no-scrollbar">
                            <button 
@@ -441,7 +469,6 @@ const App: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* NEW: GALLERY UPLOAD SECTION */}
                     <div className="space-y-4">
                        <label className="text-[10px] font-black uppercase text-zinc-400 ml-4 flex justify-between">
                          <span>Gallery Images (Max 20)</span>
@@ -491,6 +518,63 @@ const App: React.FC = () => {
                         <button onClick={() => { setEditProduct(p); setIsEditingProduct(true); }} className="text-[#007AFF] p-4"><i className="fa-solid fa-pen-to-square"></i></button>
                         <button onClick={async () => { if(window.confirm("Delete?")) { await supabase.from('products').delete().eq('id', p.id); refreshData(); } }} className="text-red-600 p-4"><i className="fa-solid fa-trash"></i></button>
                       </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {adminTab === 'Videos' && (
+              <div className="space-y-8">
+                <button 
+                  onClick={() => { setEditVideo({ title: '', url: '' }); setIsEditingVideo(true); }} 
+                  className="w-full py-6 bg-red-600 text-white rounded-3xl font-black uppercase text-xs shadow-xl flex items-center justify-center gap-3"
+                >
+                  <i className="fa-brands fa-youtube text-xl"></i> Add YouTube Tutorial
+                </button>
+
+                {isEditingVideo && (
+                  <div className="glass-panel p-10 rounded-[3rem] space-y-8 border-4 border-red-600/10 animate-in zoom-in-95 duration-300">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase text-zinc-400 ml-4">Video Info</label>
+                      <input 
+                        className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black border-2 border-transparent focus:border-red-600 outline-none transition-all" 
+                        value={editVideo.title} 
+                        onChange={e => setEditVideo({...editVideo, title: e.target.value})} 
+                        placeholder="Video Title (e.g., How to Install Themes)" 
+                      />
+                      <input 
+                        className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black border-2 border-transparent focus:border-red-600 outline-none transition-all" 
+                        value={editVideo.url} 
+                        onChange={e => setEditVideo({...editVideo, url: e.target.value})} 
+                        placeholder="YouTube URL (https://www.youtube.com/watch?v=...)" 
+                      />
+                    </div>
+                    <div className="flex gap-4">
+                      <button onClick={() => setIsEditingVideo(false)} className="flex-1 py-5 bg-zinc-200 dark:bg-zinc-800 rounded-2xl font-black uppercase text-[10px]">Cancel</button>
+                      <button onClick={saveVideo} disabled={isPublishing} className="flex-[3] py-5 bg-red-600 text-white rounded-2xl font-black uppercase text-[10px] shadow-lg">Save Video</button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {dbVideos.map(vid => (
+                    <div key={vid.id} className="p-5 glass-panel rounded-3xl flex items-center justify-between group">
+                      <div className="flex items-center gap-4 flex-1 min-w-0">
+                        <div className="w-24 aspect-video rounded-xl overflow-hidden shrink-0 bg-zinc-900">
+                           <img src={`https://img.youtube.com/vi/${vid.id}/mqdefault.jpg`} className="w-full h-full object-cover" alt={vid.title} />
+                        </div>
+                        <div className="truncate">
+                          <p className="font-black text-sm truncate">{vid.title}</p>
+                          <p className="text-[10px] font-bold text-red-600 uppercase tracking-widest mt-1">YouTube Video</p>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={async () => { if(window.confirm("Delete this video?")) { await supabase.from('videos').delete().eq('id', vid.id); refreshData(); } }} 
+                        className="text-red-600 p-4 hover:scale-110 active:scale-90 transition-transform"
+                      >
+                        <i className="fa-solid fa-trash"></i>
+                      </button>
                     </div>
                   ))}
                 </div>
