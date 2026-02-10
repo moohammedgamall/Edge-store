@@ -34,7 +34,7 @@ const App: React.FC = () => {
   // --- Database State ---
   const [dbProducts, setDbProducts] = useState<Product[]>([]);
   const [dbVideos, setDbVideos] = useState<any[]>([]); 
-  const [siteLogo, setSiteLogo] = useState<string>("https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
+  const [siteLogo, setSiteLogo] = useState<string>(() => localStorage.getItem('cached_loading_logo') || "https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
   const [adminPassword, setAdminPassword] = useState('1234');
 
   // --- UI Flow State ---
@@ -68,7 +68,6 @@ const App: React.FC = () => {
       if (prodRes.error) console.error("Products Fetch Error:", prodRes.error.message);
       else setDbProducts(prodRes.data.map(p => ({ ...p, gallery: Array.isArray(p.gallery) ? p.gallery : [] })));
 
-      // Removing .order('created_at') to fix the reported SQL error
       const vidRes = await supabase.from('videos').select('*');
       if (vidRes.error) {
           console.error("Videos Table Error:", vidRes.error.message);
@@ -82,13 +81,17 @@ const App: React.FC = () => {
       if (setRes.data) {
         setRes.data.forEach(s => {
           if (s.key === 'admin_password') setAdminPassword(s.value);
-          if (s.key === 'site_logo') setSiteLogo(s.value);
+          if (s.key === 'site_logo') {
+            setSiteLogo(s.value);
+            localStorage.setItem('cached_loading_logo', s.value);
+          }
         });
       }
     } catch (err) {
       console.error("Critical Sync Failure:", err);
     } finally {
-      setIsLoading(false);
+      // Delaying slightly for a smoother transition from loader
+      setTimeout(() => setIsLoading(false), 800);
     }
   };
 
@@ -112,7 +115,6 @@ const App: React.FC = () => {
     
     setIsPublishing(true);
     try {
-      // Removing created_at from payload as the column doesn't exist in the database
       const payload = {
         id: vidId,
         title: editVideo.title,
@@ -168,6 +170,7 @@ const App: React.FC = () => {
   const updateSetting = async (key: string, value: string) => {
     try {
       await supabase.from('settings').upsert({ key, value });
+      if (key === 'site_logo') localStorage.setItem('cached_loading_logo', value);
       await refreshData();
       showNotify("Setting updated in cloud");
     } catch (err) { 
@@ -219,10 +222,16 @@ const App: React.FC = () => {
   const orderedProduct = useMemo(() => dbProducts.find(p => p.id === orderProductId), [dbProducts, orderProductId]);
 
   if (isLoading) return (
-      <div className="h-screen w-full flex items-center justify-center bg-[#F2F2F7] dark:bg-[#2C2C2E]">
-          <div className="text-center space-y-4">
-              <div className="w-12 h-12 border-4 border-[#007AFF] border-t-transparent rounded-full animate-spin mx-auto"></div>
-              <p className="font-black text-[10px] uppercase tracking-widest text-zinc-400">Connecting to Cloud...</p>
+      <div className="h-screen w-full flex flex-col items-center justify-center bg-[#F2F2F7] dark:bg-[#2C2C2E] animate-in fade-in duration-500">
+          <div className="relative mb-8">
+              <div className="w-24 h-24 md:w-32 md:h-32 border-4 border-white dark:border-zinc-800 rounded-full overflow-hidden shadow-2xl relative z-10 bg-white">
+                  <img src={siteLogo} className="w-full h-full object-cover" alt="Logo" />
+              </div>
+              <div className="absolute -inset-4 border-2 border-dashed border-[#007AFF] rounded-full animate-[spin_8s_linear_infinite]"></div>
+          </div>
+          <div className="text-center space-y-2">
+              <h3 className="font-black text-xl md:text-2xl tracking-tighter uppercase dark:text-white">Mohamed Edge</h3>
+              <p className="font-black text-[9px] uppercase tracking-[0.4em] text-zinc-400">Syncing Marketplace...</p>
           </div>
       </div>
   );
