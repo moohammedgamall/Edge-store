@@ -12,6 +12,38 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// وظيفة متطورة لضغط الصور قبل الحفظ
+const compressAndResizeImage = (base64Str: string, maxWidth = 400, maxHeight = 400): Promise<string> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.src = base64Str;
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let width = img.width;
+      let height = img.height;
+
+      if (width > height) {
+        if (width > maxWidth) {
+          height *= maxWidth / width;
+          width = maxWidth;
+        }
+      } else {
+        if (height > maxHeight) {
+          width *= maxHeight / height;
+          height = maxHeight;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx?.drawImage(img, 0, 0, width, height);
+      // تصدير بصيغة JPEG بجودة 0.7 لتقليل الحجم بشكل كبير
+      resolve(canvas.toDataURL('image/jpeg', 0.7));
+    };
+  });
+};
+
 const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -84,11 +116,11 @@ const App: React.FC = () => {
           if (s.key === 'admin_password') setAdminPassword(s.value);
           if (s.key === 'site_logo') {
             setSiteLogo(s.value);
-            localStorage.setItem('cached_site_logo', s.value);
+            try { localStorage.setItem('cached_site_logo', s.value); } catch(e) {}
           }
           if (s.key === 'loader_logo') {
             setLoaderLogo(s.value);
-            localStorage.setItem('cached_loader_logo', s.value);
+            try { localStorage.setItem('cached_loader_logo', s.value); } catch(e) {}
           }
         });
       }
@@ -166,16 +198,22 @@ const App: React.FC = () => {
 
   const updateSetting = async (key: string, value: string) => {
     try {
-      const { error } = await supabase.from('settings').upsert({ key, value });
+      // ضغط القيمة قبل إرسالها إذا كانت صورة (Base64)
+      let finalValue = value;
+      if (value.startsWith('data:image')) {
+        finalValue = await compressAndResizeImage(value);
+      }
+
+      const { error } = await supabase.from('settings').upsert({ key, value: finalValue });
       if (error) throw error;
       
       if (key === 'site_logo') {
-        setSiteLogo(value);
-        localStorage.setItem('cached_site_logo', value);
+        setSiteLogo(finalValue);
+        try { localStorage.setItem('cached_site_logo', finalValue); } catch(e) { console.warn("Local storage quota exceeded, skipping cache."); }
       }
       if (key === 'loader_logo') {
-        setLoaderLogo(value);
-        localStorage.setItem('cached_loader_logo', value);
+        setLoaderLogo(finalValue);
+        try { localStorage.setItem('cached_loader_logo', finalValue); } catch(e) { console.warn("Local storage quota exceeded, skipping cache."); }
       }
       await refreshData();
       showNotify("Settings updated successfully");
