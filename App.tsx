@@ -69,18 +69,25 @@ const App: React.FC = () => {
 
   const refreshData = async () => {
     try {
+      // Products
       const prodRes = await supabase.from('products').select('*').order('created_at', { ascending: false });
       if (prodRes.error) console.error("Products Fetch Error:", prodRes.error.message);
       else setDbProducts(prodRes.data.map(p => ({ ...p, gallery: Array.isArray(p.gallery) ? p.gallery : [] })));
 
+      // Videos - Robust Check (Try both 'videos' and 'tutorials' tables)
+      let finalVideos: any[] = [];
       const vidRes = await supabase.from('videos').select('*');
-      if (vidRes.error) {
-          const tutRes = await supabase.from('tutorials').select('*');
-          if (!tutRes.error) setDbVideos(tutRes.data || []);
+      if (!vidRes.error && vidRes.data && vidRes.data.length > 0) {
+        finalVideos = vidRes.data;
       } else {
-          setDbVideos(vidRes.data || []);
+        const tutRes = await supabase.from('tutorials').select('*');
+        if (!tutRes.error && tutRes.data) {
+          finalVideos = tutRes.data;
+        }
       }
+      setDbVideos(finalVideos);
 
+      // Settings
       const setRes = await supabase.from('settings').select('*');
       if (setRes.data) {
         setRes.data.forEach(s => {
@@ -151,10 +158,11 @@ const App: React.FC = () => {
   };
 
   const saveVideo = async () => {
-    const vidId = editVideo.url ? (editVideo.url.includes('v=') ? editVideo.url.split('v=')[1].split('&')[0] : editVideo.url.split('/').pop()) : '';
+    const vidId = editVideo.url ? (editVideo.url.includes('v=') ? editVideo.url.split('v=')[1].split('&')[0] : (editVideo.url.includes('youtu.be/') ? editVideo.url.split('youtu.be/')[1].split('?')[0] : editVideo.url.split('/').pop())) : '';
     if (!editVideo.title || !vidId) return showNotify("Invalid video info", "error");
     setIsPublishing(true);
     try {
+      // Upsert into both possible tables to be safe for legacy reasons or just 'videos'
       const { error } = await supabase.from('videos').upsert({ id: vidId, title: editVideo.title, url: editVideo.url });
       if (error) throw error;
       await refreshData();
@@ -260,6 +268,7 @@ const App: React.FC = () => {
       <main className="max-w-7xl mx-auto px-4 py-8">
         {(activeSection === 'Home' || activeSection === 'Themes' || activeSection === 'Widgets' || activeSection === 'Walls') && (
           <div className="space-y-16 animate-in fade-in slide-in-from-bottom-8 duration-700">
+            {/* Products Section */}
             <section className="space-y-8">
               <div className="flex justify-between items-end px-1">
                 <h2 className="text-2xl font-black tracking-tighter uppercase flex items-center gap-3">
@@ -279,29 +288,33 @@ const App: React.FC = () => {
               </div>
             </section>
 
-            {/* --- Videos Section --- */}
+            {/* --- Improved Videos Section (Home Only) --- */}
             {activeSection === 'Home' && dbVideos.length > 0 && (
               <section className="space-y-8 animate-in fade-in slide-in-from-bottom-8 delay-150">
                 <div className="flex justify-between items-end px-1">
                   <h2 className="text-2xl font-black tracking-tighter uppercase flex items-center gap-3">
-                    <div className="w-1.5 h-6 bg-red-600 rounded-full"></div> Tutorials & Previews
+                    <div className="w-1.5 h-6 bg-red-600 rounded-full shadow-[0_0_10px_rgba(220,38,38,0.5)]"></div> Latest Tutorials
                   </h2>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   {dbVideos.map((video) => (
-                    <div key={video.id} className="glass-panel overflow-hidden rounded-[2.5rem] shadow-xl group hover:scale-[1.02] transition-transform duration-500">
-                      <div className="aspect-video w-full bg-black relative">
+                    <div key={video.id} className="glass-panel overflow-hidden rounded-[2.5rem] shadow-xl group hover:scale-[1.01] transition-all duration-500 border border-white/20 dark:border-white/5">
+                      <div className="aspect-video w-full bg-zinc-900 relative">
                         <iframe 
                           className="w-full h-full"
-                          src={`https://www.youtube.com/embed/${video.id}`}
+                          src={`https://www.youtube.com/embed/${video.id}?rel=0&modestbranding=1`}
                           title={video.title}
                           frameBorder="0"
                           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                           allowFullScreen
                         />
                       </div>
-                      <div className="p-6 bg-white dark:bg-zinc-900 border-t border-zinc-100 dark:border-zinc-800">
-                        <h4 className="font-black text-lg tracking-tight uppercase line-clamp-1">{video.title}</h4>
+                      <div className="p-6 bg-white dark:bg-zinc-900/50 backdrop-blur-md">
+                        <div className="flex items-center gap-3 mb-2">
+                           <i className="fa-brands fa-youtube text-red-600 text-lg"></i>
+                           <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Video Guide</span>
+                        </div>
+                        <h4 className="font-black text-lg tracking-tight uppercase line-clamp-2 leading-tight">{video.title}</h4>
                       </div>
                     </div>
                   ))}
@@ -451,7 +464,7 @@ const App: React.FC = () => {
                 {isEditingVideo && (
                   <div className="glass-panel p-10 rounded-[3rem] space-y-8 animate-in zoom-in border-4 border-red-600/10">
                     <input className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black" value={editVideo.title} onChange={e => setEditVideo({...editVideo, title: e.target.value})} placeholder="Video Title" />
-                    <input className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black" value={editVideo.url} onChange={e => setEditVideo({...editVideo, url: e.target.value})} placeholder="Youtube URL (e.g. https://www.youtube.com/watch?v=...)" />
+                    <input className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black" value={editVideo.url} onChange={e => setEditVideo({...editVideo, url: e.target.value})} placeholder="Youtube URL" />
                     <div className="flex gap-4">
                       <button onClick={() => setIsEditingVideo(false)} className="flex-1 py-5 bg-zinc-200 dark:bg-zinc-800 rounded-2xl font-black uppercase text-[10px]">Cancel</button>
                       <button onClick={saveVideo} disabled={isPublishing} className="flex-[3] py-5 bg-red-600 text-white rounded-2xl font-black uppercase text-[10px] shadow-lg">{isPublishing ? 'Publishing...' : 'Save Video'}</button>
