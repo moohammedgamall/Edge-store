@@ -51,7 +51,7 @@ const App: React.FC = () => {
   const [adminTab, setAdminTab] = useState<'Inventory' | 'Videos' | 'Settings'>('Inventory');
   const [isPublishing, setIsPublishing] = useState(false);
   const [isEditingProduct, setIsEditingProduct] = useState(false);
-  const [editProduct, setEditProduct] = useState<Partial<Product>>({ title: '', price: 0, category: 'Themes', image: '', description: '', gallery: [] });
+  const [editProduct, setEditProduct] = useState<Partial<Product>>({ title: '', price: 0, category: 'Themes', image: '', description: '', gallery: [], android_version: '' });
   const [isEditingVideo, setIsEditingVideo] = useState(false);
   const [editVideo, setEditVideo] = useState<Partial<YoutubeVideo>>({ title: '', url: '' });
 
@@ -76,7 +76,6 @@ const App: React.FC = () => {
 
   const refreshData = async () => {
     try {
-      // Products
       const prodRes = await supabase.from('products').select('*').order('created_at', { ascending: false });
       if (!prodRes.error && prodRes.data) {
         if (prodRes.data.length > 0) {
@@ -88,13 +87,11 @@ const App: React.FC = () => {
         setDbProducts(MOCK_PRODUCTS);
       }
 
-      // Videos
       const vidRes = await supabase.from('videos').select('*').order('created_at', { ascending: false });
       if (!vidRes.error && vidRes.data) {
         setDbVideos(vidRes.data);
       }
 
-      // Settings
       const setRes = await supabase.from('settings').select('*');
       if (setRes.data) {
         setRes.data.forEach(s => {
@@ -220,12 +217,13 @@ const App: React.FC = () => {
         image: editProduct.image,
         gallery: editProduct.gallery || [],
         is_premium: (Number(editProduct.price) || 0) > 0,
-        compatibility: 'Realme UI / ColorOS'
+        compatibility: 'Realme UI / ColorOS',
+        android_version: editProduct.android_version || ''
       };
       await supabase.from('products').upsert(payload);
       await refreshData();
       setIsEditingProduct(false);
-      setEditProduct({ title: '', price: 0, category: 'Themes', image: '', description: '', gallery: [] });
+      setEditProduct({ title: '', price: 0, category: 'Themes', image: '', description: '', gallery: [], android_version: '' });
       showNotify("Product saved successfully");
     } catch (err) { showNotify("Failed to save product", "error"); } finally { setIsPublishing(false); }
   };
@@ -233,7 +231,6 @@ const App: React.FC = () => {
   const saveVideo = async () => {
     if (!editVideo.title || !editVideo.url) return showNotify("Please complete all fields", "error");
     
-    // Extract YouTube ID
     let vidId = '';
     const url = editVideo.url;
     if (url.includes('v=')) vidId = url.split('v=')[1].split('&')[0];
@@ -264,11 +261,8 @@ const App: React.FC = () => {
   const handleDeleteProduct = async (id: string) => {
     if (window.confirm("Are you sure you want to delete this product? This action cannot be undone.")) {
       try {
-        const { error } = await supabase.from('products').delete().eq('id', id);
-        if (error) {
-          console.error("Delete error:", error);
-          throw error;
-        }
+        const { error } = await supabase.from('products').delete().eq( 'id', id);
+        if (error) throw error;
         showNotify("Product deleted successfully");
         setDbProducts(prev => prev.filter(p => p.id !== id));
         refreshData();
@@ -408,53 +402,122 @@ const App: React.FC = () => {
         )}
 
         {activeSection === 'Preview' && selectedProduct && (
-          <div className="max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-500">
-             <div className="glass-panel rounded-[3rem] overflow-hidden">
-                <div className="grid grid-cols-1 md:grid-cols-2">
-                   <div className="flex flex-col bg-zinc-100 dark:bg-zinc-800">
-                      <div className="aspect-[3/4] overflow-hidden relative">
-                        <img 
-                          src={previewImageIndex === 0 ? selectedProduct.image : (selectedProduct.gallery && selectedProduct.gallery[previewImageIndex - 1])} 
-                          className="w-full h-full object-cover transition-all duration-500" 
-                          alt={selectedProduct.title}
-                        />
-                      </div>
-                      {selectedProduct.gallery && selectedProduct.gallery.length > 0 && (
-                        <div className="p-4 flex gap-2 overflow-x-auto no-scrollbar">
-                           <button 
-                             onClick={() => setPreviewImageIndex(0)}
-                             className={`w-16 h-16 rounded-xl overflow-hidden shrink-0 border-2 transition-all ${previewImageIndex === 0 ? 'border-[#007AFF] scale-105' : 'border-transparent opacity-60'}`}
-                           >
-                              <img src={selectedProduct.image} className="w-full h-full object-cover" />
-                           </button>
-                           {selectedProduct.gallery.map((img, idx) => (
-                             <button 
-                               key={idx}
-                               onClick={() => setPreviewImageIndex(idx + 1)}
-                               className={`w-16 h-16 rounded-xl overflow-hidden shrink-0 border-2 transition-all ${previewImageIndex === idx + 1 ? 'border-[#007AFF] scale-105' : 'border-transparent opacity-60'}`}
-                             >
-                                <img src={img} className="w-full h-full object-cover" />
-                             </button>
-                           ))}
-                        </div>
-                      )}
-                   </div>
-                   <div className="p-10 flex flex-col justify-between">
+          <div className="max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-500 pb-20">
+             <div className="flex items-center mb-8 px-4">
+               <button 
+                onClick={() => { window.location.hash = '#/'; }}
+                className="w-14 h-14 flex items-center justify-center bg-white dark:bg-zinc-800 rounded-full shadow-lg border border-zinc-200 dark:border-zinc-700 active:scale-90 transition-all hover:bg-zinc-50 dark:hover:bg-zinc-700"
+                aria-label="Back to Store"
+               >
+                 <i className="fa-solid fa-chevron-left text-zinc-800 dark:text-zinc-200 text-xl"></i>
+               </button>
+             </div>
+
+             <div className="space-y-16">
+                <div className="w-full max-h-[600px] rounded-[4rem] overflow-hidden shadow-2xl relative border-4 border-white/50 dark:border-white/10 group">
+                   <img 
+                      src={selectedProduct.image} 
+                      className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" 
+                      alt="Cover Featured"
+                   />
+                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex items-end p-12 md:p-20">
                       <div className="space-y-6">
-                        <div className="flex justify-between items-center">
-                           <span className="text-[#007AFF] font-black text-[10px] uppercase tracking-widest">{selectedProduct.category}</span>
-                           <span className="text-zinc-400 font-bold text-[10px] uppercase">{selectedProduct.compatibility}</span>
-                        </div>
-                        <h2 className="text-4xl font-black tracking-tighter uppercase leading-none">{selectedProduct.title}</h2>
-                        <p className="text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed">{selectedProduct.description}</p>
-                        <div className="text-4xl font-black text-[#007AFF]">
-                           {selectedProduct.price === 0 ? 'FREE' : `${selectedProduct.price.toFixed(2)} EGP`}
-                        </div>
+                         <h2 className="text-5xl md:text-8xl font-black text-white uppercase tracking-tighter leading-none drop-shadow-2xl">{selectedProduct.title}</h2>
+                         <div className="flex flex-wrap gap-3">
+                           <span className="px-6 py-2 bg-[#007AFF] text-white font-black text-xs uppercase tracking-widest rounded-full shadow-xl">{selectedProduct.category}</span>
+                           {selectedProduct.android_version && (
+                              <span className="px-6 py-2 bg-orange-600 text-white font-bold text-xs uppercase rounded-full shadow-xl">
+                                <i className="fa-brands fa-android mr-2"></i>{selectedProduct.android_version}
+                              </span>
+                           )}
+                         </div>
                       </div>
-                      <button onClick={() => { setOrderProductId(selectedProduct.id); window.location.hash = '#/order'; }} className="w-full py-6 bg-[#007AFF] text-white rounded-2xl font-black text-lg shadow-xl shadow-blue-500/20 active:scale-95 transition-all mt-10">
-                         {selectedProduct.price === 0 ? 'GET FOR FREE' : 'BUY NOW'}
-                      </button>
                    </div>
+                </div>
+
+                <div className="flex flex-col items-center gap-16">
+                    <div className="w-full flex flex-col items-center justify-center relative bg-zinc-100/30 dark:bg-zinc-900/40 p-10 md:p-20 rounded-[4rem]">
+                       {selectedProduct.gallery && selectedProduct.gallery.length > 0 ? (
+                         <>
+                           {/* High-End Smartphone Mockup: edge-to-edge display with zero padding/gaps, no dynamic island for a "natural" look */}
+                           <div 
+                             className={`relative w-full max-w-[1080px] aspect-[1290/2796] rounded-[7.5rem] p-0 border-[14px] flex flex-col overflow-hidden animate-in zoom-in-95 duration-700 transition-all ${
+                               !isDarkMode 
+                               ? 'bg-zinc-950 border-[#1c1c1e] shadow-[0_100px_200px_-50px_rgba(0,0,0,0.8)]' 
+                               : 'bg-[#E5E5E7] border-[#D1D1D6] shadow-[0_100px_200px_-50px_rgba(255,255,255,0.05)]'
+                             }`}
+                           >
+                               {/* Real-feel consistent bezel */}
+                               <div className={`absolute inset-0 border-[2px] rounded-[7.2rem] pointer-events-none z-20 ${isDarkMode ? 'border-white/40' : 'border-white/5'}`}></div>
+
+                               {/* Full Edge-to-Edge display: 'object-cover' fills the entire frame for a pure high-end digital asset experience */}
+                               <div className="flex-1 w-full bg-black rounded-[6.8rem] overflow-hidden relative flex items-center justify-center">
+                                 <img 
+                                   src={selectedProduct.gallery[previewImageIndex]} 
+                                   className="w-full h-full object-cover transition-opacity duration-700" 
+                                   alt="Full Asset Display"
+                                 />
+                               </div>
+                           </div>
+
+                           <div className="mt-16 p-6 flex gap-6 overflow-x-auto no-scrollbar max-w-full">
+                              {selectedProduct.gallery.map((img, idx) => (
+                                <button 
+                                  key={idx}
+                                  onClick={() => setPreviewImageIndex(idx)}
+                                  className={`w-24 h-24 rounded-2xl overflow-hidden shrink-0 border-4 transition-all ${previewImageIndex === idx ? 'border-[#007AFF] scale-110 shadow-2xl' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                                >
+                                   <img src={img} className="w-full h-full object-cover" />
+                                </button>
+                              ))}
+                           </div>
+                         </>
+                       ) : (
+                         <div className="text-zinc-400 font-bold uppercase text-sm tracking-widest flex flex-col items-center gap-6 py-20">
+                           <i className="fa-solid fa-camera-retro text-7xl opacity-20"></i>
+                           Interactive gallery coming soon
+                         </div>
+                       )}
+                    </div>
+
+                    <div className="w-full glass-panel rounded-[4rem] p-12 md:p-20 space-y-12">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
+                           <div className="space-y-8">
+                              <h3 className="text-sm font-black text-[#007AFF] uppercase tracking-[0.3em]">Exclusive Asset Description</h3>
+                              <p className="text-zinc-600 dark:text-zinc-400 font-medium leading-relaxed text-2xl italic">"{selectedProduct.description}"</p>
+                              
+                              <div className="flex flex-wrap gap-4 pt-4">
+                                 <div className="flex items-center gap-4 p-5 bg-zinc-50 dark:bg-zinc-800/40 rounded-3xl border border-zinc-100 dark:border-zinc-700/50">
+                                    <i className="fa-solid fa-mobile-button text-[#007AFF] text-2xl"></i>
+                                    <div className="flex flex-col">
+                                       <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Device Compatibility</span>
+                                       <span className="text-sm font-bold uppercase text-zinc-900 dark:text-zinc-100">{selectedProduct.compatibility}</span>
+                                    </div>
+                                 </div>
+                                 <div className="flex items-center gap-4 p-5 bg-zinc-50 dark:bg-zinc-800/40 rounded-3xl border border-zinc-100 dark:border-zinc-700/50">
+                                    <i className="fa-solid fa-code-merge text-[#007AFF] text-2xl"></i>
+                                    <div className="flex flex-col">
+                                       <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Target OS</span>
+                                       <span className="text-sm font-bold uppercase text-zinc-900 dark:text-zinc-100">{selectedProduct.android_version || 'Universal'}</span>
+                                    </div>
+                                 </div>
+                              </div>
+                           </div>
+
+                           <div className="bg-zinc-900 dark:bg-zinc-800/80 rounded-[3rem] p-12 flex flex-col justify-center items-center gap-8 shadow-3xl">
+                              <div className="text-center space-y-2">
+                                 <p className="text-blue-400 font-black text-xs uppercase tracking-[0.4em]">One-Time Payment</p>
+                                 <div className="text-7xl font-black text-white">
+                                    {selectedProduct.price === 0 ? 'FREE' : `${selectedProduct.price.toFixed(2)} EGP`}
+                                 </div>
+                              </div>
+                              <button onClick={() => { setOrderProductId(selectedProduct.id); window.location.hash = '#/order'; }} className="w-full py-10 bg-[#007AFF] text-white rounded-[2.5rem] font-black text-2xl shadow-2xl shadow-blue-500/40 active:scale-95 transition-all flex items-center justify-center gap-6 hover:bg-blue-600">
+                                 <i className="fa-solid fa-cart-arrow-down"></i>
+                                 {selectedProduct.price === 0 ? 'DOWNLOAD NOW' : 'SECURE CHECKOUT'}
+                              </button>
+                           </div>
+                        </div>
+                    </div>
                 </div>
              </div>
           </div>
@@ -510,7 +573,7 @@ const App: React.FC = () => {
 
             {adminTab === 'Inventory' && (
               <div className="space-y-8">
-                <button onClick={() => { setEditProduct({ title: '', price: 0, category: 'Themes', image: '', description: '', gallery: [] }); setIsEditingProduct(true); }} className="w-full py-6 bg-[#007AFF] text-white rounded-3xl font-black uppercase text-xs shadow-xl">Add New Product</button>
+                <button onClick={() => { setEditProduct({ title: '', price: 0, category: 'Themes', image: '', description: '', gallery: [], android_version: '' }); setIsEditingProduct(true); }} className="w-full py-6 bg-[#007AFF] text-white rounded-3xl font-black uppercase text-xs shadow-xl">Add New Product</button>
                 {isEditingProduct && (
                   <div id="product-form" className="glass-panel p-10 rounded-[3rem] space-y-8 border-4 border-[#007AFF]/10 animate-in slide-in-from-top-4 duration-300">
                     <div className="flex justify-between items-center">
@@ -524,18 +587,27 @@ const App: React.FC = () => {
                       <textarea className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black" value={editProduct.description} onChange={e => setEditProduct({...editProduct, description: e.target.value})} placeholder="Description" rows={3} />
                     </div>
 
-                    <div className="flex gap-4">
-                        <div className="flex-1 space-y-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
                            <label className="text-[10px] font-black uppercase text-zinc-400 ml-4">Price (EGP)</label>
                            <input type="number" className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black" value={editProduct.price} onChange={e => setEditProduct({...editProduct, price: Number(e.target.value)})} placeholder="Price" />
                         </div>
-                        <div className="flex-1 space-y-2">
+                        <div className="space-y-2">
                            <label className="text-[10px] font-black uppercase text-zinc-400 ml-4">Category</label>
                            <select className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black" value={editProduct.category} onChange={e => setEditProduct({...editProduct, category: e.target.value as any})}>
                                <option value="Themes">Themes</option>
                                <option value="Widgets">Widgets</option>
                                <option value="Walls">Wallpapers</option>
                            </select>
+                        </div>
+                        <div className="space-y-2 md:col-span-2">
+                           <label className="text-[10px] font-black uppercase text-zinc-400 ml-4">Android Version (e.g. Android 14/15)</label>
+                           <input 
+                            className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black border-2 border-transparent focus:border-[#007AFF] outline-none" 
+                            value={editProduct.android_version} 
+                            onChange={e => setEditProduct({...editProduct, android_version: e.target.value})} 
+                            placeholder="Android 14 / 15 / ColorOS 15" 
+                           />
                         </div>
                     </div>
 

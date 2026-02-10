@@ -29,6 +29,7 @@ export interface Product {
   downloads: string;
   is_premium: boolean;
   compatibility: string;
+  android_version?: string; // New field for Android version
 }
 
 export interface NavItem {

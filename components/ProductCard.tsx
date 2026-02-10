@@ -26,6 +26,14 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onBuy, onPreview }) 
              View Preview
            </div>
         </div>
+        
+        {/* Android Version Badge on Card */}
+        {product.android_version && (
+          <div className="absolute top-4 left-4 px-2 py-1 bg-black/50 backdrop-blur-md rounded-lg border border-white/10 text-[8px] font-black text-white uppercase tracking-wider flex items-center gap-1">
+            <i className="fa-brands fa-android text-green-400"></i>
+            {product.android_version}
+          </div>
+        )}
       </div>
 
       <div className="p-7 flex flex-col gap-3">
