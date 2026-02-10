@@ -66,13 +66,28 @@ const App: React.FC = () => {
     localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
   }, [isDarkMode]);
 
+  // Handle HTML Splash Screen visibility
+  useEffect(() => {
+    const splash = document.getElementById('static-loader');
+    if (!isLoading && splash) {
+      splash.classList.add('fade-out');
+    }
+  }, [isLoading]);
+
   const refreshData = async () => {
     try {
       // Products
       const prodRes = await supabase.from('products').select('*').order('created_at', { ascending: false });
-      if (!prodRes.error && prodRes.data && prodRes.data.length > 0) {
-        setDbProducts(prodRes.data.map(p => ({ ...p, gallery: Array.isArray(p.gallery) ? p.gallery : [] })));
+      if (!prodRes.error && prodRes.data) {
+        // Fix: Don't fallback to Mock Data if database has been initialized even if empty
+        if (prodRes.data.length > 0) {
+          setDbProducts(prodRes.data.map(p => ({ ...p, gallery: Array.isArray(p.gallery) ? p.gallery : [] })));
+        } else {
+          // If explicitly empty, set empty array (this fixes the "delete not working" UI bug)
+          setDbProducts([]);
+        }
       } else {
+        // Fallback only on error
         setDbProducts(MOCK_PRODUCTS);
       }
 
@@ -230,8 +245,14 @@ const App: React.FC = () => {
     if (window.confirm("هل أنت متأكد من حذف هذا المنتج؟ لا يمكن التراجع عن هذا الإجراء.")) {
       try {
         const { error } = await supabase.from('products').delete().eq('id', id);
-        if (error) throw error;
+        if (error) {
+          console.error("Delete error:", error);
+          throw error;
+        }
         showNotify("تم حذف المنتج بنجاح");
+        // Update local state immediately for faster feel
+        setDbProducts(prev => prev.filter(p => p.id !== id));
+        // Then refresh to ensure sync
         refreshData();
       } catch (err) {
         showNotify("خطأ في حذف المنتج", "error");
@@ -245,6 +266,7 @@ const App: React.FC = () => {
         const { error } = await supabase.from('videos').delete().eq('id', id);
         if (error) throw error;
         showNotify("تم حذف الفيديو بنجاح");
+        setDbVideos(prev => prev.filter(v => v.id !== id));
         refreshData();
       } catch (err) {
         showNotify("خطأ في حذف الفيديو", "error");
@@ -262,7 +284,8 @@ const App: React.FC = () => {
     window.open(`https://t.me/Mohamed_edge?text=${encodeURIComponent(message)}`, '_blank');
   };
 
-  if (isLoading) return null;
+  // Only render app content if loaded, but splash logic is handled by effect
+  if (isLoading && dbProducts.length === 0) return null;
 
   return (
     <div className="min-h-screen pb-32">
@@ -318,6 +341,12 @@ const App: React.FC = () => {
                     onBuy={(id) => { setOrderProductId(id); window.location.hash = '#/order'; }} 
                   />
                 ))}
+                {filteredProducts.length === 0 && (
+                  <div className="col-span-full py-20 text-center space-y-4 opacity-40">
+                    <i className="fa-solid fa-box-open text-6xl"></i>
+                    <p className="font-black uppercase text-xs tracking-widest">No assets found</p>
+                  </div>
+                )}
               </div>
             </section>
 
@@ -568,6 +597,11 @@ const App: React.FC = () => {
                       </div>
                     </div>
                   ))}
+                  {dbProducts.length === 0 && !isLoading && (
+                    <div className="p-10 text-center border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-3xl text-zinc-400 font-bold">
+                       قائمة المنتجات فارغة حالياً
+                    </div>
+                  )}
                 </div>
               </div>
             )}
