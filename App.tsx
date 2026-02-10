@@ -12,38 +12,6 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// وظيفة متطورة لضغط الصور قبل الحفظ
-const compressAndResizeImage = (base64Str: string, maxWidth = 400, maxHeight = 400): Promise<string> => {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.src = base64Str;
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      let width = img.width;
-      let height = img.height;
-
-      if (width > height) {
-        if (width > maxWidth) {
-          height *= maxWidth / width;
-          width = maxWidth;
-        }
-      } else {
-        if (height > maxHeight) {
-          width *= maxHeight / height;
-          height = maxHeight;
-        }
-      }
-
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d');
-      ctx?.drawImage(img, 0, 0, width, height);
-      // تصدير بصيغة JPEG بجودة 0.7 لتقليل الحجم بشكل كبير
-      resolve(canvas.toDataURL('image/jpeg', 0.7));
-    };
-  });
-};
-
 const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -70,11 +38,15 @@ const App: React.FC = () => {
   const [loaderLogo, setLoaderLogo] = useState<string>(() => localStorage.getItem('cached_loader_logo') || "https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
   const [adminPassword, setAdminPassword] = useState('1234');
 
+  // --- Order Flow State ---
+  const [orderDevice, setOrderDevice] = useState<'Realme' | 'Oppo'>('Realme');
+  const [orderCategory, setOrderCategory] = useState<Section>('Themes');
+  const [orderProductId, setOrderProductId] = useState<string>('');
+
   // --- UI Flow State ---
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [passwordInput, setPasswordInput] = useState('');
   const [selectedProductId, setSelectedProductId] = useState<string>('');
-  const [orderProductId, setOrderProductId] = useState<string>(() => localStorage.getItem('last_ordered_id') || '');
   
   // --- Admin Dashboard State ---
   const [adminTab, setAdminTab] = useState<'Inventory' | 'Videos' | 'Settings'>('Inventory');
@@ -103,7 +75,6 @@ const App: React.FC = () => {
 
       const vidRes = await supabase.from('videos').select('*');
       if (vidRes.error) {
-          console.error("Videos Table Error:", vidRes.error.message);
           const tutRes = await supabase.from('tutorials').select('*');
           if (!tutRes.error) setDbVideos(tutRes.data);
       } else {
@@ -116,11 +87,11 @@ const App: React.FC = () => {
           if (s.key === 'admin_password') setAdminPassword(s.value);
           if (s.key === 'site_logo') {
             setSiteLogo(s.value);
-            try { localStorage.setItem('cached_site_logo', s.value); } catch(e) {}
+            try { localStorage.setItem('cached_site_logo', s.value); } catch(e) { /* ignore quota error */ }
           }
           if (s.key === 'loader_logo') {
             setLoaderLogo(s.value);
-            try { localStorage.setItem('cached_loader_logo', s.value); } catch(e) {}
+            try { localStorage.setItem('cached_loader_logo', s.value); } catch(e) { /* ignore quota error */ }
           }
         });
       }
@@ -133,41 +104,24 @@ const App: React.FC = () => {
 
   useEffect(() => { refreshData(); }, []);
 
-  const extractYoutubeId = (url: string): string | null => {
-    if (!url) return null;
-    const cleanUrl = url.trim();
-    const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts|live)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
-    const match = cleanUrl.match(regex);
-    if (match && match[1]) return match[1];
-    if (cleanUrl.length === 11) return cleanUrl;
-    return null;
-  };
-
-  const saveVideo = async () => {
-    const vidId = extractYoutubeId(editVideo.url || '');
-    if (!editVideo.title || !vidId) {
-      return showNotify("Please provide a valid Title and YouTube Link", "error");
-    }
-    
-    setIsPublishing(true);
+  const updateSetting = async (key: string, value: string) => {
     try {
-      const payload = { id: vidId, title: editVideo.title, url: `https://www.youtube.com/watch?v=${vidId}` };
-      const { error } = await supabase.from('videos').upsert(payload);
-      if (error) {
-        const { error: error2 } = await supabase.from('tutorials').upsert(payload);
-        if (error2) throw error2;
+      const { error } = await supabase.from('settings').upsert({ key, value });
+      if (error) throw error;
+      
+      if (key === 'site_logo') {
+        setSiteLogo(value);
+        try { localStorage.setItem('cached_site_logo', value); } catch(e) { console.warn("Quota exceeded, using cloud only"); }
       }
-      await refreshData();
-      setIsEditingVideo(false);
-      showNotify("Tutorial Synced Successfully");
+      if (key === 'loader_logo') {
+        setLoaderLogo(value);
+        try { localStorage.setItem('cached_loader_logo', value); } catch(e) { console.warn("Quota exceeded, using cloud only"); }
+      }
+      showNotify("Settings updated successfully");
     } catch (err: any) { 
-      showNotify(`Database Error: ${err.message}`, "error"); 
-    } finally { 
-      setIsPublishing(false); 
+      showNotify("Failed to save: " + err.message, "error"); 
     }
   };
-
-  const getVideoId = (v: any) => v.id || v.youtube_id || extractYoutubeId(v.url);
 
   const saveProduct = async () => {
     if (!editProduct.title || !editProduct.image) return showNotify("Title & Cover required", "error");
@@ -188,7 +142,7 @@ const App: React.FC = () => {
       if (error) throw error;
       await refreshData();
       setIsEditingProduct(false);
-      showNotify("Asset published to marketplace");
+      showNotify("Asset saved to cloud");
     } catch (err) { 
       showNotify("Database synchronization error", "error"); 
     } finally { 
@@ -196,30 +150,17 @@ const App: React.FC = () => {
     }
   };
 
-  const updateSetting = async (key: string, value: string) => {
+  const saveVideo = async () => {
+    const vidId = editVideo.url ? (editVideo.url.includes('v=') ? editVideo.url.split('v=')[1].split('&')[0] : editVideo.url.split('/').pop()) : '';
+    if (!editVideo.title || !vidId) return showNotify("Invalid video info", "error");
+    setIsPublishing(true);
     try {
-      // ضغط القيمة قبل إرسالها إذا كانت صورة (Base64)
-      let finalValue = value;
-      if (value.startsWith('data:image')) {
-        finalValue = await compressAndResizeImage(value);
-      }
-
-      const { error } = await supabase.from('settings').upsert({ key, value: finalValue });
+      const { error } = await supabase.from('videos').upsert({ id: vidId, title: editVideo.title, url: editVideo.url });
       if (error) throw error;
-      
-      if (key === 'site_logo') {
-        setSiteLogo(finalValue);
-        try { localStorage.setItem('cached_site_logo', finalValue); } catch(e) { console.warn("Local storage quota exceeded, skipping cache."); }
-      }
-      if (key === 'loader_logo') {
-        setLoaderLogo(finalValue);
-        try { localStorage.setItem('cached_loader_logo', finalValue); } catch(e) { console.warn("Local storage quota exceeded, skipping cache."); }
-      }
       await refreshData();
-      showNotify("Settings updated successfully");
-    } catch (err: any) { 
-      showNotify("Failed to save settings: " + err.message, "error"); 
-    }
+      setIsEditingVideo(false);
+      showNotify("Video synced");
+    } catch (err: any) { showNotify(err.message, "error"); } finally { setIsPublishing(false); }
   };
 
   useEffect(() => {
@@ -251,31 +192,33 @@ const App: React.FC = () => {
       window.location.hash = '#/admin';
       showNotify("Access Granted");
     } else {
-      showNotify("Incorrect security code", "error");
+      showNotify("Incorrect code", "error");
     }
   };
 
   const filteredProducts = useMemo(() => {
     if (activeSection === 'Home') return dbProducts;
-    if (activeSection === 'Themes' || activeSection === 'Widgets' || activeSection === 'Walls') {
-        return dbProducts.filter(p => p.category === activeSection);
-    }
-    return dbProducts;
+    return dbProducts.filter(p => p.category === activeSection);
   }, [dbProducts, activeSection]);
 
-  const orderedProduct = useMemo(() => dbProducts.find(p => p.id === orderProductId), [dbProducts, orderProductId]);
+  const orderProductsList = useMemo(() => dbProducts.filter(p => p.category === orderCategory), [dbProducts, orderCategory]);
+  const currentOrderedProduct = useMemo(() => dbProducts.find(p => p.id === orderProductId), [dbProducts, orderProductId]);
+
+  const handleOrderRedirect = () => {
+    if (!currentOrderedProduct) return showNotify("Select a product", "error");
+    const msg = `Hello Mohamed Edge,%0A%0A--- Order Form ---%0ADevice: ${orderDevice}%0ACategory: ${orderCategory}%0AProduct: ${currentOrderedProduct.title}%0APrice: ${currentOrderedProduct.price} EGP%0A%0AI have transferred via Vodafone Cash.`;
+    window.open(`https://t.me/Mohamed_edge?text=${msg}`, '_blank');
+  };
 
   if (isLoading) return (
-      <div className="h-screen w-full flex flex-col items-center justify-center bg-[#F2F2F7] dark:bg-[#2C2C2E] animate-in fade-in duration-150">
+      <div className="h-screen w-full flex flex-col items-center justify-center bg-[#F2F2F7] dark:bg-[#2C2C2E]">
           <div className="relative mb-8">
-              <div className="w-24 h-24 md:w-32 md:h-32 border-4 border-white dark:border-zinc-800 rounded-full overflow-hidden shadow-2xl relative z-10 bg-white">
-                  <img src={loaderLogo} className="w-full h-full object-cover" alt="Loading Logo" />
+              <div className="w-24 h-24 border-4 border-white dark:border-zinc-800 rounded-full overflow-hidden shadow-2xl relative z-10 bg-white">
+                  <img src={loaderLogo} className="w-full h-full object-cover" alt="" />
               </div>
               <div className="absolute -inset-4 border-2 border-dashed border-[#007AFF] rounded-full animate-[spin_8s_linear_infinite]"></div>
           </div>
-          <div className="text-center space-y-2">
-              <h3 className="font-black text-xl md:text-2xl tracking-tighter uppercase dark:text-white">Mohamed Edge</h3>
-          </div>
+          <h3 className="font-black text-xl uppercase dark:text-white tracking-tighter">Mohamed Edge</h3>
       </div>
   );
 
@@ -316,123 +259,123 @@ const App: React.FC = () => {
 
       <main className="max-w-7xl mx-auto px-4 py-8">
         {(activeSection === 'Home' || activeSection === 'Themes' || activeSection === 'Widgets' || activeSection === 'Walls') && (
-          <div className="space-y-20 animate-in fade-in slide-in-from-bottom-8 duration-700">
-            {/* Products Marketplace */}
+          <div className="space-y-16 animate-in fade-in slide-in-from-bottom-8 duration-700">
             <section className="space-y-8">
               <div className="flex justify-between items-end px-1">
                 <h2 className="text-2xl font-black tracking-tighter uppercase flex items-center gap-3">
-                  <div className="w-1.5 h-6 bg-[#007AFF] rounded-full"></div> {activeSection === 'Home' ? 'Marketplace' : activeSection}
+                  <div className="w-1.5 h-6 bg-[#007AFF] rounded-full"></div> {activeSection === 'Home' ? 'New Release' : activeSection}
                 </h2>
                 <span className="text-[9px] font-black text-zinc-400 tracking-widest uppercase">{filteredProducts.length} Items</span>
               </div>
-              {filteredProducts.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {filteredProducts.map(p => (
-                    <ProductCard 
-                      key={p.id} 
-                      product={p} 
-                      onPreview={(id) => { setSelectedProductId(id); window.location.hash = `#/preview/${id}`; }} 
-                      onBuy={(id) => { setOrderProductId(id); localStorage.setItem('last_ordered_id', id); window.location.hash = '#/order'; }} 
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="p-20 text-center border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-[3rem] text-zinc-400 font-black uppercase text-xs tracking-widest">
-                   No {activeSection} found in database
-                </div>
-              )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                {filteredProducts.map(p => (
+                  <ProductCard 
+                    key={p.id} 
+                    product={p} 
+                    onPreview={(id) => { setSelectedProductId(id); window.location.hash = `#/preview/${id}`; }} 
+                    onBuy={(id, cat) => { setOrderProductId(id); setOrderCategory(cat as any); window.location.hash = '#/order'; }} 
+                  />
+                ))}
+              </div>
             </section>
-            
-            {/* Video Tutorials Section */}
-            {activeSection === 'Home' && (
-              <section className="space-y-8">
-                <div className="flex justify-between items-end px-1">
-                  <h2 className="text-2xl font-black tracking-tighter uppercase flex items-center gap-3">
-                    <div className="w-1.5 h-6 bg-red-600 rounded-full"></div> Video Tutorials
-                  </h2>
-                </div>
-                {dbVideos.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {dbVideos.map(v => {
-                      const vId = getVideoId(v);
-                      if (!vId) return null;
-                      return (
-                        <a key={vId} href={v.url || `https://youtube.com/watch?v=${vId}`} target="_blank" rel="noopener noreferrer" className="glass-panel group rounded-[2.5rem] overflow-hidden hover:scale-[1.03] transition-all border-2 border-transparent hover:border-red-600/20 shadow-lg">
-                          <div className="aspect-video relative bg-zinc-900">
-                            <img 
-                              src={`https://img.youtube.com/vi/${vId}/maxresdefault.jpg`} 
-                              className="w-full h-full object-cover" 
-                              onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = `https://img.youtube.com/vi/${vId}/hqdefault.jpg`; }}
-                            />
-                            <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/50 transition-colors">
-                              <div className="w-12 h-12 bg-red-600 text-white rounded-full flex items-center justify-center shadow-2xl group-hover:scale-125 transition-transform">
-                                <i className="fa-solid fa-play ml-1"></i>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="p-5">
-                              <h4 className="font-black text-sm line-clamp-2 leading-tight group-hover:text-red-600 transition-colors">{v.title || 'Untitled Tutorial'}</h4>
-                          </div>
-                        </a>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="p-16 text-center border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-[3rem] text-zinc-400 font-black uppercase text-[10px] tracking-widest">
-                    No tutorials available on this cloud project
-                  </div>
-                )}
-              </section>
-            )}
           </div>
         )}
 
         {activeSection === 'Order' && (
-          <div className="max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-500">
-            <div className="glass-panel p-8 sm:p-12 rounded-[3.5rem] space-y-10 relative overflow-hidden">
-               <div className="absolute -top-10 -right-10 w-40 h-40 bg-[#007AFF]/10 blur-[80px]"></div>
-               <div className="text-center space-y-2">
+          <div className="max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-12 duration-500">
+            <div className="glass-panel p-8 md:p-12 rounded-[3.5rem] space-y-10 relative overflow-hidden">
+               <div className="text-center space-y-6">
+                 <div className="inline-flex items-center gap-2 px-6 py-2 bg-green-500/10 text-green-600 rounded-full border border-green-500/20 shadow-sm">
+                   <i className="fa-solid fa-shield-check text-sm"></i>
+                   <span className="text-[10px] font-black uppercase tracking-widest">Secure Checkout</span>
+                 </div>
                  <h2 className="text-4xl font-black tracking-tight uppercase leading-none">Order Details</h2>
-                 <p className="text-zinc-400 font-black text-[10px] tracking-[0.4em] uppercase">Complete your purchase</p>
+                 
+                 <a href="https://t.me/Mohamed_edge" target="_blank" className="inline-flex items-center gap-3 px-8 py-4 bg-zinc-100 dark:bg-zinc-800 rounded-2xl hover:scale-105 transition-transform shadow-sm group">
+                   <i className="fa-brands fa-telegram text-2xl text-[#0088CC] group-hover:rotate-12 transition-transform"></i>
+                   <div className="text-left">
+                     <p className="text-[10px] font-black text-zinc-400 uppercase tracking-tighter">Direct Contact</p>
+                     <p className="font-black text-sm">@Mohamed_edge</p>
+                   </div>
+                 </a>
                </div>
 
-               {orderedProduct ? (
-                 <div className="space-y-8">
-                   <div className="flex items-center gap-6 p-6 bg-zinc-100 dark:bg-zinc-800/50 rounded-[2.5rem] border border-white dark:border-zinc-700 shadow-inner">
-                      <div className="w-28 h-28 rounded-3xl overflow-hidden shadow-2xl shrink-0 border-2 border-white dark:border-zinc-600">
-                        <img src={orderedProduct.image} className="w-full h-full object-cover" />
+               <div className="space-y-8">
+                  {/* Step 1: Device Selection */}
+                  <div className="space-y-4">
+                    <label className="text-[10px] font-black uppercase text-zinc-400 tracking-widest px-2">Select Phone Device</label>
+                    <div className="grid grid-cols-2 gap-4">
+                      {['Realme', 'Oppo'].map(d => (
+                        <button key={d} onClick={() => setOrderDevice(d as any)} className={`py-6 rounded-3xl font-black text-xl transition-all border-2 ${orderDevice === d ? 'bg-[#007AFF] text-white border-[#007AFF] shadow-xl shadow-blue-500/20' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 border-transparent hover:border-zinc-200'}`}>
+                          {d}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Step 2: Category Selection */}
+                  <div className="space-y-4">
+                    <label className="text-[10px] font-black uppercase text-zinc-400 tracking-widest px-2">Product Category</label>
+                    <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
+                      {['Themes', 'Widgets', 'Walls'].map(cat => (
+                        <button key={cat} onClick={() => { setOrderCategory(cat as any); setOrderProductId(''); }} className={`px-8 py-4 rounded-2xl font-black text-xs uppercase shrink-0 transition-all border-2 ${orderCategory === cat ? 'bg-[#1C1C1E] dark:bg-white text-white dark:text-black border-[#1C1C1E] dark:border-white shadow-lg' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 border-transparent'}`}>
+                          {cat}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Step 3: Product Selection */}
+                  <div className="space-y-4">
+                    <label className="text-[10px] font-black uppercase text-zinc-400 tracking-widest px-2">Pick your Product</label>
+                    <select 
+                      className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black appearance-none border-2 border-transparent focus:border-[#007AFF] outline-none shadow-inner"
+                      value={orderProductId}
+                      onChange={e => setOrderProductId(e.target.value)}
+                    >
+                      <option value="">Select Item...</option>
+                      {orderProductsList.map(p => (
+                        <option key={p.id} value={p.id}>{p.title} ({p.price} EGP)</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Preview & Price */}
+                  {currentOrderedProduct && (
+                    <div className="space-y-8 animate-in zoom-in-95 duration-300">
+                      <div className="flex items-center gap-6 p-6 bg-white dark:bg-zinc-900 rounded-[2.5rem] border border-zinc-200 dark:border-zinc-800 shadow-xl">
+                        <img src={currentOrderedProduct.image} className="w-24 h-24 rounded-2xl object-cover shadow-2xl shrink-0" />
+                        <div>
+                          <h4 className="font-black text-2xl tracking-tighter leading-none">{currentOrderedProduct.title}</h4>
+                          <p className="text-[#007AFF] font-black text-3xl mt-2">{currentOrderedProduct.price === 0 ? 'FREE' : `${currentOrderedProduct.price.toFixed(2)} EGP`}</p>
+                        </div>
                       </div>
-                      <div className="flex-1">
-                        <h3 className="font-black text-2xl tracking-tighter leading-none">{orderedProduct.title}</h3>
-                        <p className="text-[#007AFF] font-black text-2xl mt-2">{orderedProduct.price === 0 ? 'FREE' : `${orderedProduct.price.toFixed(2)} EGP`}</p>
+
+                      <div className="p-8 bg-orange-500/10 border-2 border-dashed border-orange-500/30 rounded-[2.5rem] space-y-4">
+                        <p className="text-orange-600 dark:text-orange-400 font-black text-sm text-center leading-relaxed">
+                          Before clicking the button below, please transfer the product amount via Vodafone Cash to:
+                        </p>
+                        <div className="text-center py-4 bg-white dark:bg-zinc-900 rounded-2xl font-black text-2xl tracking-widest text-orange-600 shadow-sm border border-orange-200 dark:border-orange-900/50">
+                          01091931466
+                        </div>
                       </div>
-                   </div>
-                   <div className="grid grid-cols-1 gap-4 pt-4">
-                     <a href={`https://wa.me/201026419747?text=I'd like to order: ${orderedProduct.title}`} target="_blank" className="w-full py-6 bg-[#25D366] text-white rounded-[2rem] font-black text-xl shadow-xl shadow-green-500/20 text-center flex items-center justify-center gap-3 active:scale-95 transition-transform">
-                       <i className="fa-brands fa-whatsapp text-3xl"></i> WhatsApp Confirm
-                     </a>
-                     <a href="https://t.me/Mohamed_Edge" target="_blank" className="w-full py-6 bg-[#0088CC] text-white rounded-[2rem] font-black text-xl shadow-xl shadow-blue-500/20 text-center flex items-center justify-center gap-3 active:scale-95 transition-transform">
-                       <i className="fa-brands fa-telegram text-3xl"></i> Telegram Order
-                     </a>
-                   </div>
-                 </div>
-               ) : (
-                 <div className="text-center p-20 space-y-6">
-                    <i className="fa-solid fa-cart-shopping text-7xl text-zinc-200 dark:text-zinc-800"></i>
-                    <p className="text-zinc-400 font-black uppercase text-xs tracking-widest">No selection made</p>
-                    <button onClick={() => window.location.hash = '#/'} className="px-10 py-4 bg-[#007AFF] text-white rounded-full font-black text-[10px] uppercase shadow-lg">Browse Marketplace</button>
-                 </div>
-               )}
+
+                      <button onClick={handleOrderRedirect} className="w-full py-7 bg-[#0088CC] text-white rounded-3xl font-black text-xl shadow-2xl shadow-blue-500/20 flex items-center justify-center gap-4 active:scale-95 transition-all">
+                        <i className="fa-brands fa-telegram text-3xl"></i>
+                        Order via Telegram
+                      </button>
+                    </div>
+                  )}
+               </div>
             </div>
           </div>
         )}
 
-        {/* Admin Section */}
         {activeSection === 'Admin' && isAdminMode && (
-          <div className="max-w-5xl mx-auto space-y-10 animate-in slide-in-from-right-10 duration-500">
-            <div className="flex p-2 bg-zinc-200/50 dark:bg-zinc-900/50 backdrop-blur-3xl rounded-[2.5rem] border border-white/40 dark:border-white/5 max-w-lg mx-auto shadow-2xl">
+          <div className="max-w-5xl mx-auto space-y-10">
+            <div className="flex p-2 bg-zinc-200/50 dark:bg-zinc-900/50 rounded-[2.5rem] max-w-lg mx-auto shadow-xl">
               {['Inventory', 'Videos', 'Settings'].map(tab => (
-                <button key={tab} onClick={() => setAdminTab(tab as any)} className={`flex-1 py-4 px-2 rounded-[2rem] transition-all duration-500 ${adminTab === tab ? 'bg-white dark:bg-zinc-800 shadow-xl text-[#007AFF] font-black scale-105' : 'text-zinc-400 font-bold'} text-[10px] uppercase tracking-widest`}>
+                <button key={tab} onClick={() => setAdminTab(tab as any)} className={`flex-1 py-4 rounded-[2rem] transition-all ${adminTab === tab ? 'bg-white dark:bg-zinc-800 shadow-xl text-[#007AFF] font-black' : 'text-zinc-400 font-bold'} text-[10px] uppercase tracking-widest`}>
                   {tab}
                 </button>
               ))}
@@ -440,172 +383,75 @@ const App: React.FC = () => {
 
             {adminTab === 'Inventory' && (
               <div className="space-y-8">
-                <div className="glass-panel p-8 rounded-[3rem] flex justify-between items-center shadow-2xl">
-                  <h3 className="text-2xl font-black uppercase tracking-tighter">Marketplace Cloud</h3>
-                  <button onClick={() => { setEditProduct({ title: '', price: 0, category: 'Themes', image: '', description: '', gallery: [] }); setIsEditingProduct(true); }} className="px-10 py-4 bg-[#007AFF] text-white rounded-2xl font-black uppercase text-[10px] shadow-xl">New Asset</button>
-                </div>
-                
+                <button onClick={() => { setEditProduct({ title: '', price: 0, category: 'Themes', image: '', description: '', gallery: [] }); setIsEditingProduct(true); }} className="w-full py-6 bg-[#007AFF] text-white rounded-3xl font-black uppercase text-xs shadow-xl">New Asset</button>
                 {isEditingProduct && (
-                  <div className="glass-panel p-10 rounded-[3.5rem] space-y-10 animate-in zoom-in border-4 border-[#007AFF]/10 shadow-3xl">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                        <div className="space-y-6">
-                            <label className="text-[10px] font-black uppercase text-zinc-400 px-2">Main Cover</label>
-                            <div className="aspect-video bg-zinc-100 dark:bg-zinc-800 rounded-[2rem] overflow-hidden relative border-2 border-dashed border-zinc-300">
-                                {editProduct.image ? <img src={editProduct.image} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><i className="fa-solid fa-image text-3xl text-zinc-300"></i></div>}
-                                <input type="file" accept="image/*" onChange={async e => { if(e.target.files?.[0]) setEditProduct({...editProduct, image: await fileToBase64(e.target.files[0])}); }} className="absolute inset-0 opacity-0 cursor-pointer" />
-                            </div>
-                        </div>
-                        <div className="space-y-6">
-                            <input className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none" value={editProduct.title} onChange={e => setEditProduct({...editProduct, title: e.target.value})} placeholder="Asset Title" />
-                            <div className="flex gap-4">
-                                <input type="number" className="flex-1 p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black" value={editProduct.price} onChange={e => setEditProduct({...editProduct, price: Number(e.target.value)})} placeholder="Price" />
-                                <select className="flex-1 p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black" value={editProduct.category} onChange={e => setEditProduct({...editProduct, category: e.target.value as any})}>
-                                    <option value="Themes">Themes</option>
-                                    <option value="Widgets">Widgets</option>
-                                    <option value="Walls">Wallpapers</option>
-                                </select>
-                            </div>
-                            <textarea className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-medium h-32 outline-none" placeholder="Description" value={editProduct.description} onChange={e => setEditProduct({...editProduct, description: e.target.value})} />
-                            <div className="flex gap-3">
-                                <button onClick={() => setIsEditingProduct(false)} className="flex-1 py-5 bg-zinc-200 dark:bg-zinc-800 rounded-3xl font-black uppercase text-[10px]">Discard</button>
-                                <button onClick={saveProduct} disabled={isPublishing} className="flex-[2] py-5 bg-[#007AFF] text-white rounded-3xl font-black uppercase text-[10px] shadow-lg">{isPublishing ? 'Linking...' : 'Save Asset'}</button>
-                            </div>
-                        </div>
+                  <div className="glass-panel p-10 rounded-[3rem] space-y-8 animate-in zoom-in border-4 border-[#007AFF]/10">
+                    <input className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black" value={editProduct.title} onChange={e => setEditProduct({...editProduct, title: e.target.value})} placeholder="Title" />
+                    <div className="flex gap-4">
+                        <input type="number" className="flex-1 p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black" value={editProduct.price} onChange={e => setEditProduct({...editProduct, price: Number(e.target.value)})} placeholder="Price" />
+                        <select className="flex-1 p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black" value={editProduct.category} onChange={e => setEditProduct({...editProduct, category: e.target.value as any})}>
+                            <option value="Themes">Themes</option>
+                            <option value="Widgets">Widgets</option>
+                            <option value="Walls">Wallpapers</option>
+                        </select>
+                    </div>
+                    <div className="aspect-video bg-zinc-100 dark:bg-zinc-800 rounded-3xl overflow-hidden relative border-2 border-dashed border-zinc-300">
+                        {editProduct.image ? <img src={editProduct.image} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><i className="fa-solid fa-image text-3xl text-zinc-300"></i></div>}
+                        <input type="file" accept="image/*" onChange={async e => { if(e.target.files?.[0]) setEditProduct({...editProduct, image: await fileToBase64(e.target.files[0])}); }} className="absolute inset-0 opacity-0 cursor-pointer" />
+                    </div>
+                    <div className="flex gap-4">
+                      <button onClick={() => setIsEditingProduct(false)} className="flex-1 py-5 bg-zinc-200 dark:bg-zinc-800 rounded-2xl font-black uppercase text-[10px]">Cancel</button>
+                      <button onClick={saveProduct} disabled={isPublishing} className="flex-[3] py-5 bg-[#007AFF] text-white rounded-2xl font-black uppercase text-[10px] shadow-lg">{isPublishing ? 'Publishing...' : 'Save'}</button>
                     </div>
                   </div>
                 )}
-
-                <div className="grid grid-cols-1 gap-5">
+                <div className="grid grid-cols-1 gap-4">
                   {dbProducts.map(p => (
-                    <div key={p.id} className="p-6 glass-panel rounded-[2.5rem] flex items-center justify-between group shadow-xl">
-                      <div className="flex items-center gap-6">
-                        <img src={p.image} className="w-20 h-20 rounded-2xl object-cover shadow-2xl border-2 border-white dark:border-zinc-700" />
-                        <div>
-                          <p className="font-black text-xl leading-none">{p.title}</p>
-                          <p className="text-[10px] font-black text-[#007AFF] uppercase mt-2 tracking-widest">{p.category} • {p.price} EGP</p>
-                        </div>
+                    <div key={p.id} className="p-5 glass-panel rounded-3xl flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <img src={p.image} className="w-16 h-16 rounded-2xl object-cover" />
+                        <div><p className="font-black text-lg">{p.title}</p><p className="text-[10px] font-black text-[#007AFF]">{p.category} • {p.price} EGP</p></div>
                       </div>
-                      <div className="flex gap-3">
-                        <button onClick={() => { setEditProduct(p); setIsEditingProduct(true); }} className="w-12 h-12 bg-blue-500/10 text-blue-500 rounded-full flex items-center justify-center"><i className="fa-solid fa-pen"></i></button>
-                        <button onClick={async () => { if(window.confirm("Remove asset?")) { await supabase.from('products').delete().eq('id', p.id); refreshData(); showNotify("Removed"); } }} className="w-12 h-12 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center"><i className="fa-solid fa-trash-can"></i></button>
-                      </div>
+                      <button onClick={async () => { if(window.confirm("Delete?")) { await supabase.from('products').delete().eq('id', p.id); refreshData(); } }} className="text-red-600 p-4"><i className="fa-solid fa-trash"></i></button>
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            {adminTab === 'Videos' && (
-              <div className="space-y-8">
-                <div className="glass-panel p-8 rounded-[3rem] flex justify-between items-center shadow-2xl">
-                  <h3 className="text-2xl font-black uppercase tracking-tighter">Tutorial Hub</h3>
-                  <button onClick={() => { setEditVideo({ title: '', url: '' }); setIsEditingVideo(true); }} className="px-10 py-4 bg-red-600 text-white rounded-2xl font-black uppercase text-[10px] shadow-xl">New Video</button>
-                </div>
-                
-                {isEditingVideo && (
-                  <div className="glass-panel p-10 rounded-[3rem] space-y-8 animate-in zoom-in border-4 border-red-600/10 shadow-3xl">
-                    <input className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none border-2 border-transparent focus:border-red-600" value={editVideo.title} onChange={e => setEditVideo({...editVideo, title: e.target.value})} placeholder="Video Headline" />
-                    <input className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none border-2 border-transparent focus:border-red-600" value={editVideo.url} onChange={e => setEditVideo({...editVideo, url: e.target.value})} placeholder="YouTube Link or Shorts Link" />
-                    <div className="flex gap-4">
-                      <button onClick={() => setIsEditingVideo(false)} className="flex-1 py-5 bg-zinc-100 dark:bg-zinc-800 font-black text-[10px] uppercase rounded-2xl">Cancel</button>
-                      <button onClick={saveVideo} disabled={isPublishing} className="flex-[3] py-5 bg-red-600 text-white font-black text-[10px] uppercase rounded-2xl shadow-xl active:scale-95 transition-all">{isPublishing ? 'Processing...' : 'Add Video'}</button>
-                    </div>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-1 gap-5">
-                  {dbVideos.length > 0 ? dbVideos.map(v => {
-                    const vidId = getVideoId(v);
-                    return (
-                      <div key={vidId || Math.random()} className="p-5 glass-panel rounded-[2.5rem] flex items-center justify-between shadow-xl">
-                        <div className="flex items-center gap-6">
-                          <div className="w-24 h-14 rounded-2xl overflow-hidden shadow-2xl border-2 border-white dark:border-zinc-800 bg-zinc-800">
-                            {vidId && <img src={`https://img.youtube.com/vi/${vidId}/mqdefault.jpg`} className="w-full h-full object-cover" />}
-                          </div>
-                          <div className="flex flex-col">
-                            <span className="font-black text-lg tracking-tight">{v.title || 'Untitled'}</span>
-                            <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest">{vidId || 'ID Pending'}</span>
-                          </div>
-                        </div>
-                        <button onClick={async () => { if(window.confirm("Remove video?")) { await supabase.from('videos').delete().eq('id', vidId); await supabase.from('tutorials').delete().eq('id', vidId); refreshData(); showNotify("Deleted"); } }} className="w-12 h-12 text-red-600 flex items-center justify-center hover:bg-red-600/10 rounded-full transition-colors"><i className="fa-solid fa-trash-can text-xl"></i></button>
-                      </div>
-                    );
-                  }) : (
-                    <div className="text-center py-24 glass-panel rounded-[3rem] border-2 border-dashed border-zinc-200 dark:border-zinc-800">
-                        <p className="text-zinc-400 font-black uppercase text-[10px] tracking-widest">No Cloud Data for Tutorials</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
             {adminTab === 'Settings' && (
-              <div className="glass-panel p-12 rounded-[4rem] space-y-12 shadow-3xl">
-                <section className="space-y-10">
-                    <h4 className="text-xl font-black uppercase tracking-tighter flex items-center gap-3">
-                        <div className="w-1.5 h-6 bg-[#007AFF] rounded-full"></div> Site Branding
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
-                        {/* Header Logo Setting */}
-                        <div className="space-y-6">
-                            <label className="text-[11px] font-black uppercase text-zinc-400 px-4 tracking-[0.2em]">Site Logo (Header)</label>
-                            <div className="flex items-center gap-6 p-6 bg-zinc-100 dark:bg-zinc-800 rounded-[2.5rem] border-2 border-dashed border-zinc-300 dark:border-zinc-700 relative overflow-hidden group">
-                                <div className="w-20 h-20 rounded-full overflow-hidden shadow-xl border-2 border-white bg-white shrink-0">
-                                  <img src={siteLogo} className="w-full h-full object-cover" />
-                                </div>
-                                <div className="flex flex-col">
-                                    <span className="font-black text-xs">Update Site Logo</span>
-                                    <span className="text-[9px] text-zinc-400 font-bold uppercase mt-1">Appears in Header</span>
-                                </div>
-                                <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={async e => {
-                                    if(e.target.files?.[0]) {
-                                        const b64 = await fileToBase64(e.target.files[0]);
-                                        updateSetting('site_logo', b64);
-                                    }
-                                }} />
-                            </div>
+              <div className="glass-panel p-10 rounded-[3rem] space-y-12">
+                 <section className="space-y-10">
+                    <h4 className="text-xl font-black uppercase tracking-tighter">Branding Settings</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                        <div className="space-y-4">
+                          <label className="text-[10px] font-black uppercase text-zinc-400">Header Logo</label>
+                          <div className="flex items-center gap-6 p-6 bg-zinc-100 dark:bg-zinc-800 rounded-3xl border-2 border-dashed border-zinc-300 relative overflow-hidden">
+                            <img src={siteLogo} className="w-16 h-16 rounded-full object-cover shadow-xl bg-white" />
+                            <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={async e => { if(e.target.files?.[0]) updateSetting('site_logo', await fileToBase64(e.target.files[0])); }} />
+                            <span className="font-black text-[10px] uppercase">Update High Res Logo</span>
+                          </div>
                         </div>
-
-                        {/* Loader Logo Setting */}
-                        <div className="space-y-6">
-                            <label className="text-[11px] font-black uppercase text-zinc-400 px-4 tracking-[0.2em]">Loading Screen Logo</label>
-                            <div className="flex items-center gap-6 p-6 bg-zinc-100 dark:bg-zinc-800 rounded-[2.5rem] border-2 border-dashed border-zinc-300 dark:border-zinc-700 relative overflow-hidden group">
-                                <div className="w-20 h-20 rounded-full overflow-hidden shadow-xl border-2 border-white bg-white shrink-0">
-                                  <img src={loaderLogo} className="w-full h-full object-cover" />
-                                </div>
-                                <div className="flex flex-col">
-                                    <span className="font-black text-xs">Update Loader Logo</span>
-                                    <span className="text-[9px] text-zinc-400 font-bold uppercase mt-1">Appears during Loading</span>
-                                </div>
-                                <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={async e => {
-                                    if(e.target.files?.[0]) {
-                                        const b64 = await fileToBase64(e.target.files[0]);
-                                        updateSetting('loader_logo', b64);
-                                    }
-                                }} />
-                            </div>
+                        <div className="space-y-4">
+                          <label className="text-[10px] font-black uppercase text-zinc-400">Loading Logo</label>
+                          <div className="flex items-center gap-6 p-6 bg-zinc-100 dark:bg-zinc-800 rounded-3xl border-2 border-dashed border-zinc-300 relative overflow-hidden">
+                            <img src={loaderLogo} className="w-16 h-16 rounded-full object-cover shadow-xl bg-white" />
+                            <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={async e => { if(e.target.files?.[0]) updateSetting('loader_logo', await fileToBase64(e.target.files[0])); }} />
+                            <span className="font-black text-[10px] uppercase">Update High Res Logo</span>
+                          </div>
                         </div>
                     </div>
-                </section>
-
-                <div className="h-px bg-zinc-100 dark:bg-zinc-800 w-full"></div>
-
-                <section className="space-y-6">
-                    <h4 className="text-lg font-black uppercase tracking-tighter flex items-center gap-3">
-                        <div className="w-1.5 h-4 bg-red-600 rounded-full"></div> Security
-                    </h4>
-                    <div className="space-y-5">
-                       <label className="text-[10px] font-black uppercase text-zinc-400 tracking-[0.3em] px-4">Master Admin Password</label>
-                       <input type="password" placeholder="••••" className="w-full p-8 rounded-[2.5rem] bg-zinc-100 dark:bg-zinc-800 font-black border-2 border-transparent focus:border-[#007AFF] outline-none text-xl" onBlur={e => e.target.value && updateSetting('admin_password', e.target.value)} />
-                    </div>
-                </section>
+                 </section>
+                 <section className="space-y-4">
+                    <label className="text-[10px] font-black uppercase text-zinc-400 px-4">Admin Security Code</label>
+                    <input type="password" placeholder="••••" className="w-full p-8 rounded-[2rem] bg-zinc-100 dark:bg-zinc-800 font-black border-2 border-transparent focus:border-[#007AFF] outline-none text-xl" onBlur={e => e.target.value && updateSetting('admin_password', e.target.value)} />
+                 </section>
               </div>
             )}
           </div>
         )}
       </main>
 
-      {/* Floating Notification */}
       {notification && (
         <div className={`fixed top-12 left-1/2 -translate-x-1/2 z-[200] px-10 py-6 rounded-full font-black text-[10px] uppercase shadow-3xl animate-in fade-in slide-in-from-top-12 flex items-center gap-5 border-2 ${notification.type === 'success' ? 'bg-[#007AFF] text-white border-blue-400' : 'bg-red-600 text-white border-red-400'}`}>
           <i className={`fa-solid ${notification.type === 'success' ? 'fa-circle-check' : 'fa-circle-exclamation'} text-2xl`}></i>
@@ -613,7 +459,6 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* Bottom Navigation */}
       {!isAdminMode && activeSection !== 'Preview' && (
         <BottomNav 
           activeSection={activeSection} 
