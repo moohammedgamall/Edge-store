@@ -76,7 +76,7 @@ const App: React.FC = () => {
       const vidRes = await supabase.from('videos').select('*');
       if (vidRes.error) {
           const tutRes = await supabase.from('tutorials').select('*');
-          if (!tutRes.error) setDbVideos(tutRes.data);
+          if (!tutRes.error) setDbVideos(tutRes.data || []);
       } else {
           setDbVideos(vidRes.data || []);
       }
@@ -87,11 +87,11 @@ const App: React.FC = () => {
           if (s.key === 'admin_password') setAdminPassword(s.value);
           if (s.key === 'site_logo') {
             setSiteLogo(s.value);
-            try { localStorage.setItem('cached_site_logo', s.value); } catch(e) { /* ignore quota error */ }
+            try { localStorage.setItem('cached_site_logo', s.value); } catch(e) {}
           }
           if (s.key === 'loader_logo') {
             setLoaderLogo(s.value);
-            try { localStorage.setItem('cached_loader_logo', s.value); } catch(e) { /* ignore quota error */ }
+            try { localStorage.setItem('cached_loader_logo', s.value); } catch(e) {}
           }
         });
       }
@@ -111,11 +111,11 @@ const App: React.FC = () => {
       
       if (key === 'site_logo') {
         setSiteLogo(value);
-        try { localStorage.setItem('cached_site_logo', value); } catch(e) { console.warn("Quota exceeded, using cloud only"); }
+        try { localStorage.setItem('cached_site_logo', value); } catch(e) {}
       }
       if (key === 'loader_logo') {
         setLoaderLogo(value);
-        try { localStorage.setItem('cached_loader_logo', value); } catch(e) { console.warn("Quota exceeded, using cloud only"); }
+        try { localStorage.setItem('cached_loader_logo', value); } catch(e) {}
       }
       showNotify("Settings updated successfully");
     } catch (err: any) { 
@@ -278,6 +278,36 @@ const App: React.FC = () => {
                 ))}
               </div>
             </section>
+
+            {/* --- Videos Section --- */}
+            {activeSection === 'Home' && dbVideos.length > 0 && (
+              <section className="space-y-8 animate-in fade-in slide-in-from-bottom-8 delay-150">
+                <div className="flex justify-between items-end px-1">
+                  <h2 className="text-2xl font-black tracking-tighter uppercase flex items-center gap-3">
+                    <div className="w-1.5 h-6 bg-red-600 rounded-full"></div> Tutorials & Previews
+                  </h2>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {dbVideos.map((video) => (
+                    <div key={video.id} className="glass-panel overflow-hidden rounded-[2.5rem] shadow-xl group hover:scale-[1.02] transition-transform duration-500">
+                      <div className="aspect-video w-full bg-black relative">
+                        <iframe 
+                          className="w-full h-full"
+                          src={`https://www.youtube.com/embed/${video.id}`}
+                          title={video.title}
+                          frameBorder="0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        />
+                      </div>
+                      <div className="p-6 bg-white dark:bg-zinc-900 border-t border-zinc-100 dark:border-zinc-800">
+                        <h4 className="font-black text-lg tracking-tight uppercase line-clamp-1">{video.title}</h4>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
           </div>
         )}
 
@@ -301,7 +331,6 @@ const App: React.FC = () => {
                </div>
 
                <div className="space-y-8">
-                  {/* Step 1: Device Selection */}
                   <div className="space-y-4">
                     <label className="text-[10px] font-black uppercase text-zinc-400 tracking-widest px-2">Select Phone Device</label>
                     <div className="grid grid-cols-2 gap-4">
@@ -313,7 +342,6 @@ const App: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Step 2: Category Selection */}
                   <div className="space-y-4">
                     <label className="text-[10px] font-black uppercase text-zinc-400 tracking-widest px-2">Product Category</label>
                     <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
@@ -325,7 +353,6 @@ const App: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Step 3: Product Selection */}
                   <div className="space-y-4">
                     <label className="text-[10px] font-black uppercase text-zinc-400 tracking-widest px-2">Pick your Product</label>
                     <select 
@@ -340,7 +367,6 @@ const App: React.FC = () => {
                     </select>
                   </div>
 
-                  {/* Preview & Price */}
                   {currentOrderedProduct && (
                     <div className="space-y-8 animate-in zoom-in-95 duration-300">
                       <div className="flex items-center gap-6 p-6 bg-white dark:bg-zinc-900 rounded-[2.5rem] border border-zinc-200 dark:border-zinc-800 shadow-xl">
@@ -413,6 +439,33 @@ const App: React.FC = () => {
                         <div><p className="font-black text-lg">{p.title}</p><p className="text-[10px] font-black text-[#007AFF]">{p.category} • {p.price} EGP</p></div>
                       </div>
                       <button onClick={async () => { if(window.confirm("Delete?")) { await supabase.from('products').delete().eq('id', p.id); refreshData(); } }} className="text-red-600 p-4"><i className="fa-solid fa-trash"></i></button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {adminTab === 'Videos' && (
+              <div className="space-y-8">
+                <button onClick={() => { setEditVideo({ title: '', url: '' }); setIsEditingVideo(true); }} className="w-full py-6 bg-red-600 text-white rounded-3xl font-black uppercase text-xs shadow-xl">New Tutorial Video</button>
+                {isEditingVideo && (
+                  <div className="glass-panel p-10 rounded-[3rem] space-y-8 animate-in zoom-in border-4 border-red-600/10">
+                    <input className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black" value={editVideo.title} onChange={e => setEditVideo({...editVideo, title: e.target.value})} placeholder="Video Title" />
+                    <input className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black" value={editVideo.url} onChange={e => setEditVideo({...editVideo, url: e.target.value})} placeholder="Youtube URL (e.g. https://www.youtube.com/watch?v=...)" />
+                    <div className="flex gap-4">
+                      <button onClick={() => setIsEditingVideo(false)} className="flex-1 py-5 bg-zinc-200 dark:bg-zinc-800 rounded-2xl font-black uppercase text-[10px]">Cancel</button>
+                      <button onClick={saveVideo} disabled={isPublishing} className="flex-[3] py-5 bg-red-600 text-white rounded-2xl font-black uppercase text-[10px] shadow-lg">{isPublishing ? 'Publishing...' : 'Save Video'}</button>
+                    </div>
+                  </div>
+                )}
+                <div className="grid grid-cols-1 gap-4">
+                  {dbVideos.map(v => (
+                    <div key={v.id} className="p-5 glass-panel rounded-3xl flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="w-16 h-9 bg-zinc-900 rounded-lg flex items-center justify-center text-white"><i className="fa-brands fa-youtube"></i></div>
+                        <p className="font-black text-lg">{v.title}</p>
+                      </div>
+                      <button onClick={async () => { if(window.confirm("Delete?")) { await supabase.from('videos').delete().eq('id', v.id); refreshData(); } }} className="text-red-600 p-4"><i className="fa-solid fa-trash"></i></button>
                     </div>
                   ))}
                 </div>
