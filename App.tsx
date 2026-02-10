@@ -90,7 +90,7 @@ const App: React.FC = () => {
     } catch (err) {
       console.error("Critical Sync Failure:", err);
     } finally {
-      // Immediate transition
+      // Transition immediately to content
       setIsLoading(false);
     }
   };
@@ -220,7 +220,7 @@ const App: React.FC = () => {
   const orderedProduct = useMemo(() => dbProducts.find(p => p.id === orderProductId), [dbProducts, orderProductId]);
 
   if (isLoading) return (
-      <div className="h-screen w-full flex flex-col items-center justify-center bg-[#F2F2F7] dark:bg-[#2C2C2E] animate-in fade-in duration-200">
+      <div className="h-screen w-full flex flex-col items-center justify-center bg-[#F2F2F7] dark:bg-[#2C2C2E] animate-in fade-in duration-150">
           <div className="relative mb-8">
               <div className="w-24 h-24 md:w-32 md:h-32 border-4 border-white dark:border-zinc-800 rounded-full overflow-hidden shadow-2xl relative z-10 bg-white">
                   <img src={siteLogo} className="w-full h-full object-cover" alt="Logo" />
@@ -497,16 +497,16 @@ const App: React.FC = () => {
               <div className="glass-panel p-12 rounded-[4rem] space-y-12 shadow-3xl">
                 <section className="space-y-8">
                     <h4 className="text-lg font-black uppercase tracking-tighter flex items-center gap-3">
-                        <div className="w-1.5 h-4 bg-[#007AFF] rounded-full"></div> Visual Identity
+                        <div className="w-1.5 h-4 bg-[#007AFF] rounded-full"></div> الهوية البصرية (الشعار)
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
                         <div className="space-y-4">
-                            <label className="text-[10px] font-black uppercase text-zinc-400 px-4">Site & Loading Logo</label>
+                            <label className="text-[10px] font-black uppercase text-zinc-400 px-4">شعار الموقع والتحميل</label>
                             <div className="flex items-center gap-6 p-6 bg-zinc-100 dark:bg-zinc-800 rounded-[2rem] border-2 border-dashed border-zinc-300 dark:border-zinc-700 relative overflow-hidden group">
                                 <img src={siteLogo} className="w-20 h-20 rounded-full object-cover shadow-xl border-2 border-white" />
                                 <div className="flex flex-col">
-                                    <span className="font-black text-xs">Update Branding</span>
-                                    <span className="text-[9px] text-zinc-400 font-bold uppercase">PNG/JPG Preferred</span>
+                                    <span className="font-black text-xs">تغيير الشعار</span>
+                                    <span className="text-[9px] text-zinc-400 font-bold uppercase">سيتم تحديثه في شاشة التحميل فوراً</span>
                                 </div>
                                 <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={async e => {
                                     if(e.target.files?.[0]) {
@@ -517,9 +517,9 @@ const App: React.FC = () => {
                             </div>
                         </div>
                         <div className="space-y-4">
-                            <label className="text-[10px] font-black uppercase text-zinc-400 px-4">Manual Logo URL (Optional)</label>
+                            <label className="text-[10px] font-black uppercase text-zinc-400 px-4">رابط الشعار المباشر (اختياري)</label>
                             <div className="flex gap-3">
-                                <input type="text" className="flex-1 p-6 rounded-[1.5rem] bg-zinc-100 dark:bg-zinc-800 font-bold outline-none border-2 border-transparent focus:border-[#007AFF]" placeholder="Paste URL here..." onBlur={e => e.target.value && updateSetting('site_logo', e.target.value)} />
+                                <input type="text" className="flex-1 p-6 rounded-[1.5rem] bg-zinc-100 dark:bg-zinc-800 font-bold outline-none border-2 border-transparent focus:border-[#007AFF]" placeholder="ضع الرابط هنا..." onBlur={e => e.target.value && updateSetting('site_logo', e.target.value)} />
                             </div>
                         </div>
                     </div>
@@ -529,10 +529,10 @@ const App: React.FC = () => {
 
                 <section className="space-y-6">
                     <h4 className="text-lg font-black uppercase tracking-tighter flex items-center gap-3">
-                        <div className="w-1.5 h-4 bg-red-600 rounded-full"></div> Security
+                        <div className="w-1.5 h-4 bg-red-600 rounded-full"></div> الأمان
                     </h4>
                     <div className="space-y-5">
-                       <label className="text-[10px] font-black uppercase text-zinc-400 tracking-[0.3em] px-4">Master Admin Password</label>
+                       <label className="text-[10px] font-black uppercase text-zinc-400 tracking-[0.3em] px-4">كلمة مرور لوحة التحكم</label>
                        <input type="password" placeholder="••••" className="w-full p-8 rounded-[2.5rem] bg-zinc-100 dark:bg-zinc-800 font-black border-2 border-transparent focus:border-[#007AFF] outline-none text-xl" onBlur={e => e.target.value && updateSetting('admin_password', e.target.value)} />
                     </div>
                 </section>
