@@ -99,8 +99,14 @@ const App: React.FC = () => {
       if (setRes.data) {
         setRes.data.forEach(s => {
           if (s.key === 'admin_password') setAdminPassword(s.value.toString().trim());
-          if (s.key === 'site_logo') setSiteLogo(s.value);
-          if (s.key === 'loader_logo') setLoaderLogo(s.value);
+          if (s.key === 'site_logo') {
+            setSiteLogo(s.value);
+            localStorage.setItem('cached_site_logo', s.value);
+          }
+          if (s.key === 'loader_logo') {
+            setLoaderLogo(s.value);
+            localStorage.setItem('cached_loader_logo', s.value);
+          }
         });
       }
     } catch (err) {
@@ -158,10 +164,27 @@ const App: React.FC = () => {
     try {
       await supabase.from('settings').upsert({ key, value });
       if (key === 'admin_password') setAdminPassword(value.trim());
-      if (key === 'site_logo') setSiteLogo(value);
-      if (key === 'loader_logo') setLoaderLogo(value);
+      if (key === 'site_logo') {
+        setSiteLogo(value);
+        localStorage.setItem('cached_site_logo', value);
+      }
+      if (key === 'loader_logo') {
+        setLoaderLogo(value);
+        localStorage.setItem('cached_loader_logo', value);
+      }
       showNotify("Settings updated");
     } catch (err) { showNotify("Sync error", "error"); }
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'site' | 'loader') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const base64 = await fileToBase64(file);
+      await updateSetting(type === 'site' ? 'site_logo' : 'loader_logo', base64);
+    } catch (err) {
+      showNotify("Failed to upload logo", "error");
+    }
   };
 
   const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -681,6 +704,32 @@ const App: React.FC = () => {
                     <label className="text-[10px] font-black uppercase text-zinc-400">Admin Password</label>
                     <input type="password" placeholder="••••" className="w-full p-8 rounded-[2rem] bg-zinc-100 dark:bg-zinc-800 font-black text-xl" onBlur={e => e.target.value && updateSetting('admin_password', e.target.value)} />
                  </section>
+
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                    <section className="space-y-4">
+                        <label className="text-[10px] font-black uppercase text-zinc-400">Site Logo (Header)</label>
+                        <div className="aspect-square w-32 mx-auto md:mx-0 rounded-full overflow-hidden relative border-4 border-[#007AFF]/20 bg-zinc-100 dark:bg-zinc-800 shadow-xl group">
+                           <img src={siteLogo} className="w-full h-full object-cover" />
+                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                              <i className="fa-solid fa-camera text-white"></i>
+                           </div>
+                           <input type="file" accept="image/*" onChange={e => handleLogoUpload(e, 'site')} className="absolute inset-0 opacity-0 cursor-pointer" title="Change Site Logo" />
+                        </div>
+                        <p className="text-[9px] text-zinc-400 font-bold uppercase tracking-wider text-center md:text-left">Recommended: 1:1 Aspect Ratio (Square)</p>
+                    </section>
+
+                    <section className="space-y-4">
+                        <label className="text-[10px] font-black uppercase text-zinc-400">Loader Logo (Splash Screen)</label>
+                        <div className="aspect-square w-32 mx-auto md:mx-0 rounded-full overflow-hidden relative border-4 border-[#007AFF]/20 bg-zinc-100 dark:bg-zinc-800 shadow-xl group">
+                           <img src={loaderLogo} className="w-full h-full object-cover" />
+                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                              <i className="fa-solid fa-camera text-white"></i>
+                           </div>
+                           <input type="file" accept="image/*" onChange={e => handleLogoUpload(e, 'loader')} className="absolute inset-0 opacity-0 cursor-pointer" title="Change Loader Logo" />
+                        </div>
+                        <p className="text-[9px] text-zinc-400 font-bold uppercase tracking-wider text-center md:text-left">Visible during the initial app load</p>
+                    </section>
+                 </div>
               </div>
             )}
           </div>
