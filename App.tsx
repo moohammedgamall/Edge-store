@@ -34,7 +34,9 @@ const App: React.FC = () => {
   const [dbVideos, setDbVideos] = useState<any[]>([]); 
   const [siteLogo, setSiteLogo] = useState<string>(() => localStorage.getItem('cached_site_logo') || "https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
   const [loaderLogo, setLoaderLogo] = useState<string>(() => localStorage.getItem('cached_loader_logo') || "https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
-  const [adminPassword, setAdminPassword] = useState('1234');
+  
+  // Initialize admin password from localStorage fallback if available
+  const [adminPassword, setAdminPassword] = useState(() => localStorage.getItem('admin_pass_cache') || '1234');
   const [newPassInput, setNewPassInput] = useState('');
 
   const [orderDevice, setOrderDevice] = useState<'Realme' | 'Oppo'>('Realme');
@@ -79,10 +81,15 @@ const App: React.FC = () => {
       }
       const vidRes = await supabase.from('videos').select('*').order('created_at', { ascending: false });
       if (!vidRes.error && vidRes.data) setDbVideos(vidRes.data);
+      
       const setRes = await supabase.from('settings').select('*');
       if (setRes.data) {
         setRes.data.forEach(s => {
-          if (s.key === 'admin_password') setAdminPassword(s.value.toString().trim());
+          if (s.key === 'admin_password' && s.value) {
+            const pass = s.value.toString().trim();
+            setAdminPassword(pass);
+            localStorage.setItem('admin_pass_cache', pass);
+          }
           if (s.key === 'site_logo') { setSiteLogo(s.value); localStorage.setItem('cached_site_logo', s.value); }
           if (s.key === 'loader_logo') { setLoaderLogo(s.value); localStorage.setItem('cached_loader_logo', s.value); }
         });
@@ -97,10 +104,14 @@ const App: React.FC = () => {
   useEffect(() => { refreshData(); }, []);
 
   const handleAuth = () => {
-    if (passwordInput.trim() === adminPassword || passwordInput.trim() === '1234') {
+    const input = passwordInput.trim();
+    const currentPass = adminPassword.trim();
+    // Check against live state, localStorage fallback, and default emergency pass
+    if (input === currentPass || input === localStorage.getItem('admin_pass_cache') || input === '1234') {
       setIsAdminMode(true);
       setIsAuthModalOpen(false);
       setPasswordInput('');
+      setActiveSection('Admin'); // Set section immediately
       window.location.hash = '#/admin';
       showNotify("Logged in successfully");
     } else {
@@ -119,8 +130,9 @@ const App: React.FC = () => {
         setActiveSection('Order');
       } else if (['#/themes', '#/widgets', '#/walls'].includes(hash)) {
         setActiveSection(hash.replace('#/', '').charAt(0).toUpperCase() + hash.replace('#/', '').slice(1) as any);
-      } else if (hash === '#/admin' && isAdminMode) {
-        setActiveSection('Admin');
+      } else if (hash === '#/admin') {
+        if (isAdminMode) setActiveSection('Admin');
+        else window.location.hash = '#/';
       } else {
         setActiveSection('Home');
       }
@@ -140,12 +152,27 @@ const App: React.FC = () => {
 
   const updateSetting = async (key: string, value: string) => {
     try {
-      await supabase.from('settings').upsert({ key, value });
-      if (key === 'admin_password') setAdminPassword(value.trim());
-      if (key === 'site_logo') { setSiteLogo(value); localStorage.setItem('cached_site_logo', value); }
-      if (key === 'loader_logo') { setLoaderLogo(value); localStorage.setItem('cached_loader_logo', value); }
-      showNotify("Settings updated");
-    } catch (err) { showNotify("Sync error", "error"); }
+      // Use explicit onConflict for settings keys
+      await supabase.from('settings').upsert({ key, value }, { onConflict: 'key' });
+      
+      if (key === 'admin_password') {
+        const pass = value.trim();
+        setAdminPassword(pass);
+        localStorage.setItem('admin_pass_cache', pass);
+        showNotify("Admin password updated successfully");
+      } else if (key === 'site_logo') {
+        setSiteLogo(value);
+        localStorage.setItem('cached_site_logo', value);
+        showNotify("Site logo updated");
+      } else if (key === 'loader_logo') {
+        setLoaderLogo(value);
+        localStorage.setItem('cached_loader_logo', value);
+        showNotify("Loader logo updated");
+      }
+    } catch (err) {
+      console.error("Update Setting Error:", err);
+      showNotify("Failed to sync settings", "error");
+    }
   };
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'site' | 'loader') => {
@@ -623,8 +650,9 @@ const App: React.FC = () => {
                       />
                       <button 
                         onClick={() => {
-                          if (newPassInput.trim()) {
-                            updateSetting('admin_password', newPassInput.trim());
+                          const pass = newPassInput.trim();
+                          if (pass) {
+                            updateSetting('admin_password', pass);
                             setNewPassInput('');
                           } else {
                             showNotify("Please enter a valid password", "error");
@@ -634,6 +662,7 @@ const App: React.FC = () => {
                       >
                         Update Admin Password
                       </button>
+                      <p className="text-[10px] text-zinc-400 font-bold px-4 uppercase text-center italic">Changes take effect immediately. Default backup is '1234'.</p>
                     </div>
                  </section>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
