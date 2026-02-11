@@ -324,12 +324,12 @@ const App: React.FC = () => {
              <button onClick={() => window.location.hash = '#/'} className="w-10 h-10 mb-8 flex items-center justify-center bg-white dark:bg-zinc-800 rounded-full shadow-lg border border-zinc-200 dark:border-zinc-700 hover:scale-110 transition-transform"><i className="fa-solid fa-chevron-left"></i></button>
              
              <div className="flex flex-col lg:flex-row items-center lg:items-center xl:items-start gap-10 lg:gap-16 xl:gap-24">
-                {/* Responsive Mockup - Ultra Realistic Frame with 40px Corner Radius */}
+                {/* Responsive Mockup - Ultra Realistic Frame with 50px Corner Radius */}
                 <div className="w-full flex flex-col items-center gap-8 lg:w-auto shrink-0">
-                   <div className="relative aspect-[1290/2796] w-full max-w-[280px] sm:max-w-[320px] md:max-w-[360px] lg:max-w-[400px] xl:max-w-[440px] rounded-[40px] bg-gradient-to-br from-[#2a2a2a] via-[#121212] to-[#2a2a2a] p-[10px] md:p-[13px] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.8)] ring-1 ring-white/20 outline outline-[4px] md:outline-[6px] outline-[#1a1a1a] transition-all duration-500 overflow-visible">
+                   <div className="relative aspect-[1290/2796] w-full max-w-[280px] sm:max-w-[320px] md:max-w-[360px] lg:max-w-[400px] xl:max-w-[440px] rounded-[50px] bg-gradient-to-br from-[#2a2a2a] via-[#121212] to-[#2a2a2a] p-[10px] md:p-[13px] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.8)] ring-1 ring-white/20 outline outline-[4px] md:outline-[6px] outline-[#1a1a1a] transition-all duration-500 overflow-visible">
                       
                       {/* Bezel Highlight / Reflections */}
-                      <div className="absolute inset-0 rounded-[40px] border border-white/10 pointer-events-none opacity-40"></div>
+                      <div className="absolute inset-0 rounded-[50px] border border-white/10 pointer-events-none opacity-40"></div>
                       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-[1px] bg-white/20 blur-[1px]"></div>
                       
                       {/* Physical Buttons */}
@@ -338,8 +338,8 @@ const App: React.FC = () => {
                       <div className="absolute -left-[4px] md:-left-[6px] top-64 w-[2px] md:w-[3px] h-14 bg-[#333] rounded-l-full border-y border-white/10 shadow-[inset_-1px_0_1px_rgba(255,255,255,0.1)]"></div>
                       <div className="absolute -right-[4px] md:-right-[6px] top-48 w-[2px] md:w-[3px] h-20 bg-[#333] rounded-r-full border-y border-white/10 shadow-[inset_1px_0_1px_rgba(255,255,255,0.1)]"></div>
 
-                      {/* Screen Area - Proportional Radius (40px frame - ~10px padding = 30px screen radius) */}
-                      <div className="relative w-full h-full rounded-[30px] overflow-hidden bg-black shadow-[inset_0_0_20px_rgba(0,0,0,1)] ring-1 ring-white/5">
+                      {/* Screen Area - Proportional Radius (50px frame - padding = ~38px screen radius) */}
+                      <div className="relative w-full h-full rounded-[38px] overflow-hidden bg-black shadow-[inset_0_0_20px_rgba(0,0,0,1)] ring-1 ring-white/5">
                         <img 
                           src={selectedProduct.gallery[previewImageIndex] || selectedProduct.image} 
                           className="w-full h-full object-cover transition-opacity duration-700" 
