@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
 interface HeaderProps {
   isAdmin: boolean;
@@ -11,24 +10,7 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ isAdmin, onAdminTrigger, onLogout, onThemeToggle, isDarkMode, logoUrl }) => {
-  const [clickCount, setClickCount] = useState(0);
   const [imgError, setImgError] = useState(false);
-
-  const handleTitleClick = () => {
-    setClickCount(prev => prev + 1);
-  };
-
-  useEffect(() => {
-    if (clickCount === 3) {
-      onAdminTrigger();
-      setClickCount(0);
-    }
-    const timer = setTimeout(() => {
-      if (clickCount > 0) setClickCount(0);
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, [clickCount, onAdminTrigger]);
 
   const defaultLogo = "https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa";
   const finalLogo = logoUrl || defaultLogo;
@@ -37,8 +19,7 @@ const Header: React.FC<HeaderProps> = ({ isAdmin, onAdminTrigger, onLogout, onTh
     <header className="sticky top-0 z-40 w-full flex justify-center bg-white/80 dark:bg-zinc-950/80 backdrop-blur-3xl border-b border-zinc-200/50 dark:border-zinc-800/50">
       <div className="w-full max-w-7xl px-4 md:px-8 py-3 md:py-4 flex items-center justify-between">
         <div 
-          onClick={handleTitleClick}
-          className="flex items-center gap-3 md:gap-4 cursor-pointer select-none active:scale-95 transition-transform"
+          className="flex items-center gap-3 md:gap-4 select-none transition-transform"
         >
           <div className="w-10 h-10 md:w-14 md:h-14 flex items-center justify-center rounded-full overflow-hidden relative shadow-md bg-zinc-100 dark:bg-zinc-800 shrink-0">
             {!imgError ? (
