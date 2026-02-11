@@ -338,14 +338,21 @@ const App: React.FC = () => {
                       <div className="absolute -left-[4px] md:-left-[6px] top-64 w-[2px] md:w-[3px] h-14 bg-[#333] rounded-l-full border-y border-white/10 shadow-[inset_-1px_0_1px_rgba(255,255,255,0.1)]"></div>
                       <div className="absolute -right-[4px] md:-right-[6px] top-48 w-[2px] md:w-[3px] h-20 bg-[#333] rounded-r-full border-y border-white/10 shadow-[inset_1px_0_1px_rgba(255,255,255,0.1)]"></div>
 
-                      {/* Screen Area - Updated with object-contain to show full content */}
+                      {/* Screen Area - Updated with object-contain + blurred bg for consistency */}
                       <div className="relative w-full h-full rounded-[38px] overflow-hidden bg-black shadow-[inset_0_0_20px_rgba(0,0,0,1)] ring-1 ring-white/5">
+                        {/* Background Fill Blur */}
                         <img 
                           src={selectedProduct.gallery[previewImageIndex] || selectedProduct.image} 
-                          className="w-full h-full object-contain transition-opacity duration-700" 
+                          aria-hidden="true"
+                          className="absolute inset-0 w-full h-full object-cover blur-3xl opacity-50 scale-125"
+                        />
+                        {/* Foreground Main Image */}
+                        <img 
+                          src={selectedProduct.gallery[previewImageIndex] || selectedProduct.image} 
+                          className="relative z-10 w-full h-full object-contain transition-opacity duration-700" 
                           alt="" 
                         />
-                        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent pointer-events-none"></div>
+                        <div className="absolute inset-0 z-20 bg-gradient-to-tr from-transparent via-white/5 to-transparent pointer-events-none"></div>
                       </div>
                    </div>
                    
