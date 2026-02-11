@@ -78,7 +78,6 @@ const App: React.FC = () => {
         showNotify(`Database: ${error.message}`, "error");
         setDbProducts([]);
       } else {
-        // مصفوفة فارغة في البداية بدلاً من المنتجات التجريبية
         setDbProducts(data ? data.map(p => ({ ...p, gallery: Array.isArray(p.gallery) ? p.gallery : [] })) : []);
       }
 
@@ -204,7 +203,7 @@ const App: React.FC = () => {
         gallery: editProduct.gallery || [],
         is_premium: (Number(editProduct.price) || 0) > 0,
         compatibility: 'Realme UI / ColorOS',
-        android_version: editProduct.android_version || '' // التأكد من إرسال الحقل بشكل صحيح
+        android_version: editProduct.android_version || ''
       };
       
       const { error } = await supabase.from('products').upsert(payload);
@@ -314,34 +313,90 @@ const App: React.FC = () => {
 
         {activeSection === 'Preview' && selectedProduct && (
           <div className="max-w-6xl mx-auto pb-20 px-4 animate-in fade-in slide-in-from-bottom-8">
-             <button onClick={() => window.location.hash = '#/'} className="w-10 h-10 mb-8 flex items-center justify-center bg-white dark:bg-zinc-800 rounded-full shadow-lg border border-zinc-200 dark:border-zinc-700"><i className="fa-solid fa-chevron-left"></i></button>
+             <button onClick={() => window.location.hash = '#/'} className="w-10 h-10 mb-8 flex items-center justify-center bg-white dark:bg-zinc-800 rounded-full shadow-lg border border-zinc-200 dark:border-zinc-700 hover:scale-110 transition-transform"><i className="fa-solid fa-chevron-left"></i></button>
              <div className="flex flex-col items-center lg:flex-row lg:items-start gap-12 lg:gap-20">
+                {/* iPhone 15 Pro Mockup */}
                 <div className="w-full max-w-[420px] flex flex-col gap-10">
-                   <div className="relative aspect-[1290/2796] w-full rounded-[54px] bg-zinc-900 overflow-hidden shadow-3xl">
-                      <img src={selectedProduct.gallery[previewImageIndex] || selectedProduct.image} className="w-full h-full object-cover" alt="" />
+                   <div className="relative aspect-[1290/2796] w-full rounded-[60px] bg-[#0F0F0F] p-[10px] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] ring-8 ring-[#252525] ring-inset outline outline-2 outline-white/10">
+                      {/* Side Buttons Mockup */}
+                      <div className="absolute -left-[10px] top-28 w-[4px] h-8 bg-[#333] rounded-l-md border-y border-white/10"></div>
+                      <div className="absolute -left-[10px] top-44 w-[4px] h-16 bg-[#333] rounded-l-md border-y border-white/10"></div>
+                      <div className="absolute -left-[10px] top-64 w-[4px] h-16 bg-[#333] rounded-l-md border-y border-white/10"></div>
+                      <div className="absolute -right-[10px] top-48 w-[4px] h-24 bg-[#333] rounded-r-md border-y border-white/10"></div>
+
+                      <div className="relative w-full h-full rounded-[50px] overflow-hidden bg-black ring-1 ring-white/5">
+                        <img 
+                          src={selectedProduct.gallery[previewImageIndex] || selectedProduct.image} 
+                          className="w-full h-full object-cover transition-opacity duration-500" 
+                          alt="" 
+                        />
+                        
+                        {/* Dynamic Island */}
+                        <div className="absolute top-4 left-1/2 -translate-x-1/2 w-32 h-8 bg-black rounded-full flex items-center justify-center gap-2 shadow-xl ring-1 ring-white/10">
+                           <div className="w-2.5 h-2.5 rounded-full bg-[#111] ring-1 ring-white/5"></div>
+                           <div className="w-1.5 h-1.5 rounded-full bg-[#222]"></div>
+                        </div>
+
+                        {/* Bottom Home Indicator */}
+                        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-1/3 h-1 bg-white/40 rounded-full"></div>
+                      </div>
                    </div>
-                   <div className="flex flex-wrap gap-2 justify-center">
-                      {selectedProduct.gallery.map((img, idx) => (
-                        <button key={idx} onClick={() => setPreviewImageIndex(idx)} className={`w-14 h-14 rounded-2xl overflow-hidden border-2 transition-all ${previewImageIndex === idx ? 'border-[#007AFF] scale-105' : 'border-transparent opacity-50'}`}><img src={img} className="w-full h-full object-cover" alt="" /></button>
+                   
+                   {/* Gallery Thumbnails */}
+                   <div className="flex flex-wrap gap-3 justify-center">
+                      {(selectedProduct.gallery.length > 0 ? selectedProduct.gallery : [selectedProduct.image]).map((img, idx) => (
+                        <button 
+                          key={idx} 
+                          onClick={() => setPreviewImageIndex(idx)} 
+                          className={`w-14 h-14 rounded-2xl overflow-hidden border-2 transition-all duration-300 ${previewImageIndex === idx ? 'border-[#007AFF] scale-110 shadow-lg shadow-blue-500/20' : 'border-transparent opacity-50 grayscale hover:opacity-100 hover:grayscale-0'}`}
+                        >
+                          <img src={img} className="w-full h-full object-cover" alt="" />
+                        </button>
                       ))}
                    </div>
                 </div>
-                <div className="flex-1 space-y-10">
-                   <div className="space-y-4">
-                      <div className="flex gap-2">
-                        <span className="px-4 py-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-full font-black text-[10px] uppercase border border-white/5">{selectedProduct.category}</span>
-                        {selectedProduct.android_version && <span className="px-4 py-1.5 bg-orange-500/10 text-orange-600 rounded-full font-black text-[10px] uppercase border border-orange-500/20"><i className="fa-brands fa-android mr-2"></i>{selectedProduct.android_version}</span>}
+
+                <div className="flex-1 space-y-10 py-6">
+                   <div className="space-y-6">
+                      <div className="flex flex-wrap gap-2">
+                        <span className="px-5 py-2 bg-zinc-100 dark:bg-zinc-800 rounded-full font-black text-[10px] uppercase border border-white/5 tracking-widest">{selectedProduct.category}</span>
+                        {selectedProduct.android_version && (
+                          <span className="px-5 py-2 bg-orange-500/10 text-orange-600 rounded-full font-black text-[10px] uppercase border border-orange-500/20 flex items-center gap-2">
+                            <i className="fa-brands fa-android"></i>
+                            {selectedProduct.android_version}
+                          </span>
+                        )}
                       </div>
-                      <h2 className="text-4xl md:text-6xl font-black tracking-tighter uppercase">{selectedProduct.title}</h2>
-                      <p className="text-zinc-500 text-lg md:text-xl italic">"{selectedProduct.description}"</p>
+                      <h2 className="text-4xl md:text-7xl font-black tracking-tighter uppercase leading-[0.9]">{selectedProduct.title}</h2>
+                      <p className="text-zinc-500 text-lg md:text-xl font-medium leading-relaxed italic border-l-4 border-[#007AFF] pl-6 py-2">
+                        "{selectedProduct.description}"
+                      </p>
                    </div>
                    <div className="grid grid-cols-2 gap-4">
-                      <div className="p-6 bg-zinc-50 dark:bg-zinc-900/40 rounded-[2rem] border border-white/5"><span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block">Support</span><span className="font-black text-lg uppercase">Realme & Oppo</span></div>
-                      <div className="p-6 bg-zinc-50 dark:bg-zinc-900/40 rounded-[2rem] border border-white/5"><span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block">Type</span><span className="font-black text-lg uppercase">{selectedProduct.is_premium ? 'Premium' : 'Standard'}</span></div>
+                      <div className="p-8 bg-zinc-50 dark:bg-zinc-900/60 rounded-[2.5rem] border border-white/5 shadow-sm">
+                        <span className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] block mb-2">Support</span>
+                        <span className="font-black text-xl uppercase tracking-tight">Realme & Oppo</span>
+                      </div>
+                      <div className="p-8 bg-zinc-50 dark:bg-zinc-900/60 rounded-[2.5rem] border border-white/5 shadow-sm">
+                        <span className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] block mb-2">Asset Status</span>
+                        <span className="font-black text-xl uppercase tracking-tight">{selectedProduct.is_premium ? 'Premium' : 'Public'}</span>
+                      </div>
                    </div>
-                   <div className="space-y-6">
-                      <div><p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">Listing Price</p><span className="text-5xl font-black">{selectedProduct.price === 0 ? 'FREE' : `${selectedProduct.price} EGP`}</span></div>
-                      <button onClick={() => { setOrderProductId(selectedProduct.id); window.location.hash = '#/order'; }} className="w-full py-6 bg-[#007AFF] text-white rounded-[2rem] font-black text-xl shadow-2xl active:scale-95 transition-all">SECURE PURCHASE</button>
+                   <div className="space-y-8 p-10 bg-white dark:bg-zinc-900/40 rounded-[3rem] border border-zinc-100 dark:border-white/5 shadow-2xl">
+                      <div className="flex items-end justify-between">
+                        <div>
+                          <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2">Price for Unlimited License</p>
+                          <span className="text-6xl font-black tracking-tighter">{selectedProduct.price === 0 ? 'FREE' : `${selectedProduct.price} EGP`}</span>
+                        </div>
+                        <div className="hidden sm:block text-right">
+                          <i className="fa-solid fa-guarantee text-[#007AFF] text-4xl opacity-20 mb-2 block"></i>
+                          <span className="text-[8px] font-black uppercase text-zinc-400 tracking-tighter">Lifetime Updates</span>
+                        </div>
+                      </div>
+                      <button onClick={() => { setOrderProductId(selectedProduct.id); window.location.hash = '#/order'; }} className="w-full py-7 bg-[#007AFF] text-white rounded-[2rem] font-black text-xl shadow-2xl shadow-blue-500/40 active:scale-95 transition-all flex items-center justify-center gap-4">
+                        <i className="fa-solid fa-cart-shopping"></i>
+                        PROCEED TO ORDER
+                      </button>
                    </div>
                 </div>
              </div>
