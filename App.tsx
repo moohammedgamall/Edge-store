@@ -324,10 +324,9 @@ const App: React.FC = () => {
              <button onClick={() => window.location.hash = '#/'} className="w-10 h-10 mb-8 flex items-center justify-center bg-white dark:bg-zinc-800 rounded-full shadow-lg border border-zinc-200 dark:border-zinc-700 hover:scale-110 transition-transform"><i className="fa-solid fa-chevron-left"></i></button>
              
              <div className="flex flex-col lg:flex-row items-center lg:items-center xl:items-start gap-10 lg:gap-16 xl:gap-24">
-                {/* Black Titanium iPhone 15 Pro Mockup - Responsive Scaling */}
+                {/* Responsive Mockup */}
                 <div className="w-full flex flex-col items-center gap-8 lg:w-auto shrink-0">
                    <div className="relative aspect-[1290/2796] w-full max-w-[280px] sm:max-w-[320px] md:max-w-[360px] lg:max-w-[400px] xl:max-w-[440px] rounded-[50px] bg-gradient-to-br from-[#1c1c1c] via-[#0f0f0f] to-[#1c1c1c] p-[10px] md:p-[12px] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.6)] ring-1 ring-white/10 outline outline-[4px] md:outline-[6px] outline-[#252525] transition-all duration-500">
-                      {/* Fluid Side Buttons */}
                       <div className="absolute -left-[4px] md:-left-[6px] top-28 w-[2px] md:w-[3px] h-8 bg-[#333] rounded-l-full border-y border-white/5"></div>
                       <div className="absolute -left-[4px] md:-left-[6px] top-44 w-[2px] md:w-[3px] h-16 bg-[#333] rounded-l-full border-y border-white/5"></div>
                       <div className="absolute -left-[4px] md:-left-[6px] top-64 w-[2px] md:w-[3px] h-16 bg-[#333] rounded-l-full border-y border-white/5"></div>
@@ -342,7 +341,6 @@ const App: React.FC = () => {
                       </div>
                    </div>
                    
-                   {/* Gallery Thumbnails - Responsive Wrapper */}
                    <div className="flex flex-wrap gap-2 md:gap-3 justify-center max-w-full">
                       {(selectedProduct.gallery.length > 0 ? selectedProduct.gallery : [selectedProduct.image]).map((img, idx) => (
                         <button 
@@ -356,60 +354,61 @@ const App: React.FC = () => {
                    </div>
                 </div>
 
-                {/* Product Details Section - Refined Font Sizes */}
-                <div className="flex-1 w-full max-w-3xl space-y-8 lg:space-y-10 py-4 lg:py-6">
-                   <div className="space-y-4 md:space-y-6 text-center lg:text-left">
-                      <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
-                        <span className="px-4 md:px-5 py-1.5 md:py-2 bg-zinc-100 dark:bg-zinc-800 rounded-full font-black text-[9px] md:text-[10px] uppercase border border-white/5 tracking-widest">{selectedProduct.category}</span>
+                {/* Refined Text Content Section based on Screenshot */}
+                <div className="flex-1 w-full max-w-2xl space-y-10 lg:space-y-14 py-4 lg:py-6">
+                   <div className="space-y-6 md:space-y-10 text-center lg:text-left flex flex-col items-center lg:items-start">
+                      <div className="flex flex-wrap gap-3 justify-center lg:justify-start">
+                        <span className="px-5 py-2 bg-zinc-100 dark:bg-zinc-800 rounded-full font-black text-[10px] md:text-[11px] uppercase border border-white/5 tracking-widest">{selectedProduct.category}</span>
                         {selectedProduct.android_version && (
-                          <span className="px-4 md:px-5 py-1.5 md:py-2 bg-orange-500/10 text-orange-600 rounded-full font-black text-[9px] md:text-[10px] uppercase border border-orange-500/20 flex items-center gap-2">
+                          <span className="px-5 py-2 bg-orange-500/10 text-orange-600 rounded-full font-black text-[10px] md:text-[11px] uppercase border border-orange-500/20 flex items-center gap-2">
                             <i className="fa-brands fa-android"></i>
                             {selectedProduct.android_version}
                           </span>
                         )}
                       </div>
                       
-                      {/* Refined Proportional Title */}
-                      <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter uppercase leading-[1.1] break-words">
+                      {/* Title: Adaptive size, tighter leading, improved for long texts & emojis */}
+                      <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black tracking-tighter uppercase leading-[1.1] md:leading-[1.15] break-words max-w-[90%] lg:max-w-full mx-auto lg:mx-0">
                         {selectedProduct.title}
                       </h2>
                       
-                      <p className="text-zinc-500 text-sm md:text-base lg:text-lg font-medium leading-relaxed italic border-l-0 lg:border-l-4 border-[#007AFF] lg:pl-6 py-2">
+                      {/* Description: Professional font weighting & spacing */}
+                      <p className="text-zinc-500 dark:text-zinc-400 text-sm md:text-base lg:text-lg font-medium leading-relaxed italic max-w-prose border-l-0 lg:border-l-4 border-[#007AFF] lg:pl-6 py-1">
                         "{selectedProduct.description}"
                       </p>
                    </div>
 
-                   {/* Stats Grid - Responsive Column Count */}
+                   {/* Stats Grid */}
                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="p-6 md:p-8 bg-zinc-50 dark:bg-zinc-900/60 rounded-[2rem] md:rounded-[2.5rem] border border-white/5 shadow-sm text-center lg:text-left">
-                        <span className="text-[9px] md:text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] block mb-2">Support</span>
+                      <div className="p-7 md:p-9 bg-zinc-50 dark:bg-zinc-900/60 rounded-[2.2rem] md:rounded-[2.8rem] border border-white/5 shadow-sm text-center lg:text-left">
+                        <span className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.25em] block mb-2">Support</span>
                         <span className="font-black text-lg md:text-xl uppercase tracking-tight">Realme & Oppo</span>
                       </div>
-                      <div className="p-6 md:p-8 bg-zinc-50 dark:bg-zinc-900/60 rounded-[2rem] md:rounded-[2.5rem] border border-white/5 shadow-sm text-center lg:text-left">
-                        <span className="text-[9px] md:text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] block mb-2">Asset Status</span>
+                      <div className="p-7 md:p-9 bg-zinc-50 dark:bg-zinc-900/60 rounded-[2.2rem] md:rounded-[2.8rem] border border-white/5 shadow-sm text-center lg:text-left">
+                        <span className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.25em] block mb-2">Asset Status</span>
                         <span className="font-black text-lg md:text-xl uppercase tracking-tight">{selectedProduct.is_premium ? 'Premium' : 'Public'}</span>
                       </div>
                    </div>
 
-                   {/* Pricing & CTA - Responsive Padding & Layout */}
-                   <div className="space-y-6 md:space-y-8 p-6 md:p-10 bg-white dark:bg-zinc-900/40 rounded-[2.5rem] md:rounded-[3rem] border border-zinc-100 dark:border-white/5 shadow-2xl">
-                      <div className="flex flex-col sm:flex-row items-center sm:items-end justify-between gap-4">
+                   {/* Pricing & CTA */}
+                   <div className="space-y-8 md:space-y-10 p-8 md:p-12 bg-white dark:bg-zinc-900/40 rounded-[2.8rem] md:rounded-[3.5rem] border border-zinc-100 dark:border-white/5 shadow-2xl">
+                      <div className="flex flex-col sm:flex-row items-center sm:items-end justify-between gap-6">
                         <div className="text-center sm:text-left">
-                          <p className="text-[9px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2">Price for Unlimited License</p>
-                          <span className="text-4xl md:text-5xl font-black tracking-tighter">
+                          <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3">One-Time License Fee</p>
+                          <span className="text-4xl md:text-5xl font-black tracking-tighter text-[#007AFF] dark:text-blue-400">
                             {selectedProduct.price === 0 ? 'FREE' : `${selectedProduct.price} EGP`}
                           </span>
                         </div>
-                        <div className="hidden md:block text-right">
-                          <i className="fa-solid fa-guarantee text-[#007AFF] text-3xl lg:text-4xl opacity-20 mb-2 block"></i>
-                          <span className="text-[8px] font-black uppercase text-zinc-400 tracking-tighter">Lifetime Updates</span>
+                        <div className="hidden md:flex flex-col items-end">
+                          <i className="fa-solid fa-medal text-[#007AFF] text-3xl opacity-30 mb-2"></i>
+                          <span className="text-[9px] font-black uppercase text-zinc-400 tracking-tighter">Lifetime Access</span>
                         </div>
                       </div>
                       <button 
                         onClick={() => { setOrderProductId(selectedProduct.id); window.location.hash = '#/order'; }} 
-                        className="w-full py-5 md:py-7 bg-[#007AFF] text-white rounded-[1.5rem] md:rounded-[2rem] font-black text-lg md:text-xl shadow-2xl shadow-blue-500/40 active:scale-95 transition-all flex items-center justify-center gap-3 md:gap-4"
+                        className="w-full py-6 md:py-8 bg-[#007AFF] text-white rounded-[1.8rem] md:rounded-[2.2rem] font-black text-lg md:text-xl shadow-2xl shadow-blue-500/40 active:scale-95 transition-all flex items-center justify-center gap-4 group"
                       >
-                        <i className="fa-solid fa-cart-shopping"></i>
+                        <i className="fa-solid fa-cart-shopping group-hover:scale-110 transition-transform"></i>
                         PROCEED TO ORDER
                       </button>
                    </div>
