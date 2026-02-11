@@ -20,6 +20,17 @@ const fileToBase64 = (file: File): Promise<string> => {
   });
 };
 
+// وظيفة حفظ آمنة في التخزين المحلي لتجنب خطأ المساحة
+const safeLocalStorageSet = (key: string, value: string) => {
+  try {
+    // إذا كانت الصورة أكبر من 1 ميجابايت تقريباً، لا نخزنها محلياً لتجنب الامتلاء
+    if (value.length > 1000000) return;
+    localStorage.setItem(key, value);
+  } catch (e) {
+    console.warn("Storage quota exceeded, skipping local cache.");
+  }
+};
+
 const App: React.FC = () => {
   const [isAdminMode, setIsAdminMode] = useState<boolean>(false);
   const [activeSection, setActiveSection] = useState<Section>('Home');
@@ -34,9 +45,9 @@ const App: React.FC = () => {
   const [dbProducts, setDbProducts] = useState<Product[]>([]);
   const [dbVideos, setDbVideos] = useState<any[]>([]); 
   
-  // إعدادات الموقع المستمدة من Supabase
-  const [siteLogo, setSiteLogo] = useState<string>("https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
-  const [loaderLogo, setLoaderLogo] = useState<string>("https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
+  // تهيئة الشعارات من التخزين المحلي أولاً لسرعة الظهور
+  const [siteLogo, setSiteLogo] = useState<string>(() => localStorage.getItem('cached_site_logo') || "https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
+  const [loaderLogo, setLoaderLogo] = useState<string>(() => localStorage.getItem('cached_loader_logo') || "https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
   const [adminPassword, setAdminPassword] = useState<string>("1234");
 
   const [newPassInput, setNewPassInput] = useState('');
@@ -75,25 +86,28 @@ const App: React.FC = () => {
 
   const refreshData = async () => {
     try {
-      // 1. جلب المنتجات
-      const { data: prods, error: pErr } = await supabase.from('products').select('*').order('created_at', { ascending: false });
-      if (!pErr) setDbProducts(prods.map(p => ({ ...p, gallery: Array.isArray(p.gallery) ? p.gallery : [] })));
+      const { data: prods } = await supabase.from('products').select('*').order('created_at', { ascending: false });
+      if (prods) setDbProducts(prods.map(p => ({ ...p, gallery: Array.isArray(p.gallery) ? p.gallery : [] })));
 
-      // 2. جلب الفيديوهات
-      const { data: vids, error: vErr } = await supabase.from('videos').select('*').order('created_at', { ascending: false });
-      if (!vErr) setDbVideos(vids);
+      const { data: vids } = await supabase.from('videos').select('*').order('created_at', { ascending: false });
+      if (vids) setDbVideos(vids);
       
-      // 3. جلب الإعدادات (الشعار وكلمة السر) من قاعدة البيانات مباشرة
-      const { data: settings, error: sErr } = await supabase.from('settings').select('*');
-      if (!sErr && settings) {
+      const { data: settings } = await supabase.from('settings').select('*');
+      if (settings) {
         settings.forEach(s => {
           if (s.key === 'admin_password') setAdminPassword(s.value);
-          if (s.key === 'site_logo') setSiteLogo(s.value);
-          if (s.key === 'loader_logo') setLoaderLogo(s.value);
+          if (s.key === 'site_logo') {
+            setSiteLogo(s.value);
+            safeLocalStorageSet('cached_site_logo', s.value);
+          }
+          if (s.key === 'loader_logo') {
+            setLoaderLogo(s.value);
+            safeLocalStorageSet('cached_loader_logo', s.value);
+          }
         });
       }
     } catch (err) {
-      console.error("Critical Sync Error:", err);
+      console.error("Sync Error:", err);
     } finally {
       setIsLoading(false);
     }
@@ -150,10 +164,16 @@ const App: React.FC = () => {
       if (error) throw error;
       
       if (key === 'admin_password') setAdminPassword(value);
-      if (key === 'site_logo') setSiteLogo(value);
-      if (key === 'loader_logo') setLoaderLogo(value);
+      if (key === 'site_logo') {
+        setSiteLogo(value);
+        safeLocalStorageSet('cached_site_logo', value);
+      }
+      if (key === 'loader_logo') {
+        setLoaderLogo(value);
+        safeLocalStorageSet('cached_loader_logo', value);
+      }
       
-      showNotify(`${key.replace('_', ' ')} updated successfully`);
+      showNotify("Setting updated successfully");
     } catch (err: any) { 
       showNotify(err.message, "error"); 
     }
@@ -303,15 +323,13 @@ const App: React.FC = () => {
              <button onClick={() => window.location.hash = '#/'} className="w-10 h-10 mb-8 flex items-center justify-center bg-white dark:bg-zinc-800 rounded-full shadow-lg border border-zinc-200 dark:border-zinc-700 hover:scale-110 transition-transform"><i className="fa-solid fa-chevron-left"></i></button>
              
              <div className="flex flex-col lg:flex-row items-center lg:items-start gap-12 lg:gap-16 xl:gap-24">
-                {/* Responsive Mockup - 40px Corner Radius, No Dynamic Island */}
+                {/* Mockup */}
                 <div className="w-full flex flex-col items-center gap-8 lg:w-auto shrink-0">
                    <div className="relative aspect-[1290/2796] w-full max-w-[300px] sm:max-w-[320px] md:max-w-[380px] lg:max-w-[420px] rounded-[40px] bg-[#1a1a1c] p-3 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.6)] ring-1 ring-zinc-100/10 outline outline-[1px] outline-zinc-600 overflow-hidden">
-                      {/* Hardware Buttons */}
                       <div className="absolute left-0 top-[20%] w-[3px] h-12 bg-[#2a2a2c] rounded-r-sm"></div>
                       <div className="absolute left-0 top-[28%] w-[3px] h-16 bg-[#2a2a2c] rounded-r-sm"></div>
                       <div className="absolute right-0 top-[26%] w-[3px] h-24 bg-[#2a2a2c] rounded-l-sm"></div>
 
-                      {/* Screen Area */}
                       <div className="relative w-full h-full rounded-[30px] overflow-hidden bg-black ring-1 ring-white/10">
                         <img 
                           src={selectedProduct.gallery[previewImageIndex] || selectedProduct.image} 
@@ -321,7 +339,6 @@ const App: React.FC = () => {
                       </div>
                    </div>
                    
-                   {/* Thumbs */}
                    <div className="flex flex-wrap gap-3 justify-center">
                       {(selectedProduct.gallery.length > 0 ? selectedProduct.gallery : [selectedProduct.image]).map((img, idx) => (
                         <button key={idx} onClick={() => setPreviewImageIndex(idx)} className={`w-14 h-14 rounded-2xl overflow-hidden border-2 transition-all ${previewImageIndex === idx ? 'border-[#007AFF] scale-110 shadow-lg' : 'border-transparent opacity-50 grayscale hover:opacity-100 hover:grayscale-0'}`}>
@@ -444,17 +461,6 @@ const App: React.FC = () => {
                         </div>
                       </div>
                     </div>
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-center"><label className="text-[10px] font-black uppercase text-zinc-400">Preview Gallery (Max 20)</label><span className="text-[10px] font-black text-[#007AFF]">{editProduct.gallery?.length || 0}/20</span></div>
-                      <div className="flex flex-wrap gap-3">
-                        {(editProduct.gallery || []).map((img, idx) => (
-                          <div key={idx} className="w-20 h-20 rounded-2xl overflow-hidden relative group"><img src={img} className="w-full h-full object-cover" /><button onClick={() => { const g = [...(editProduct.gallery || [])]; g.splice(idx, 1); setEditProduct({...editProduct, gallery: g}); }} className="absolute top-1 right-1 bg-red-600 text-white w-6 h-6 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100"><i className="fa-solid fa-xmark text-[10px]"></i></button></div>
-                        ))}
-                        {(editProduct.gallery?.length || 0) < 20 && (
-                          <div className="w-20 h-20 rounded-2xl bg-zinc-100 dark:bg-zinc-800 border-2 border-dashed border-zinc-300 flex items-center justify-center relative"><i className="fa-solid fa-plus text-zinc-400"></i><input type="file" multiple accept="image/*" onChange={handleGalleryUpload} className="absolute inset-0 opacity-0 cursor-pointer" /></div>
-                        )}
-                      </div>
-                    </div>
                     <button onClick={saveProduct} disabled={isPublishing} className="w-full py-6 bg-[#007AFF] text-white rounded-3xl font-black uppercase text-sm shadow-xl">{isPublishing ? 'PUBLISHING...' : 'SAVE CHANGES'}</button>
                   </div>
                 )}
@@ -462,25 +468,6 @@ const App: React.FC = () => {
                   <div key={p.id} className="p-5 glass-panel rounded-3xl flex items-center justify-between group">
                     <div className="flex items-center gap-4"><img src={p.image} className="w-16 h-16 rounded-2xl object-cover" /><div><p className="font-black text-lg">{p.title}</p><p className="text-[10px] font-black text-[#007AFF] uppercase">{p.category} • {p.price} EGP</p></div></div>
                     <div className="flex gap-2"><button onClick={() => { setEditProduct(p); setIsEditingProduct(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="w-10 h-10 flex items-center justify-center bg-blue-500/10 text-blue-600 rounded-full"><i className="fa-solid fa-pen"></i></button><button onClick={() => handleDeleteProduct(p.id)} className="w-10 h-10 flex items-center justify-center bg-red-500/10 text-red-600 rounded-full"><i className="fa-solid fa-trash"></i></button></div>
-                  </div>
-                ))}</div>
-              </div>
-            )}
-
-            {adminTab === 'Videos' && (
-              <div className="space-y-8">
-                <button onClick={() => { setEditVideo({ title: '', url: '' }); setIsEditingVideo(true); }} className="w-full py-6 bg-red-600 text-white rounded-3xl font-black uppercase text-xs">New Tutorial</button>
-                {isEditingVideo && (
-                  <div className="glass-panel p-10 rounded-[3rem] space-y-8">
-                    <input className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black" value={editVideo.title} onChange={e => setEditVideo({...editVideo, title: e.target.value})} placeholder="Title" />
-                    <input className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black" value={editVideo.url} onChange={e => setEditVideo({...editVideo, url: e.target.value})} placeholder="YouTube Link" />
-                    <button onClick={saveVideo} disabled={isPublishing} className="w-full py-6 bg-red-600 text-white rounded-3xl font-black uppercase text-sm shadow-xl">Update Tutorial</button>
-                  </div>
-                )}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">{dbVideos.map(v => (
-                  <div key={v.id} className="p-5 glass-panel rounded-3xl flex items-center justify-between">
-                    <div className="flex items-center gap-4 flex-1 min-w-0"><div className="w-20 aspect-video rounded-xl bg-zinc-900 shrink-0"><img src={`https://img.youtube.com/vi/${v.id}/mqdefault.jpg`} className="w-full h-full object-cover" /></div><p className="font-black text-sm truncate uppercase">{v.title}</p></div>
-                    <div className="flex gap-2"><button onClick={() => { setEditVideo(v); setIsEditingVideo(true); }} className="w-10 h-10 flex items-center justify-center bg-blue-500/10 text-blue-600 rounded-full"><i className="fa-solid fa-pen"></i></button><button onClick={() => supabase.from('videos').delete().eq('id', v.id).then(refreshData)} className="w-10 h-10 flex items-center justify-center bg-red-500/10 text-red-600 rounded-full"><i className="fa-solid fa-trash"></i></button></div>
                   </div>
                 ))}</div>
               </div>

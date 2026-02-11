@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface HeaderProps {
   isAdmin: boolean;
@@ -12,6 +12,11 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ isAdmin, onAdminTrigger, onLogout, onThemeToggle, isDarkMode, logoUrl }) => {
   const [imgError, setImgError] = useState(false);
 
+  // إعادة ضبط حالة الخطأ عند تغيير الشعار للسماح للمتصفح بمحاولة تحميل الصورة الجديدة
+  useEffect(() => {
+    setImgError(false);
+  }, [logoUrl]);
+
   const defaultLogo = "https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa";
   const finalLogo = logoUrl || defaultLogo;
 
@@ -24,6 +29,7 @@ const Header: React.FC<HeaderProps> = ({ isAdmin, onAdminTrigger, onLogout, onTh
           <div className="w-10 h-10 md:w-14 md:h-14 flex items-center justify-center rounded-full overflow-hidden relative shadow-md bg-zinc-100 dark:bg-zinc-800 shrink-0">
             {!imgError ? (
               <img 
+                key={finalLogo} // استخدام key لإجبار المتصفح على إعادة التحميل
                 src={finalLogo}
                 alt="" 
                 className="w-full h-full object-cover rounded-full"
