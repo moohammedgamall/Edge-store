@@ -316,8 +316,8 @@ const App: React.FC = () => {
         {activeSection === 'Preview' && selectedProduct && (
           <div className="max-w-6xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-700 pb-20 px-4">
              <div className="flex items-center mb-8">
-               <button onClick={() => window.location.hash = '#/'} className="w-12 h-12 flex items-center justify-center bg-white dark:bg-zinc-800 rounded-full shadow-lg border border-zinc-200 dark:border-zinc-700 active:scale-90 transition-all hover:bg-zinc-50 dark:hover:bg-zinc-700">
-                 <i className="fa-solid fa-chevron-left text-zinc-800 dark:text-zinc-200"></i>
+               <button onClick={() => window.location.hash = '#/'} className="w-10 h-10 flex items-center justify-center bg-white dark:bg-zinc-800 rounded-full shadow-lg border border-zinc-200 dark:border-zinc-700 active:scale-90 transition-all hover:bg-zinc-50 dark:hover:bg-zinc-700">
+                 <i className="fa-solid fa-chevron-left text-zinc-800 dark:text-zinc-200 text-xs"></i>
                </button>
              </div>
 
@@ -377,13 +377,13 @@ const App: React.FC = () => {
                            <p className="text-[10px] font-black uppercase tracking-[0.4em] whitespace-nowrap">Asset Gallery</p>
                            <div className="h-px bg-zinc-400 flex-1"></div>
                         </div>
-                        <div className="flex flex-wrap gap-3 py-2 px-1 w-full justify-center">
+                        <div className="flex flex-wrap gap-2 py-2 px-1 w-full justify-center">
                            {selectedProduct.gallery.map((img, idx) => (
                              <button 
                                key={idx} 
                                onClick={() => setPreviewImageIndex(idx)} 
-                               className={`w-14 h-14 sm:w-16 sm:h-16 aspect-square rounded-[1.25rem] overflow-hidden shrink-0 border-2 transition-all duration-300 ${
-                                 previewImageIndex === idx ? 'border-[#007AFF] scale-110 shadow-xl z-10 ring-4 ring-blue-500/10' : 'border-transparent opacity-40 hover:opacity-100 hover:scale-105'
+                               className={`w-12 h-12 sm:w-14 sm:h-14 aspect-square rounded-2xl overflow-hidden shrink-0 border-2 transition-all duration-300 ${
+                                 previewImageIndex === idx ? 'border-[#007AFF] scale-105 shadow-xl z-10 ring-2 ring-blue-500/10' : 'border-transparent opacity-40 hover:opacity-100 hover:scale-105'
                                }`}
                              >
                                 <img src={img} className="w-full h-full object-cover" alt={`Slide ${idx + 1}`} />
@@ -440,10 +440,10 @@ const App: React.FC = () => {
                       </div>
                       <button 
                         onClick={() => { setOrderProductId(selectedProduct.id); window.location.hash = '#/order'; }} 
-                        className="w-full py-8 bg-[#007AFF] text-white rounded-[2.5rem] font-black text-xl shadow-2xl shadow-blue-500/30 active:scale-95 transition-all flex items-center justify-center gap-4 hover:bg-blue-600"
+                        className="w-full py-6 bg-[#007AFF] text-white rounded-[2rem] font-black text-lg shadow-2xl shadow-blue-500/30 active:scale-95 transition-all flex items-center justify-center gap-4 hover:bg-blue-600"
                       >
-                         <i className="fa-solid fa-cart-arrow-down text-2xl"></i>
-                         <span className="uppercase">{selectedProduct.price === 0 ? 'Download' : 'Secure Purchase'}</span>
+                         <i className="fa-solid fa-cart-arrow-down text-xl"></i>
+                         <span className="uppercase">{selectedProduct.price === 0 ? 'Get in' : 'Secure Purchase'}</span>
                       </button>
                       <p className="text-center lg:text-left text-[10px] font-bold text-zinc-400 uppercase tracking-widest px-6 opacity-60">
                         Asset delivery via @Mohamed_edge Telegram service
