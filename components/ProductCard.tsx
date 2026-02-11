@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Product, Section } from '../types';
 
@@ -11,17 +10,17 @@ interface ProductCardProps {
 const ProductCard: React.FC<ProductCardProps> = ({ product, onBuy, onPreview }) => {
   return (
     <div className="glass-panel group relative overflow-hidden rounded-[2rem] transition-all duration-500 hover:scale-[1.01] hover:shadow-2xl hover:border-[#007AFF]/30 dark:hover:border-[#007AFF]/50">
-      {/* Image Preview Trigger */}
+      {/* Image Preview Trigger - Changed aspect to 4/5 for mobile assets */}
       <div 
         onClick={() => onPreview(product.id)}
-        className="aspect-[16/9] w-full overflow-hidden bg-zinc-100 dark:bg-zinc-800 cursor-pointer relative"
+        className="aspect-[4/5] w-full overflow-hidden bg-zinc-100 dark:bg-zinc-900/50 cursor-pointer relative"
       >
         <img 
           src={product.image} 
           alt={product.title}
-          className="h-full w-full object-cover transition-transform duration-1000 group-hover:scale-110"
+          className="h-full w-full object-contain transition-transform duration-1000 group-hover:scale-105"
         />
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 dark:group-hover:bg-black/40 transition-colors flex items-center justify-center">
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 dark:group-hover:bg-black/20 transition-colors flex items-center justify-center">
            <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/20 dark:bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/30 dark:border-white/10 text-white font-black text-xs uppercase tracking-widest translate-y-4 group-hover:translate-y-0 duration-500">
              View Preview
            </div>
