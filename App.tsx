@@ -416,45 +416,47 @@ const App: React.FC = () => {
              <div className="flex flex-col items-center gap-12 lg:gap-20 lg:flex-row lg:items-start lg:justify-between">
                 {/* Hero Mockup Area */}
                 <div className="w-full max-w-[340px] sm:max-w-[400px] lg:max-w-[440px] flex flex-col items-center gap-10">
-                   {/* Refined iPhone Pro Max Mockup with Adjusted Corner Rounding */}
+                   {/* Refined iPhone Pro Max Mockup with Proportional Buttons */}
                    <div className={`relative aspect-[1290/2796] w-full rounded-[3.8rem] p-[8px] transition-all duration-700 shadow-[0_60px_120px_-30px_rgba(0,0,0,0.6)] ${
                      isDarkMode 
                      ? 'bg-gradient-to-br from-[#2c2c2e] via-[#3a3a3c] to-[#1c1c1e]' 
                      : 'bg-gradient-to-br from-[#d2d2d7] via-[#e8e8ed] to-[#b8b8bc]'
                    }`}>
-                      {/* Metallic Outer Hedges - Adjusted for realism */}
+                      {/* Metallic Outer Hedges - Realistic Titanium Shell */}
                       <div className={`absolute -inset-[3.5px] rounded-[4.1rem] border-[11px] pointer-events-none z-10 transition-colors duration-500 ${
                         isDarkMode 
                         ? 'border-zinc-700/90 shadow-[inset_0_0_12px_rgba(0,0,0,0.8),0_0_0_1px_rgba(255,255,255,0.05)]' 
                         : 'border-zinc-300/90 shadow-[inset_0_0_8px_rgba(255,255,255,0.6),0_0_0_1px_rgba(0,0,0,0.05)]'
                       }`}></div>
                       
-                      {/* Physical Buttons Simulation */}
-                      <div className={`absolute -left-[14px] top-[18%] w-[4.5px] h-[6.5%] rounded-r-[4px] shadow-sm z-20 ${isDarkMode ? 'bg-zinc-700' : 'bg-zinc-300'}`}></div>
-                      <div className={`absolute -left-[14px] top-[27%] w-[4.5px] h-[10.5%] rounded-r-[4px] shadow-sm z-20 ${isDarkMode ? 'bg-zinc-700' : 'bg-zinc-300'}`}></div>
-                      <div className={`absolute -left-[14px] top-[40%] w-[4.5px] h-[10.5%] rounded-r-[4px] shadow-sm z-20 ${isDarkMode ? 'bg-zinc-700' : 'bg-zinc-300'}`}></div>
-                      <div className={`absolute -right-[14px] top-[32%] w-[4.5px] h-[13%] rounded-l-[4px] shadow-sm z-20 ${isDarkMode ? 'bg-zinc-700' : 'bg-zinc-300'}`}></div>
+                      {/* High-Fidelity Physical Buttons - Proportional & Integrated */}
+                      {/* Left Side: Action Button + Volume Up/Down */}
+                      <div className={`absolute -left-[3px] top-[18%] w-[6px] h-[5%] rounded-l-md shadow-sm z-20 border-r border-black/10 transition-colors ${isDarkMode ? 'bg-zinc-600' : 'bg-zinc-400'}`}></div>
+                      <div className={`absolute -left-[3px] top-[26%] w-[6px] h-[9%] rounded-l-md shadow-sm z-20 border-r border-black/10 transition-colors ${isDarkMode ? 'bg-zinc-600' : 'bg-zinc-400'}`}></div>
+                      <div className={`absolute -left-[3px] top-[37.5%] w-[6px] h-[9%] rounded-l-md shadow-sm z-20 border-r border-black/10 transition-colors ${isDarkMode ? 'bg-zinc-600' : 'bg-zinc-400'}`}></div>
+                      
+                      {/* Right Side: Power Button */}
+                      <div className={`absolute -right-[3px] top-[30%] w-[6px] h-[12%] rounded-r-md shadow-sm z-20 border-l border-black/10 transition-colors ${isDarkMode ? 'bg-zinc-600' : 'bg-zinc-400'}`}></div>
 
-                      {/* Display Viewport - Adjusted Rounding */}
+                      {/* Display Viewport - Perfect Squircle Rounding */}
                       <div className="flex-1 w-full h-full bg-black rounded-[3.3rem] overflow-hidden relative shadow-[inset_0_0_30px_rgba(0,0,0,1)] flex items-center justify-center">
                          <img 
                            src={selectedProduct.gallery[previewImageIndex] || selectedProduct.image} 
                            className="w-full h-full object-cover animate-in fade-in duration-1000 select-none" 
-                           alt="Preview View"
+                           alt="Asset Preview"
                          />
                          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent pointer-events-none"></div>
                       </div>
                    </div>
 
-                   {/* Gallery Thumbnails Strip - Full Visibility Layout */}
+                   {/* Gallery Thumbnails Strip - Complete Visibility Wrapping Layout */}
                    {selectedProduct.gallery && selectedProduct.gallery.length > 0 && (
                      <div className="w-full space-y-6">
                         <div className="flex items-center justify-center gap-3 px-4">
                            <div className="h-px bg-zinc-200 dark:bg-zinc-800 flex-1"></div>
-                           <p className="text-[10px] font-black uppercase text-zinc-400 tracking-[0.3em] whitespace-nowrap opacity-60">Complete Asset View</p>
+                           <p className="text-[10px] font-black uppercase text-zinc-400 tracking-[0.3em] whitespace-nowrap opacity-60">Visual Library</p>
                            <div className="h-px bg-zinc-200 dark:bg-zinc-800 flex-1"></div>
                         </div>
-                        {/* Changed from overflow-x-auto to flex-wrap for "full count" visibility */}
                         <div className="flex flex-wrap gap-3 sm:gap-4 py-2 px-1 w-full justify-center">
                            {selectedProduct.gallery.map((img, idx) => (
                              <button 
@@ -474,7 +476,7 @@ const App: React.FC = () => {
                    )}
                 </div>
 
-                {/* Content Area - Info & Purchase */}
+                {/* Content Area - Product Specs & Checkout */}
                 <div className="w-full lg:flex-1 lg:pt-10 flex flex-col gap-10">
                    <div className="space-y-8 text-center lg:text-left">
                       <div className="flex flex-wrap justify-center lg:justify-start gap-4">
@@ -489,7 +491,7 @@ const App: React.FC = () => {
                       </div>
                       
                       <div className="space-y-4">
-                        <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-zinc-900 dark:text-zinc-100 tracking-tighter leading-none uppercase drop-shadow-sm">
+                        <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-zinc-900 dark:text-zinc-100 tracking-tighter leading-none uppercase">
                           {selectedProduct.title}
                         </h2>
                         <p className="text-zinc-500 dark:text-zinc-400 font-medium text-lg sm:text-xl md:text-2xl italic leading-relaxed max-w-xl mx-auto lg:mx-0 opacity-80">
@@ -498,14 +500,14 @@ const App: React.FC = () => {
                       </div>
                    </div>
 
-                   {/* Specs Grid */}
+                   {/* Features Section */}
                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full">
                       <div className="flex items-center gap-6 p-6 sm:p-8 bg-zinc-50 dark:bg-zinc-900/40 rounded-[2.5rem] border border-zinc-100 dark:border-white/5 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-900/60">
                          <div className="w-12 h-12 sm:w-14 sm:h-14 bg-[#007AFF]/10 rounded-2xl flex items-center justify-center shrink-0">
                             <i className="fa-solid fa-mobile-screen-button text-[#007AFF] text-xl sm:text-2xl"></i>
                          </div>
                          <div className="flex flex-col min-w-0">
-                            <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1 truncate">Architecture</span>
+                            <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1 truncate">Platform Architecture</span>
                             <span className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-zinc-100 uppercase truncate">{selectedProduct.compatibility}</span>
                          </div>
                       </div>
@@ -514,16 +516,16 @@ const App: React.FC = () => {
                             <i className="fa-solid fa-crown text-orange-500 text-xl sm:text-2xl"></i>
                          </div>
                          <div className="flex flex-col min-w-0">
-                            <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1 truncate">Premium Access</span>
-                            <span className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-zinc-100 uppercase truncate">{selectedProduct.is_premium ? 'Exclusive' : 'Standard'}</span>
+                            <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1 truncate">Digital License</span>
+                            <span className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-zinc-100 uppercase truncate">{selectedProduct.is_premium ? 'Premium Asset' : 'Free Resource'}</span>
                          </div>
                       </div>
                    </div>
 
-                   {/* Pricing & CTA */}
+                   {/* Purchase Interface */}
                    <div className="mt-6 flex flex-col gap-10 bg-white dark:bg-zinc-900/40 lg:bg-transparent rounded-[3.5rem] p-10 lg:p-0 shadow-2xl lg:shadow-none">
                       <div className="text-center lg:text-left group">
-                        <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.5em] mb-3 opacity-60">One-Time License Fee</p>
+                        <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.5em] mb-3 opacity-60">Asset Pricing</p>
                         <span className="text-6xl sm:text-7xl font-black text-zinc-900 dark:text-zinc-100 tracking-tighter group-hover:text-[#007AFF] transition-colors duration-500">
                           {selectedProduct.price === 0 ? 'FREE' : `${selectedProduct.price.toFixed(2)} EGP`}
                         </span>
@@ -534,11 +536,11 @@ const App: React.FC = () => {
                         className="w-full py-8 sm:py-10 bg-[#007AFF] text-white rounded-[3rem] font-black text-xl sm:text-2xl shadow-[0_25px_60px_-15px_rgba(0,122,255,0.4)] active:scale-95 transition-all flex items-center justify-center gap-6 hover:bg-blue-600 hover:shadow-blue-500/60 group/btn"
                       >
                          <i className="fa-solid fa-cart-arrow-down text-2xl sm:text-3xl group-hover/btn:translate-y-1 transition-transform"></i>
-                         <span className="uppercase tracking-tight">{selectedProduct.price === 0 ? 'Instant Download' : 'Continue to Checkout'}</span>
+                         <span className="uppercase tracking-tight">{selectedProduct.price === 0 ? 'Secure Download' : 'Confirm Order'}</span>
                       </button>
                       
                       <p className="text-center lg:text-left text-[10px] font-bold text-zinc-400 uppercase tracking-widest px-6 opacity-60">
-                        Secure transaction processed via Mohamed Edge verified network
+                        Orders are handled via secure private Telegram channel (@Mohamed_edge)
                       </p>
                    </div>
                 </div>
