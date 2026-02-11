@@ -324,15 +324,16 @@ const App: React.FC = () => {
              <button onClick={() => window.location.hash = '#/'} className="w-10 h-10 mb-8 flex items-center justify-center bg-white dark:bg-zinc-800 rounded-full shadow-lg border border-zinc-200 dark:border-zinc-700 hover:scale-110 transition-transform"><i className="fa-solid fa-chevron-left"></i></button>
              
              <div className="flex flex-col lg:flex-row items-center lg:items-center xl:items-start gap-10 lg:gap-16 xl:gap-24">
-                {/* Responsive Mockup */}
+                {/* Responsive Mockup - Updated Corner Radius for a smoother iPhone feel */}
                 <div className="w-full flex flex-col items-center gap-8 lg:w-auto shrink-0">
-                   <div className="relative aspect-[1290/2796] w-full max-w-[280px] sm:max-w-[320px] md:max-w-[360px] lg:max-w-[400px] xl:max-w-[440px] rounded-[50px] bg-gradient-to-br from-[#1c1c1c] via-[#0f0f0f] to-[#1c1c1c] p-[10px] md:p-[12px] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.6)] ring-1 ring-white/10 outline outline-[4px] md:outline-[6px] outline-[#252525] transition-all duration-500">
+                   <div className="relative aspect-[1290/2796] w-full max-w-[280px] sm:max-w-[320px] md:max-w-[360px] lg:max-w-[400px] xl:max-w-[440px] rounded-[60px] bg-gradient-to-br from-[#1c1c1c] via-[#0f0f0f] to-[#1c1c1c] p-[10px] md:p-[12px] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.6)] ring-1 ring-white/10 outline outline-[4px] md:outline-[6px] outline-[#252525] transition-all duration-500">
+                      {/* Fluid Side Buttons */}
                       <div className="absolute -left-[4px] md:-left-[6px] top-28 w-[2px] md:w-[3px] h-8 bg-[#333] rounded-l-full border-y border-white/5"></div>
                       <div className="absolute -left-[4px] md:-left-[6px] top-44 w-[2px] md:w-[3px] h-16 bg-[#333] rounded-l-full border-y border-white/5"></div>
                       <div className="absolute -left-[4px] md:-left-[6px] top-64 w-[2px] md:w-[3px] h-16 bg-[#333] rounded-l-full border-y border-white/5"></div>
                       <div className="absolute -right-[4px] md:-right-[6px] top-48 w-[2px] md:w-[3px] h-24 bg-[#333] rounded-r-full border-y border-white/5"></div>
 
-                      <div className="relative w-full h-full rounded-[40px] overflow-hidden bg-black shadow-inner ring-1 ring-white/5">
+                      <div className="relative w-full h-full rounded-[50px] overflow-hidden bg-black shadow-inner ring-1 ring-white/5">
                         <img 
                           src={selectedProduct.gallery[previewImageIndex] || selectedProduct.image} 
                           className="w-full h-full object-cover transition-opacity duration-500" 
@@ -354,7 +355,7 @@ const App: React.FC = () => {
                    </div>
                 </div>
 
-                {/* Refined Text Content Section based on Screenshot */}
+                {/* Refined Text Content Section */}
                 <div className="flex-1 w-full max-w-2xl space-y-10 lg:space-y-14 py-4 lg:py-6">
                    <div className="space-y-6 md:space-y-10 text-center lg:text-left flex flex-col items-center lg:items-start">
                       <div className="flex flex-wrap gap-3 justify-center lg:justify-start">
@@ -367,12 +368,10 @@ const App: React.FC = () => {
                         )}
                       </div>
                       
-                      {/* Title: Adaptive size, tighter leading, improved for long texts & emojis */}
                       <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black tracking-tighter uppercase leading-[1.1] md:leading-[1.15] break-words max-w-[90%] lg:max-w-full mx-auto lg:mx-0">
                         {selectedProduct.title}
                       </h2>
                       
-                      {/* Description: Professional font weighting & spacing */}
                       <p className="text-zinc-500 dark:text-zinc-400 text-sm md:text-base lg:text-lg font-medium leading-relaxed italic max-w-prose border-l-0 lg:border-l-4 border-[#007AFF] lg:pl-6 py-1">
                         "{selectedProduct.description}"
                       </p>
