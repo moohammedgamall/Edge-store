@@ -33,12 +33,13 @@ const App: React.FC = () => {
 
   const [dbProducts, setDbProducts] = useState<Product[]>([]);
   const [dbVideos, setDbVideos] = useState<any[]>([]); 
-  const [siteLogo, setSiteLogo] = useState<string>(() => localStorage.getItem('cached_site_logo') || "https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
-  const [loaderLogo, setLoaderLogo] = useState<string>(() => localStorage.getItem('cached_loader_logo') || "https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
   
-  const [adminPassword, setAdminPassword] = useState(() => localStorage.getItem('admin_pass_cache') || '1234');
-  const [newPassInput, setNewPassInput] = useState('');
+  // إعدادات الموقع المستمدة من Supabase
+  const [siteLogo, setSiteLogo] = useState<string>("https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
+  const [loaderLogo, setLoaderLogo] = useState<string>("https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
+  const [adminPassword, setAdminPassword] = useState<string>("1234");
 
+  const [newPassInput, setNewPassInput] = useState('');
   const [orderDevice, setOrderDevice] = useState<'Realme' | 'Oppo'>('Realme');
   const [orderProductId, setOrderProductId] = useState<string>('');
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -61,13 +62,7 @@ const App: React.FC = () => {
   const handleThemeToggle = useCallback(() => {
     const nextMode = !isDarkMode;
     setIsDarkMode(nextMode);
-    
-    if (nextMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    
+    document.documentElement.classList.toggle('dark', nextMode);
     localStorage.setItem('theme', nextMode ? 'dark' : 'light');
   }, [isDarkMode]);
 
@@ -80,32 +75,25 @@ const App: React.FC = () => {
 
   const refreshData = async () => {
     try {
-      const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: false });
-      
-      if (error) {
-        showNotify(`Database: ${error.message}`, "error");
-        setDbProducts([]);
-      } else {
-        setDbProducts(data ? data.map(p => ({ ...p, gallery: Array.isArray(p.gallery) ? p.gallery : [] })) : []);
-      }
+      // 1. جلب المنتجات
+      const { data: prods, error: pErr } = await supabase.from('products').select('*').order('created_at', { ascending: false });
+      if (!pErr) setDbProducts(prods.map(p => ({ ...p, gallery: Array.isArray(p.gallery) ? p.gallery : [] })));
 
-      const vidRes = await supabase.from('videos').select('*').order('created_at', { ascending: false });
-      if (!vidRes.error && vidRes.data) setDbVideos(vidRes.data);
+      // 2. جلب الفيديوهات
+      const { data: vids, error: vErr } = await supabase.from('videos').select('*').order('created_at', { ascending: false });
+      if (!vErr) setDbVideos(vids);
       
-      const setRes = await supabase.from('settings').select('*');
-      if (setRes.data) {
-        setRes.data.forEach(s => {
-          if (s.key === 'admin_password' && s.value) {
-            const pass = s.value.toString().trim();
-            setAdminPassword(pass);
-            localStorage.setItem('admin_pass_cache', pass);
-          }
-          if (s.key === 'site_logo') { setSiteLogo(s.value); localStorage.setItem('cached_site_logo', s.value); }
-          if (s.key === 'loader_logo') { setLoaderLogo(s.value); localStorage.setItem('cached_loader_logo', s.value); }
+      // 3. جلب الإعدادات (الشعار وكلمة السر) من قاعدة البيانات مباشرة
+      const { data: settings, error: sErr } = await supabase.from('settings').select('*');
+      if (!sErr && settings) {
+        settings.forEach(s => {
+          if (s.key === 'admin_password') setAdminPassword(s.value);
+          if (s.key === 'site_logo') setSiteLogo(s.value);
+          if (s.key === 'loader_logo') setLoaderLogo(s.value);
         });
       }
     } catch (err) {
-      console.error("Sync Error:", err);
+      console.error("Critical Sync Error:", err);
     } finally {
       setIsLoading(false);
     }
@@ -114,16 +102,14 @@ const App: React.FC = () => {
   useEffect(() => { refreshData(); }, []);
 
   const handleAuth = () => {
-    const input = passwordInput.trim();
-    if (input === adminPassword.trim() || input === '1234') {
+    if (passwordInput.trim() === adminPassword.trim() || passwordInput === '1234') {
       setIsAdminMode(true);
       setIsAuthModalOpen(false);
       setPasswordInput('');
-      setActiveSection('Admin');
       window.location.hash = '#/admin';
-      showNotify("Logged in successfully");
+      showNotify("Admin Access Granted");
     } else {
-      showNotify("Incorrect password", "error");
+      showNotify("Incorrect Credentials", "error");
     }
   };
 
@@ -162,16 +148,15 @@ const App: React.FC = () => {
     try {
       const { error } = await supabase.from('settings').upsert({ key, value }, { onConflict: 'key' });
       if (error) throw error;
-      if (key === 'admin_password') {
-        setAdminPassword(value.trim());
-        localStorage.setItem('admin_pass_cache', value.trim());
-        showNotify("Password updated");
-      } else {
-        localStorage.setItem(`cached_${key}`, value);
-        key === 'site_logo' ? setSiteLogo(value) : setLoaderLogo(value);
-        showNotify("Logo updated");
-      }
-    } catch (err: any) { showNotify(err.message, "error"); }
+      
+      if (key === 'admin_password') setAdminPassword(value);
+      if (key === 'site_logo') setSiteLogo(value);
+      if (key === 'loader_logo') setLoaderLogo(value);
+      
+      showNotify(`${key.replace('_', ' ')} updated successfully`);
+    } catch (err: any) { 
+      showNotify(err.message, "error"); 
+    }
   };
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'site' | 'loader') => {
@@ -180,25 +165,21 @@ const App: React.FC = () => {
     try {
       const base64 = await fileToBase64(file);
       await updateSetting(type === 'site' ? 'site_logo' : 'loader_logo', base64);
-    } catch (err) { showNotify("Upload failed", "error"); }
+    } catch (err) { 
+      showNotify("Logo upload failed", "error"); 
+    }
   };
 
   const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []) as File[];
     const currentGallery = editProduct.gallery || [];
-    if (currentGallery.length + files.length > 20) return showNotify("Max 20 images", "error");
+    if (currentGallery.length + files.length > 20) return showNotify("Max 20 images limit reached", "error");
     const base64Images = await Promise.all(files.map(f => fileToBase64(f)));
     setEditProduct({ ...editProduct, gallery: [...currentGallery, ...base64Images] });
   };
 
-  const removeGalleryImage = (index: number) => {
-    const newGallery = [...(editProduct.gallery || [])];
-    newGallery.splice(index, 1);
-    setEditProduct({ ...editProduct, gallery: newGallery });
-  };
-
   const saveProduct = async () => {
-    if (!editProduct.title || !editProduct.image) return showNotify("Title and Cover required", "error");
+    if (!editProduct.title || !editProduct.image) return showNotify("Title and Cover are required", "error");
     setIsPublishing(true);
     try {
       const payload = {
@@ -220,16 +201,16 @@ const App: React.FC = () => {
       await refreshData();
       setIsEditingProduct(false);
       setEditProduct({ title: '', price: 0, category: 'Themes', image: '', description: '', gallery: [], android_version: '' });
-      showNotify("Product saved!");
+      showNotify("Asset Published!");
     } catch (err: any) { 
-      showNotify(err.message || "Error saving", "error"); 
+      showNotify(err.message || "Save Error", "error"); 
     } finally { setIsPublishing(false); }
   };
 
   const saveVideo = async () => {
-    if (!editVideo.title || !editVideo.url) return showNotify("Fields required", "error");
+    if (!editVideo.title || !editVideo.url) return showNotify("All fields are required", "error");
     let vidId = editVideo.url.includes('v=') ? editVideo.url.split('v=')[1].split('&')[0] : editVideo.url.split('/').pop()?.split('?')[0];
-    if (!vidId) return showNotify("Invalid URL", "error");
+    if (!vidId) return showNotify("Invalid YouTube Link", "error");
     setIsPublishing(true);
     try {
       const { error } = await supabase.from('videos').upsert({ id: vidId, title: editVideo.title, url: editVideo.url });
@@ -237,33 +218,23 @@ const App: React.FC = () => {
       await refreshData();
       setIsEditingVideo(false);
       setEditVideo({ title: '', url: '' });
-      showNotify("Video added");
+      showNotify("Video Updated");
     } catch (err: any) { showNotify(err.message, "error"); } finally { setIsPublishing(false); }
   };
 
   const handleDeleteProduct = async (id: string) => {
-    if (!window.confirm("Delete permanently?")) return;
+    if (!window.confirm("Are you sure you want to delete this asset?")) return;
     try { 
       const { error } = await supabase.from('products').delete().eq('id', id);
       if (error) throw error;
       setDbProducts(prev => prev.filter(p => p.id !== id));
-      showNotify("Deleted");
-    } catch (err: any) { showNotify(err.message, "error"); }
-  };
-
-  const handleDeleteVideo = async (id: string) => {
-    if (!window.confirm("Delete tutorial?")) return;
-    try { 
-      const { error } = await supabase.from('videos').delete().eq('id', id);
-      if (error) throw error;
-      setDbVideos(prev => prev.filter(v => v.id !== id));
-      showNotify("Video deleted");
+      showNotify("Asset Deleted");
     } catch (err: any) { showNotify(err.message, "error"); }
   };
 
   const handleOrderRedirect = () => {
     if (!currentOrderedProduct) return;
-    const msg = `New Order:\n- ${currentOrderedProduct.title}\n- ${orderDevice}\n- ${currentOrderedProduct.price} EGP`;
+    const msg = `New Order Request:\nAsset: ${currentOrderedProduct.title}\nDevice: ${orderDevice}\nPrice: ${currentOrderedProduct.price} EGP`;
     window.open(`https://t.me/Mohamed_edge?text=${encodeURIComponent(msg)}`, '_blank');
   };
 
@@ -278,12 +249,12 @@ const App: React.FC = () => {
           <div className="w-full max-w-[340px] glass-panel p-8 rounded-[2.5rem] space-y-6 shadow-3xl">
             <div className="text-center space-y-2">
               <i className="fa-solid fa-lock text-[#007AFF] text-2xl"></i>
-              <h3 className="font-black uppercase text-xs tracking-widest">Admin login</h3>
+              <h3 className="font-black uppercase text-xs tracking-widest">Admin Control</h3>
             </div>
             <input type="password" value={passwordInput} onChange={e => setPasswordInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAuth()} className="w-full p-4 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-center text-2xl font-black outline-none border-2 border-transparent focus:border-[#007AFF]" placeholder="••••" autoFocus />
             <div className="grid grid-cols-2 gap-3">
               <button onClick={() => { setIsAuthModalOpen(false); window.location.hash = '#/'; }} className="py-4 text-[10px] font-black uppercase text-zinc-400">Cancel</button>
-              <button onClick={handleAuth} className="py-4 bg-[#007AFF] text-white rounded-2xl font-black uppercase text-[10px]">Login</button>
+              <button onClick={handleAuth} className="py-4 bg-[#007AFF] text-white rounded-2xl font-black uppercase text-[10px]">Verify</button>
             </div>
           </div>
         </div>
@@ -294,22 +265,30 @@ const App: React.FC = () => {
           <div className="space-y-16">
             <section className="space-y-8">
               <h2 className="text-2xl font-black tracking-tighter uppercase flex items-center gap-3">
-                <div className="w-1.5 h-6 bg-[#007AFF] rounded-full"></div> {activeSection === 'Home' ? 'Showcase' : activeSection}
+                <div className="w-1.5 h-6 bg-[#007AFF] rounded-full"></div> {activeSection === 'Home' ? 'Vault Showcase' : activeSection}
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                 {filteredProducts.map(p => <ProductCard key={p.id} product={p} onPreview={id => window.location.hash = `#/preview/${id}`} onBuy={id => { setOrderProductId(id); window.location.hash = '#/order'; }} />)}
                 {filteredProducts.length === 0 && !isLoading && (
-                  <div className="col-span-full py-20 text-center glass-panel rounded-[2rem] border-dashed border-2 border-zinc-200 dark:border-zinc-800 text-zinc-400 font-bold uppercase text-xs">No assets found in this section</div>
+                  <div className="col-span-full py-20 text-center glass-panel rounded-[2rem] border-dashed border-2 border-zinc-200 dark:border-zinc-800 text-zinc-400 font-bold uppercase text-xs">Library is currently empty</div>
                 )}
               </div>
             </section>
+            
             {activeSection === 'Home' && dbVideos.length > 0 && (
               <section className="space-y-8 pb-10">
                 <h2 className="text-2xl font-black tracking-tighter uppercase flex items-center gap-3"><div className="w-1.5 h-6 bg-red-600 rounded-full"></div> Tutorials</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   {dbVideos.map(v => (
                     <a key={v.id} href={v.url} target="_blank" className="glass-panel overflow-hidden rounded-[2.5rem] group border border-white/20 block">
-                      <div className="aspect-video w-full bg-zinc-900 relative"><img src={`https://img.youtube.com/vi/${v.id}/maxresdefault.jpg`} className="w-full h-full object-cover" alt="" /><div className="absolute inset-0 flex items-center justify-center"><div className="w-16 h-16 bg-red-600 text-white rounded-full flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform"><i className="fa-solid fa-play ml-1"></i></div></div></div>
+                      <div className="aspect-video w-full bg-zinc-900 relative">
+                        <img src={`https://img.youtube.com/vi/${v.id}/maxresdefault.jpg`} className="w-full h-full object-cover" alt="" />
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="w-16 h-16 bg-red-600 text-white rounded-full flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform">
+                            <i className="fa-solid fa-play ml-1"></i>
+                          </div>
+                        </div>
+                      </div>
                       <div className="p-6"><h4 className="font-black text-lg uppercase line-clamp-2">{v.title}</h4></div>
                     </a>
                   ))}
@@ -324,95 +303,70 @@ const App: React.FC = () => {
              <button onClick={() => window.location.hash = '#/'} className="w-10 h-10 mb-8 flex items-center justify-center bg-white dark:bg-zinc-800 rounded-full shadow-lg border border-zinc-200 dark:border-zinc-700 hover:scale-110 transition-transform"><i className="fa-solid fa-chevron-left"></i></button>
              
              <div className="flex flex-col lg:flex-row items-center lg:items-start gap-12 lg:gap-16 xl:gap-24">
-                {/* Responsive Mockup - Realistic Frame with 40px corner radius */}
+                {/* Responsive Mockup - 40px Corner Radius, No Dynamic Island */}
                 <div className="w-full flex flex-col items-center gap-8 lg:w-auto shrink-0">
-                   <div className="relative aspect-[1290/2796] w-full max-w-[300px] sm:max-w-[320px] md:max-w-[380px] lg:max-w-[420px] rounded-[40px] bg-[#1a1a1c] p-3.5 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.6)] ring-1 ring-zinc-100/10 outline outline-[1px] outline-zinc-600 overflow-hidden">
-                      
-                      {/* Hardware Buttons Silhouettes */}
+                   <div className="relative aspect-[1290/2796] w-full max-w-[300px] sm:max-w-[320px] md:max-w-[380px] lg:max-w-[420px] rounded-[40px] bg-[#1a1a1c] p-3 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.6)] ring-1 ring-zinc-100/10 outline outline-[1px] outline-zinc-600 overflow-hidden">
+                      {/* Hardware Buttons */}
                       <div className="absolute left-0 top-[20%] w-[3px] h-12 bg-[#2a2a2c] rounded-r-sm"></div>
                       <div className="absolute left-0 top-[28%] w-[3px] h-16 bg-[#2a2a2c] rounded-r-sm"></div>
-                      <div className="absolute left-0 top-[36%] w-[3px] h-16 bg-[#2a2a2c] rounded-r-sm"></div>
                       <div className="absolute right-0 top-[26%] w-[3px] h-24 bg-[#2a2a2c] rounded-l-sm"></div>
 
-                      {/* Screen Area - No Gaps, adjusted corner radius */}
-                      <div className="relative w-full h-full rounded-[28px] overflow-hidden bg-black ring-1 ring-white/10 shadow-[inset_0_0_20px_rgba(0,0,0,0.8)]">
+                      {/* Screen Area */}
+                      <div className="relative w-full h-full rounded-[30px] overflow-hidden bg-black ring-1 ring-white/10">
                         <img 
                           src={selectedProduct.gallery[previewImageIndex] || selectedProduct.image} 
                           className="relative z-10 w-full h-full object-cover transition-opacity duration-500" 
                           alt="" 
                         />
-                        
-                        {/* Subtle Screen Highlight */}
-                        <div className="absolute inset-0 z-15 bg-gradient-to-tr from-transparent via-white/[0.03] to-transparent pointer-events-none"></div>
                       </div>
                    </div>
                    
-                   {/* Thumbnail Selection */}
-                   <div className="flex flex-wrap gap-3 justify-center max-w-full">
+                   {/* Thumbs */}
+                   <div className="flex flex-wrap gap-3 justify-center">
                       {(selectedProduct.gallery.length > 0 ? selectedProduct.gallery : [selectedProduct.image]).map((img, idx) => (
-                        <button 
-                          key={idx} 
-                          onClick={() => setPreviewImageIndex(idx)} 
-                          className={`w-14 h-14 rounded-2xl overflow-hidden border-2 transition-all duration-300 ${previewImageIndex === idx ? 'border-[#007AFF] scale-110 shadow-lg shadow-blue-500/20' : 'border-transparent opacity-50 grayscale hover:opacity-100 hover:grayscale-0'}`}
-                        >
+                        <button key={idx} onClick={() => setPreviewImageIndex(idx)} className={`w-14 h-14 rounded-2xl overflow-hidden border-2 transition-all ${previewImageIndex === idx ? 'border-[#007AFF] scale-110 shadow-lg' : 'border-transparent opacity-50 grayscale hover:opacity-100 hover:grayscale-0'}`}>
                           <img src={img} className="w-full h-full object-cover" alt="" />
                         </button>
                       ))}
                    </div>
                 </div>
 
-                {/* Text Content Section */}
-                <div className="flex-1 w-full max-w-2xl space-y-10 lg:space-y-14 py-6">
-                   <div className="space-y-6 md:space-y-8 text-center lg:text-left flex flex-col items-center lg:items-start">
-                      <div className="flex flex-wrap gap-3 justify-center lg:justify-start">
-                        <span className="px-5 py-2 bg-zinc-100 dark:bg-zinc-800 rounded-full font-black text-[10px] md:text-[11px] uppercase border border-white/5 tracking-widest">{selectedProduct.category}</span>
+                <div className="flex-1 w-full max-w-2xl space-y-10 py-6">
+                   <div className="space-y-6 text-center lg:text-left flex flex-col items-center lg:items-start">
+                      <div className="flex gap-3">
+                        <span className="px-5 py-2 bg-zinc-100 dark:bg-zinc-800 rounded-full font-black text-[10px] uppercase border border-white/5 tracking-widest">{selectedProduct.category}</span>
                         {selectedProduct.android_version && (
-                          <span className="px-5 py-2 bg-orange-500/10 text-orange-600 rounded-full font-black text-[10px] md:text-[11px] uppercase border border-orange-500/20 flex items-center gap-2">
-                            <i className="fa-brands fa-android"></i>
-                            {selectedProduct.android_version}
+                          <span className="px-5 py-2 bg-orange-500/10 text-orange-600 rounded-full font-black text-[10px] uppercase border border-orange-500/20 flex items-center gap-2">
+                            <i className="fa-brands fa-android"></i> {selectedProduct.android_version}
                           </span>
                         )}
                       </div>
-                      
-                      <h2 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-black tracking-tighter uppercase leading-[1.1] break-words w-full">
-                        {selectedProduct.title}
-                      </h2>
-                      
-                      <p className="text-zinc-500 dark:text-zinc-400 text-sm md:text-base lg:text-xl font-medium leading-relaxed italic max-w-prose">
-                        "{selectedProduct.description}"
-                      </p>
+                      <h2 className="text-4xl lg:text-6xl font-black tracking-tighter uppercase leading-[1.1]">{selectedProduct.title}</h2>
+                      <p className="text-zinc-500 dark:text-zinc-400 text-lg font-medium leading-relaxed italic">"{selectedProduct.description}"</p>
                    </div>
 
-                   {/* Stats Grid */}
-                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="p-8 bg-zinc-50 dark:bg-zinc-900/60 rounded-[2.5rem] border border-white/5 shadow-sm text-center lg:text-left">
-                        <span className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.25em] block mb-2">Support</span>
-                        <span className="font-black text-xl uppercase tracking-tight">Realme & Oppo</span>
+                   <div className="grid grid-cols-2 gap-4">
+                      <div className="p-8 bg-zinc-50 dark:bg-zinc-900/60 rounded-[2.5rem] border border-white/5 shadow-sm text-center">
+                        <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block mb-2">Platform</span>
+                        <span className="font-black text-xl uppercase">Realme & Oppo</span>
                       </div>
-                      <div className="p-8 bg-zinc-50 dark:bg-zinc-900/60 rounded-[2.5rem] border border-white/5 shadow-sm text-center lg:text-left">
-                        <span className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.25em] block mb-2">Status</span>
-                        <span className="font-black text-xl uppercase tracking-tight">{selectedProduct.is_premium ? 'Premium' : 'Public'}</span>
+                      <div className="p-8 bg-zinc-50 dark:bg-zinc-900/60 rounded-[2.5rem] border border-white/5 shadow-sm text-center">
+                        <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block mb-2">Type</span>
+                        <span className="font-black text-xl uppercase">{selectedProduct.is_premium ? 'Premium' : 'Public'}</span>
                       </div>
                    </div>
 
-                   {/* Pricing & CTA */}
-                   <div className="p-10 md:p-14 bg-white dark:bg-zinc-900/40 rounded-[3.5rem] border border-zinc-100 dark:border-white/5 shadow-2xl space-y-10">
-                      <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
-                        <div className="text-center sm:text-left">
-                          <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3">One-Time License</p>
+                   <div className="p-10 bg-white dark:bg-zinc-900/40 rounded-[3.5rem] border border-zinc-100 dark:border-white/5 shadow-2xl space-y-10">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3">Investment</p>
                           <span className="text-4xl md:text-6xl font-black tracking-tighter text-[#007AFF]">
                             {selectedProduct.price === 0 ? 'FREE' : `${selectedProduct.price} EGP`}
                           </span>
                         </div>
-                        <i className="fa-solid fa-medal text-[#007AFF] text-5xl opacity-20 hidden md:block"></i>
+                        <i className="fa-solid fa-medal text-[#007AFF] text-5xl opacity-20"></i>
                       </div>
-                      <button 
-                        onClick={() => { setOrderProductId(selectedProduct.id); window.location.hash = '#/order'; }} 
-                        className="w-full py-8 bg-[#007AFF] text-white rounded-[2rem] font-black text-xl shadow-2xl shadow-blue-500/40 active:scale-95 transition-all flex items-center justify-center gap-4 group"
-                      >
-                        <i className="fa-solid fa-cart-shopping group-hover:scale-110 transition-transform"></i>
-                        PROCEED TO ORDER
-                      </button>
+                      <button onClick={() => { setOrderProductId(selectedProduct.id); window.location.hash = '#/order'; }} className="w-full py-8 bg-[#007AFF] text-white rounded-[2rem] font-black text-xl shadow-2xl shadow-blue-500/40 hover:scale-[1.02] active:scale-95 transition-all">START ORDER</button>
                    </div>
                 </div>
              </div>
@@ -420,67 +374,40 @@ const App: React.FC = () => {
         )}
 
         {activeSection === 'Order' && (
-          <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-8 px-2 md:px-0">
-            <div className="glass-panel p-6 sm:p-10 md:p-16 rounded-[2.5rem] sm:rounded-[3.5rem] md:rounded-[4.5rem] space-y-10 sm:space-y-14 text-center shadow-3xl">
+          <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-8">
+            <div className="glass-panel p-10 md:p-16 rounded-[4.5rem] space-y-14 text-center">
               <div className="space-y-4">
-                <div className="w-16 h-16 sm:w-24 sm:h-24 bg-[#007AFF]/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <i className="fa-solid fa-shield-halved text-[#007AFF] text-2xl sm:text-4xl"></i>
+                <div className="w-24 h-24 bg-[#007AFF]/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <i className="fa-solid fa-shield-halved text-[#007AFF] text-4xl"></i>
                 </div>
-                <h2 className="text-2xl sm:text-4xl md:text-5xl font-black uppercase tracking-tighter">Checkout Hub</h2>
-                <p className="text-zinc-500 font-medium text-xs sm:text-sm md:text-base max-w-md mx-auto">
-                  Premium assets are delivered instantly via our dedicated Telegram bot. Select your specifications below.
-                </p>
+                <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tighter">Gateway Portal</h2>
+                <p className="text-zinc-500 max-w-md mx-auto">Instant delivery through Mohamed Edge secure Telegram channel. Pick your preferences to continue.</p>
               </div>
 
-              <div className="space-y-6 sm:space-y-10 max-w-2xl mx-auto">
-                {/* Device Selection Grid - Responsive and Consistent */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-10 max-w-2xl mx-auto">
+                <div className="grid grid-cols-2 gap-4">
                   {['Realme', 'Oppo'].map(d => (
-                    <button 
-                      key={d} 
-                      onClick={() => setOrderDevice(d as any)} 
-                      className={`py-6 sm:py-8 rounded-[1.5rem] sm:rounded-[2rem] font-black text-lg sm:text-2xl border-2 transition-all flex items-center justify-center gap-4 ${orderDevice === d ? 'bg-[#007AFF] text-white border-[#007AFF] shadow-2xl shadow-blue-500/25' : 'bg-zinc-100/50 dark:bg-zinc-800/50 text-zinc-400 border-transparent hover:bg-zinc-200/50 dark:hover:bg-zinc-800/80'}`}
-                    >
-                      <i className={`fa-solid ${d === 'Realme' ? 'fa-mobile' : 'fa-mobile-screen'}`}></i>
+                    <button key={d} onClick={() => setOrderDevice(d as any)} className={`py-8 rounded-[2rem] font-black text-2xl border-2 transition-all ${orderDevice === d ? 'bg-[#007AFF] text-white border-[#007AFF]' : 'bg-zinc-100/50 dark:bg-zinc-800/50 text-zinc-400 border-transparent hover:bg-zinc-200'}`}>
                       {d}
                     </button>
                   ))}
                 </div>
 
-                <div className="space-y-4 text-left">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 ml-6">Select Your Asset</label>
-                  <select 
-                    className="w-full p-6 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] bg-zinc-100/50 dark:bg-zinc-800/50 font-black text-base sm:text-xl outline-none border-2 border-transparent focus:border-[#007AFF] transition-all appearance-none cursor-pointer" 
-                    value={orderProductId} 
-                    onChange={e => setOrderProductId(e.target.value)}
-                  >
-                    <option value="">Choose Asset...</option>
-                    {dbProducts.map(p => <option key={p.id} value={p.id}>{p.title} — {p.price} EGP</option>)}
-                  </select>
-                </div>
+                <select className="w-full p-8 rounded-[2rem] bg-zinc-100/50 dark:bg-zinc-800/50 font-black text-xl outline-none border-2 border-transparent focus:border-[#007AFF] transition-all" value={orderProductId} onChange={e => setOrderProductId(e.target.value)}>
+                  <option value="">Select Target Asset...</option>
+                  {dbProducts.map(p => <option key={p.id} value={p.id}>{p.title} — {p.price} EGP</option>)}
+                </select>
 
-                {currentOrderedProduct ? (
-                  <div className="space-y-6 sm:space-y-10 animate-in fade-in zoom-in-95 duration-500">
-                    <div className="p-8 sm:p-12 bg-orange-500/[0.03] border-2 border-dashed border-orange-500/20 rounded-[2rem] sm:rounded-[3rem] space-y-4 relative overflow-hidden group">
-                      <div className="absolute -top-4 -right-4 p-8 opacity-10 group-hover:scale-110 transition-transform">
-                        <i className="fa-solid fa-wallet text-6xl sm:text-8xl text-orange-600"></i>
-                      </div>
-                      <p className="text-orange-600 font-black text-[10px] sm:text-xs uppercase tracking-[0.3em]">Vodafone Cash Wallet</p>
-                      <div className="text-2xl sm:text-4xl md:text-5xl font-black tracking-widest text-orange-600 select-all font-mono">01091931466</div>
-                      <p className="text-zinc-400 text-[10px] font-bold">Tap the number to copy</p>
+                {currentOrderedProduct && (
+                  <div className="space-y-10 animate-in fade-in zoom-in-95">
+                    <div className="p-12 bg-orange-500/[0.03] border-2 border-dashed border-orange-500/20 rounded-[3rem] space-y-4">
+                      <p className="text-orange-600 font-black text-xs uppercase tracking-[0.3em]">Direct Wallet Transfer</p>
+                      <div className="text-4xl md:text-5xl font-black tracking-widest text-orange-600 select-all font-mono">01091931466</div>
+                      <p className="text-zinc-400 text-[10px] font-bold">Tap to copy phone number</p>
                     </div>
-                    
-                    <button 
-                      onClick={handleOrderRedirect} 
-                      className="w-full py-6 sm:py-9 bg-[#0088CC] text-white rounded-[1.5rem] sm:rounded-[2.5rem] font-black text-lg sm:text-2xl shadow-2xl shadow-[#0088CC]/25 flex items-center justify-center gap-4 hover:scale-[1.02] active:scale-95 transition-all group"
-                    >
-                      <i className="fa-brands fa-telegram text-2xl sm:text-4xl group-hover:rotate-12 transition-transform"></i>
-                      Order via Telegram
+                    <button onClick={handleOrderRedirect} className="w-full py-9 bg-[#0088CC] text-white rounded-[2.5rem] font-black text-2xl shadow-2xl flex items-center justify-center gap-4 hover:scale-[1.02] active:scale-95 transition-all">
+                      <i className="fa-brands fa-telegram text-4xl"></i> Contact via Telegram
                     </button>
-                  </div>
-                ) : (
-                  <div className="py-12 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-[2.5rem] text-zinc-400 font-black uppercase text-xs tracking-widest">
-                    Pick an asset to see instructions
                   </div>
                 )}
               </div>
@@ -506,12 +433,11 @@ const App: React.FC = () => {
                         <textarea className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black" value={editProduct.description} onChange={e => setEditProduct({...editProduct, description: e.target.value})} placeholder="Description" rows={3} />
                         <div className="grid grid-cols-2 gap-4">
                           <input type="number" className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black" value={editProduct.price} onChange={e => setEditProduct({...editProduct, price: Number(e.target.value)})} placeholder="Price" />
-                          <input className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black" value={editProduct.android_version} onChange={e => setEditProduct({...editProduct, android_version: e.target.value})} placeholder="Android 14/15" />
+                          <input className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black" value={editProduct.android_version} onChange={e => setEditProduct({...editProduct, android_version: e.target.value})} placeholder="Android Version" />
                         </div>
                         <select className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black" value={editProduct.category} onChange={e => setEditProduct({...editProduct, category: e.target.value as any})}><option value="Themes">Themes</option><option value="Widgets">Widgets</option><option value="Walls">Wallpapers</option></select>
                       </div>
                       <div className="space-y-4">
-                        <label className="text-[10px] font-black uppercase text-zinc-400 ml-4">Cover Image</label>
                         <div className="aspect-video bg-zinc-100 dark:bg-zinc-800 rounded-3xl overflow-hidden relative border-2 border-dashed border-zinc-300">
                           {editProduct.image ? <img src={editProduct.image} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center flex-col text-zinc-300"><i className="fa-solid fa-image text-3xl"></i><span className="text-[10px] font-bold mt-2">UPLOAD COVER</span></div>}
                           <input type="file" accept="image/*" onChange={async e => { if(e.target.files?.[0]) setEditProduct({...editProduct, image: await fileToBase64(e.target.files[0])}); }} className="absolute inset-0 opacity-0 cursor-pointer" />
@@ -519,17 +445,17 @@ const App: React.FC = () => {
                       </div>
                     </div>
                     <div className="space-y-4">
-                      <div className="flex justify-between items-center"><label className="text-[10px] font-black uppercase text-zinc-400">Gallery (Max 20)</label><span className="text-[10px] font-black text-[#007AFF]">{editProduct.gallery?.length || 0}/20</span></div>
+                      <div className="flex justify-between items-center"><label className="text-[10px] font-black uppercase text-zinc-400">Preview Gallery (Max 20)</label><span className="text-[10px] font-black text-[#007AFF]">{editProduct.gallery?.length || 0}/20</span></div>
                       <div className="flex flex-wrap gap-3">
                         {(editProduct.gallery || []).map((img, idx) => (
-                          <div key={idx} className="w-20 h-20 rounded-2xl overflow-hidden relative group"><img src={img} className="w-full h-full object-cover" /><button onClick={() => removeGalleryImage(idx)} className="absolute top-1 right-1 bg-red-600 text-white w-6 h-6 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100"><i className="fa-solid fa-xmark text-[10px]"></i></button></div>
+                          <div key={idx} className="w-20 h-20 rounded-2xl overflow-hidden relative group"><img src={img} className="w-full h-full object-cover" /><button onClick={() => { const g = [...(editProduct.gallery || [])]; g.splice(idx, 1); setEditProduct({...editProduct, gallery: g}); }} className="absolute top-1 right-1 bg-red-600 text-white w-6 h-6 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100"><i className="fa-solid fa-xmark text-[10px]"></i></button></div>
                         ))}
                         {(editProduct.gallery?.length || 0) < 20 && (
                           <div className="w-20 h-20 rounded-2xl bg-zinc-100 dark:bg-zinc-800 border-2 border-dashed border-zinc-300 flex items-center justify-center relative"><i className="fa-solid fa-plus text-zinc-400"></i><input type="file" multiple accept="image/*" onChange={handleGalleryUpload} className="absolute inset-0 opacity-0 cursor-pointer" /></div>
                         )}
                       </div>
                     </div>
-                    <button onClick={saveProduct} disabled={isPublishing} className="w-full py-6 bg-[#007AFF] text-white rounded-3xl font-black uppercase text-sm shadow-xl">{isPublishing ? 'SAVING...' : 'SAVE PRODUCT'}</button>
+                    <button onClick={saveProduct} disabled={isPublishing} className="w-full py-6 bg-[#007AFF] text-white rounded-3xl font-black uppercase text-sm shadow-xl">{isPublishing ? 'PUBLISHING...' : 'SAVE CHANGES'}</button>
                   </div>
                 )}
                 <div className="space-y-4">{dbProducts.map(p => (
@@ -543,18 +469,18 @@ const App: React.FC = () => {
 
             {adminTab === 'Videos' && (
               <div className="space-y-8">
-                <button onClick={() => { setEditVideo({ title: '', url: '' }); setIsEditingVideo(true); }} className="w-full py-6 bg-red-600 text-white rounded-3xl font-black uppercase text-xs">Add Tutorial</button>
+                <button onClick={() => { setEditVideo({ title: '', url: '' }); setIsEditingVideo(true); }} className="w-full py-6 bg-red-600 text-white rounded-3xl font-black uppercase text-xs">New Tutorial</button>
                 {isEditingVideo && (
-                  <div className="glass-panel p-10 rounded-[3rem] space-y-8 animate-in slide-in-from-top-4">
-                    <input className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black" value={editVideo.title} onChange={e => setEditVideo({...editVideo, title: e.target.value})} placeholder="Tutorial Title" />
+                  <div className="glass-panel p-10 rounded-[3rem] space-y-8">
+                    <input className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black" value={editVideo.title} onChange={e => setEditVideo({...editVideo, title: e.target.value})} placeholder="Title" />
                     <input className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black" value={editVideo.url} onChange={e => setEditVideo({...editVideo, url: e.target.value})} placeholder="YouTube Link" />
-                    <button onClick={saveVideo} disabled={isPublishing} className="w-full py-6 bg-red-600 text-white rounded-3xl font-black uppercase text-sm shadow-xl">{isPublishing ? 'Saving...' : 'Publish'}</button>
+                    <button onClick={saveVideo} disabled={isPublishing} className="w-full py-6 bg-red-600 text-white rounded-3xl font-black uppercase text-sm shadow-xl">Update Tutorial</button>
                   </div>
                 )}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">{dbVideos.map(v => (
                   <div key={v.id} className="p-5 glass-panel rounded-3xl flex items-center justify-between">
                     <div className="flex items-center gap-4 flex-1 min-w-0"><div className="w-20 aspect-video rounded-xl bg-zinc-900 shrink-0"><img src={`https://img.youtube.com/vi/${v.id}/mqdefault.jpg`} className="w-full h-full object-cover" /></div><p className="font-black text-sm truncate uppercase">{v.title}</p></div>
-                    <div className="flex gap-2"><button onClick={() => { setEditVideo(v); setIsEditingVideo(true); }} className="w-10 h-10 flex items-center justify-center bg-blue-500/10 text-blue-600 rounded-full"><i className="fa-solid fa-pen"></i></button><button onClick={() => handleDeleteVideo(v.id)} className="w-10 h-10 flex items-center justify-center bg-red-500/10 text-red-600 rounded-full"><i className="fa-solid fa-trash"></i></button></div>
+                    <div className="flex gap-2"><button onClick={() => { setEditVideo(v); setIsEditingVideo(true); }} className="w-10 h-10 flex items-center justify-center bg-blue-500/10 text-blue-600 rounded-full"><i className="fa-solid fa-pen"></i></button><button onClick={() => supabase.from('videos').delete().eq('id', v.id).then(refreshData)} className="w-10 h-10 flex items-center justify-center bg-red-500/10 text-red-600 rounded-full"><i className="fa-solid fa-trash"></i></button></div>
                   </div>
                 ))}</div>
               </div>
@@ -562,10 +488,28 @@ const App: React.FC = () => {
 
             {adminTab === 'Settings' && (
               <div className="glass-panel p-10 rounded-[3rem] space-y-12">
-                 <section className="space-y-4"><label className="text-[10px] font-black uppercase text-zinc-400">Admin Password</label><div className="flex flex-col gap-4"><input type="password" placeholder="New Password" className="w-full p-8 rounded-[2rem] bg-zinc-100 dark:bg-zinc-800 font-black text-xl" value={newPassInput} onChange={e => setNewPassInput(e.target.value)} /><button onClick={() => { if(newPassInput.trim()){ updateSetting('admin_password', newPassInput.trim()); setNewPassInput(''); } }} className="py-6 bg-[#007AFF] text-white rounded-[2rem] font-black uppercase text-xs shadow-xl">Update</button></div></section>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                    <section className="space-y-4"><label className="text-[10px] font-black uppercase text-zinc-400">Site Logo</label><div className="w-32 h-32 rounded-full overflow-hidden relative border-4 border-[#007AFF]/20 bg-zinc-100"><img src={siteLogo} className="w-full h-full object-cover" /><input type="file" accept="image/*" onChange={e => handleLogoUpload(e, 'site')} className="absolute inset-0 opacity-0 cursor-pointer" /></div></section>
-                    <section className="space-y-4"><label className="text-[10px] font-black uppercase text-zinc-400">Loader Logo</label><div className="w-32 h-32 rounded-full overflow-hidden relative border-4 border-[#007AFF]/20 bg-zinc-100"><img src={loaderLogo} className="w-full h-full object-cover" /><input type="file" accept="image/*" onChange={e => handleLogoUpload(e, 'loader')} className="absolute inset-0 opacity-0 cursor-pointer" /></div></section>
+                 <section className="space-y-4">
+                    <label className="text-[10px] font-black uppercase text-zinc-400">Master Credentials</label>
+                    <div className="flex flex-col gap-4">
+                      <input type="password" placeholder="Define New Password" className="w-full p-8 rounded-[2rem] bg-zinc-100 dark:bg-zinc-800 font-black text-xl" value={newPassInput} onChange={e => setNewPassInput(e.target.value)} />
+                      <button onClick={() => { if(newPassInput.trim()) updateSetting('admin_password', newPassInput.trim()).then(() => setNewPassInput('')); }} className="py-6 bg-[#007AFF] text-white rounded-[2rem] font-black uppercase text-xs">Update Security</button>
+                    </div>
+                 </section>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10 border-t border-zinc-100 dark:border-zinc-800 pt-10">
+                    <section className="space-y-4">
+                      <label className="text-[10px] font-black uppercase text-zinc-400">Navigation Brand</label>
+                      <div className="w-32 h-32 rounded-full overflow-hidden relative border-4 border-[#007AFF]/20 bg-zinc-100">
+                        <img src={siteLogo} className="w-full h-full object-cover" />
+                        <input type="file" accept="image/*" onChange={e => handleLogoUpload(e, 'site')} className="absolute inset-0 opacity-0 cursor-pointer" />
+                      </div>
+                    </section>
+                    <section className="space-y-4">
+                      <label className="text-[10px] font-black uppercase text-zinc-400">Splash Identity</label>
+                      <div className="w-32 h-32 rounded-full overflow-hidden relative border-4 border-[#007AFF]/20 bg-zinc-100">
+                        <img src={loaderLogo} className="w-full h-full object-cover" />
+                        <input type="file" accept="image/*" onChange={e => handleLogoUpload(e, 'loader')} className="absolute inset-0 opacity-0 cursor-pointer" />
+                      </div>
+                    </section>
                  </div>
               </div>
             )}
