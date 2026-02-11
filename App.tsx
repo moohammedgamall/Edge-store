@@ -356,7 +356,7 @@ const App: React.FC = () => {
                    </div>
                 </div>
 
-                {/* Product Details Section - Responsive Layout */}
+                {/* Product Details Section - Refined Font Sizes */}
                 <div className="flex-1 w-full max-w-3xl space-y-8 lg:space-y-10 py-4 lg:py-6">
                    <div className="space-y-4 md:space-y-6 text-center lg:text-left">
                       <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
@@ -368,10 +368,13 @@ const App: React.FC = () => {
                           </span>
                         )}
                       </div>
-                      <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black tracking-tighter uppercase leading-[0.95] break-words">
+                      
+                      {/* Refined Proportional Title */}
+                      <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter uppercase leading-[1.1] break-words">
                         {selectedProduct.title}
                       </h2>
-                      <p className="text-zinc-500 text-base md:text-lg lg:text-xl font-medium leading-relaxed italic border-l-0 lg:border-l-4 border-[#007AFF] lg:pl-6 py-2">
+                      
+                      <p className="text-zinc-500 text-sm md:text-base lg:text-lg font-medium leading-relaxed italic border-l-0 lg:border-l-4 border-[#007AFF] lg:pl-6 py-2">
                         "{selectedProduct.description}"
                       </p>
                    </div>
@@ -393,7 +396,7 @@ const App: React.FC = () => {
                       <div className="flex flex-col sm:flex-row items-center sm:items-end justify-between gap-4">
                         <div className="text-center sm:text-left">
                           <p className="text-[9px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2">Price for Unlimited License</p>
-                          <span className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter">
+                          <span className="text-4xl md:text-5xl font-black tracking-tighter">
                             {selectedProduct.price === 0 ? 'FREE' : `${selectedProduct.price} EGP`}
                           </span>
                         </div>
