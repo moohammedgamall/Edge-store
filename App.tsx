@@ -315,16 +315,16 @@ const App: React.FC = () => {
           <div className="max-w-6xl mx-auto pb-20 px-4 animate-in fade-in slide-in-from-bottom-8">
              <button onClick={() => window.location.hash = '#/'} className="w-10 h-10 mb-8 flex items-center justify-center bg-white dark:bg-zinc-800 rounded-full shadow-lg border border-zinc-200 dark:border-zinc-700 hover:scale-110 transition-transform"><i className="fa-solid fa-chevron-left"></i></button>
              <div className="flex flex-col items-center lg:flex-row lg:items-start gap-12 lg:gap-20">
-                {/* iPhone 15 Pro Mockup */}
+                {/* Black Titanium iPhone 15 Pro Mockup */}
                 <div className="w-full max-w-[420px] flex flex-col gap-10">
-                   <div className="relative aspect-[1290/2796] w-full rounded-[60px] bg-[#0F0F0F] p-[10px] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] ring-8 ring-[#252525] ring-inset outline outline-2 outline-white/10">
-                      {/* Side Buttons Mockup */}
-                      <div className="absolute -left-[10px] top-28 w-[4px] h-8 bg-[#333] rounded-l-md border-y border-white/10"></div>
-                      <div className="absolute -left-[10px] top-44 w-[4px] h-16 bg-[#333] rounded-l-md border-y border-white/10"></div>
-                      <div className="absolute -left-[10px] top-64 w-[4px] h-16 bg-[#333] rounded-l-md border-y border-white/10"></div>
-                      <div className="absolute -right-[10px] top-48 w-[4px] h-24 bg-[#333] rounded-r-md border-y border-white/10"></div>
+                   <div className="relative aspect-[1290/2796] w-full rounded-[50px] bg-gradient-to-br from-[#1c1c1c] via-[#0f0f0f] to-[#1c1c1c] p-[12px] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.6)] ring-1 ring-white/10 outline outline-[6px] outline-[#252525]">
+                      {/* Fluid Side Buttons */}
+                      <div className="absolute -left-[6px] top-28 w-[3px] h-8 bg-[#333] rounded-l-full border-y border-white/5"></div>
+                      <div className="absolute -left-[6px] top-44 w-[3px] h-16 bg-[#333] rounded-l-full border-y border-white/5"></div>
+                      <div className="absolute -left-[6px] top-64 w-[3px] h-16 bg-[#333] rounded-l-full border-y border-white/5"></div>
+                      <div className="absolute -right-[6px] top-48 w-[3px] h-24 bg-[#333] rounded-r-full border-y border-white/5"></div>
 
-                      <div className="relative w-full h-full rounded-[50px] overflow-hidden bg-black ring-1 ring-white/5">
+                      <div className="relative w-full h-full rounded-[40px] overflow-hidden bg-black shadow-inner ring-1 ring-white/5">
                         <img 
                           src={selectedProduct.gallery[previewImageIndex] || selectedProduct.image} 
                           className="w-full h-full object-cover transition-opacity duration-500" 
@@ -332,13 +332,12 @@ const App: React.FC = () => {
                         />
                         
                         {/* Dynamic Island */}
-                        <div className="absolute top-4 left-1/2 -translate-x-1/2 w-32 h-8 bg-black rounded-full flex items-center justify-center gap-2 shadow-xl ring-1 ring-white/10">
-                           <div className="w-2.5 h-2.5 rounded-full bg-[#111] ring-1 ring-white/5"></div>
-                           <div className="w-1.5 h-1.5 rounded-full bg-[#222]"></div>
+                        <div className="absolute top-4 left-1/2 -translate-x-1/2 w-28 h-7 bg-black rounded-full flex items-center justify-center gap-2 shadow-xl border border-white/5">
+                           <div className="w-2 h-2 rounded-full bg-[#111] border border-white/5"></div>
+                           <div className="w-1 h-1 rounded-full bg-[#222]"></div>
                         </div>
 
-                        {/* Bottom Home Indicator */}
-                        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-1/3 h-1 bg-white/40 rounded-full"></div>
+                        {/* Home Indicator Removed */}
                       </div>
                    </div>
                    
