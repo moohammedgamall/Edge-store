@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { Section, Product, YoutubeVideo } from './types';
 import { NAV_ITEMS } from './constants';
@@ -25,6 +25,7 @@ const App: React.FC = () => {
   const [activeSection, setActiveSection] = useState<Section>('Home');
   const [isLoading, setIsLoading] = useState(true);
   const [notification, setNotification] = useState<{message: string, type: 'success' | 'error'} | null>(null);
+  
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
     const stored = localStorage.getItem('theme');
     return stored ? stored === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -57,10 +58,18 @@ const App: React.FC = () => {
     setTimeout(() => setNotification(null), 4000);
   };
 
-  useEffect(() => {
-    if (isDarkMode) document.documentElement.classList.add('dark');
-    else document.documentElement.classList.remove('dark');
-    localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+  const handleThemeToggle = useCallback(() => {
+    const nextMode = !isDarkMode;
+    setIsDarkMode(nextMode);
+    
+    // Immediate DOM manipulation for speed
+    if (nextMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    
+    localStorage.setItem('theme', nextMode ? 'dark' : 'light');
   }, [isDarkMode]);
 
   useEffect(() => {
@@ -263,7 +272,7 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen pb-32">
-      <Header isAdmin={isAdminMode} onAdminTrigger={() => setIsAuthModalOpen(true)} onLogout={() => { setIsAdminMode(false); window.location.hash = '#/'; }} onThemeToggle={() => setIsDarkMode(!isDarkMode)} isDarkMode={isDarkMode} logoUrl={siteLogo} />
+      <Header isAdmin={isAdminMode} onAdminTrigger={() => setIsAuthModalOpen(true)} onLogout={() => { setIsAdminMode(false); window.location.hash = '#/'; }} onThemeToggle={handleThemeToggle} isDarkMode={isDarkMode} logoUrl={siteLogo} />
 
       {isAuthModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-xl">
