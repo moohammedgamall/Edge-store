@@ -322,20 +322,34 @@ const App: React.FC = () => {
              </div>
 
              <div className="flex flex-col items-center gap-12 lg:gap-20 lg:flex-row lg:items-start lg:justify-between">
-                {/* iPhone Mockup Area - Inspired by Desert Titanium Reference */}
+                {/* iPhone Mockup Area - Dynamic Finish based on Theme */}
                 <div className="w-full max-w-[340px] sm:max-w-[380px] md:max-w-[420px] lg:max-w-[460px] flex flex-col items-center gap-10">
                    
-                   {/* Custom High-Fidelity Mockup Container with 50px Corner Radius */}
+                   {/* Custom High-Fidelity Mockup Container */}
                    <div className="relative aspect-[1290/2796] w-full group">
                       
-                      {/* Frame: Outer Desert Titanium Border with Exact 50px Radius */}
-                      <div className="absolute -inset-[3.5px] rounded-[50px] bg-gradient-to-br from-[#E2B78D] via-[#C19A6B] to-[#917052] border border-white/20 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.6)]"></div>
+                      {/* Frame: Outer Titanium Border - Concentric Radius Logic (R_outer 54px) */}
+                      {/* Finish: Light Titanium in Dark Mode, Black Titanium in Light Mode */}
+                      <div className={`absolute -inset-[4px] rounded-[54px] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.8)] transition-all duration-500 ${
+                        isDarkMode ? 'bg-[#D4D4D2]' : 'bg-[#1C1C1E]'
+                      }`}>
+                         <div className={`absolute inset-0 rounded-[54px] bg-gradient-to-br transition-all duration-500 ${
+                           isDarkMode 
+                            ? 'from-[#EBEBEB] via-[#D4D4D2] to-[#B7B7B5]' 
+                            : 'from-[#2C2C2E] via-[#1C1C1E] to-[#0A0A0A]'
+                         }`}></div>
+                         
+                         {/* Subtle metallic edge highlight */}
+                         <div className={`absolute inset-[1.5px] rounded-[52.5px] border transition-all duration-500 pointer-events-none ${
+                           isDarkMode ? 'border-white/40' : 'border-white/5'
+                         }`}></div>
+                      </div>
                       
-                      {/* Bezel: Inner Deep Black Edge with Synchronized Radius */}
-                      <div className="absolute inset-[6px] rounded-[46px] bg-black p-[5.5px] shadow-[inset_0_0_15px_rgba(255,255,255,0.05)]">
+                      {/* Bezel: Inner Edge with Synchronized Radius (54 - 12 = 42px) */}
+                      <div className="absolute inset-[8px] rounded-[42px] bg-black shadow-[inset_0_0_15px_rgba(0,0,0,0.9)] transition-all">
                         
-                        {/* Display Area with 42px Radius to avoid clipping and display content more fully */}
-                        <div className="relative w-full h-full rounded-[42px] overflow-hidden bg-black shadow-[inset_0_0_30px_rgba(0,0,0,0.8)]">
+                        {/* Display Area with Concentric Radius (42 - 6 = 36px) */}
+                        <div className="absolute inset-[6px] rounded-[36px] overflow-hidden bg-black shadow-[inset_0_0_30px_rgba(0,0,0,0.95)]">
                            <img 
                              src={selectedProduct.gallery[previewImageIndex] || selectedProduct.image} 
                              className="w-full h-full object-cover animate-in fade-in duration-700 select-none" 
@@ -343,18 +357,16 @@ const App: React.FC = () => {
                              style={{ imageRendering: 'high-quality' }}
                            />
                            
-                           {/* Screen Gloss Reflection */}
+                           {/* Screen Gloss Reflection Overlay */}
                            <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent pointer-events-none z-10"></div>
                         </div>
                       </div>
 
-                      {/* Physical Buttons - Integrated and Subtle */}
-                      <div className="absolute -left-[3px] top-[18%] w-[4px] h-[4%] bg-[#A8825C] rounded-l shadow-sm z-20"></div>
-                      <div className="absolute -left-[3px] top-[26%] w-[4px] h-[9%] bg-[#A8825C] rounded-l shadow-sm z-20"></div>
-                      <div className="absolute -left-[3px] top-[37%] w-[4px] h-[9%] bg-[#A8825C] rounded-l shadow-sm z-20"></div>
-                      <div className="absolute -right-[3px] top-[30%] w-[4px] h-[12%] bg-[#A8825C] rounded-r shadow-sm z-20"></div>
-
-                      {/* No Dynamic Island Overlay - As requested */}
+                      {/* Physical Buttons - Titanium matching */}
+                      <div className={`absolute -left-[4px] top-[18%] w-[4px] h-[4%] rounded-l-sm shadow-sm z-20 transition-all ${isDarkMode ? 'bg-[#B7B7B5]' : 'bg-[#2C2C2E]'}`}></div>
+                      <div className={`absolute -left-[4px] top-[26%] w-[4px] h-[9%] rounded-l-sm shadow-sm z-20 transition-all ${isDarkMode ? 'bg-[#B7B7B5]' : 'bg-[#2C2C2E]'}`}></div>
+                      <div className={`absolute -left-[4px] top-[37%] w-[4px] h-[9%] rounded-l-sm shadow-sm z-20 transition-all ${isDarkMode ? 'bg-[#B7B7B5]' : 'bg-[#2C2C2E]'}`}></div>
+                      <div className={`absolute -right-[4px] top-[30%] w-[4px] h-[12%] rounded-r-sm shadow-sm z-20 transition-all ${isDarkMode ? 'bg-[#B7B7B5]' : 'bg-[#2C2C2E]'}`}></div>
                    </div>
 
                    {/* Gallery Assets Navigation */}
