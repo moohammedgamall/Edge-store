@@ -31,23 +31,19 @@ const App: React.FC = () => {
     return stored ? stored === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
   });
 
-  // --- Database State ---
   const [dbProducts, setDbProducts] = useState<Product[]>([]);
   const [dbVideos, setDbVideos] = useState<any[]>([]); 
   const [siteLogo, setSiteLogo] = useState<string>(() => localStorage.getItem('cached_site_logo') || "https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
   const [loaderLogo, setLoaderLogo] = useState<string>(() => localStorage.getItem('cached_loader_logo') || "https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
   const [adminPassword, setAdminPassword] = useState('1234');
 
-  // --- Order/UI State ---
   const [orderDevice, setOrderDevice] = useState<'Realme' | 'Oppo'>('Realme');
-  const [orderCategory, setOrderCategory] = useState<Section>('Themes');
   const [orderProductId, setOrderProductId] = useState<string>('');
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [passwordInput, setPasswordInput] = useState('');
   const [selectedProductId, setSelectedProductId] = useState<string>('');
   const [previewImageIndex, setPreviewImageIndex] = useState(0);
   
-  // --- Admin State ---
   const [adminTab, setAdminTab] = useState<'Inventory' | 'Videos' | 'Settings'>('Inventory');
   const [isPublishing, setIsPublishing] = useState(false);
   const [isEditingProduct, setIsEditingProduct] = useState(false);
@@ -66,7 +62,6 @@ const App: React.FC = () => {
     localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
   }, [isDarkMode]);
 
-  // Handle HTML Splash Screen visibility
   useEffect(() => {
     const splash = document.getElementById('static-loader');
     if (!isLoading && splash) {
@@ -78,32 +73,18 @@ const App: React.FC = () => {
     try {
       const prodRes = await supabase.from('products').select('*').order('created_at', { ascending: false });
       if (!prodRes.error && prodRes.data) {
-        if (prodRes.data.length > 0) {
-          setDbProducts(prodRes.data.map(p => ({ ...p, gallery: Array.isArray(p.gallery) ? p.gallery : [] })));
-        } else {
-          setDbProducts([]);
-        }
+        setDbProducts(prodRes.data.map(p => ({ ...p, gallery: Array.isArray(p.gallery) ? p.gallery : [] })));
       } else {
         setDbProducts(MOCK_PRODUCTS);
       }
-
       const vidRes = await supabase.from('videos').select('*').order('created_at', { ascending: false });
-      if (!vidRes.error && vidRes.data) {
-        setDbVideos(vidRes.data);
-      }
-
+      if (!vidRes.error && vidRes.data) setDbVideos(vidRes.data);
       const setRes = await supabase.from('settings').select('*');
       if (setRes.data) {
         setRes.data.forEach(s => {
           if (s.key === 'admin_password') setAdminPassword(s.value.toString().trim());
-          if (s.key === 'site_logo') {
-            setSiteLogo(s.value);
-            localStorage.setItem('cached_site_logo', s.value);
-          }
-          if (s.key === 'loader_logo') {
-            setLoaderLogo(s.value);
-            localStorage.setItem('cached_loader_logo', s.value);
-          }
+          if (s.key === 'site_logo') { setSiteLogo(s.value); localStorage.setItem('cached_site_logo', s.value); }
+          if (s.key === 'loader_logo') { setLoaderLogo(s.value); localStorage.setItem('cached_loader_logo', s.value); }
         });
       }
     } catch (err) {
@@ -161,14 +142,8 @@ const App: React.FC = () => {
     try {
       await supabase.from('settings').upsert({ key, value });
       if (key === 'admin_password') setAdminPassword(value.trim());
-      if (key === 'site_logo') {
-        setSiteLogo(value);
-        localStorage.setItem('cached_site_logo', value);
-      }
-      if (key === 'loader_logo') {
-        setLoaderLogo(value);
-        localStorage.setItem('cached_loader_logo', value);
-      }
+      if (key === 'site_logo') { setSiteLogo(value); localStorage.setItem('cached_site_logo', value); }
+      if (key === 'loader_logo') { setLoaderLogo(value); localStorage.setItem('cached_loader_logo', value); }
       showNotify("Settings updated");
     } catch (err) { showNotify("Sync error", "error"); }
   };
@@ -179,21 +154,14 @@ const App: React.FC = () => {
     try {
       const base64 = await fileToBase64(file);
       await updateSetting(type === 'site' ? 'site_logo' : 'loader_logo', base64);
-    } catch (err) {
-      showNotify("Failed to upload logo", "error");
-    }
+    } catch (err) { showNotify("Failed to upload logo", "error"); }
   };
 
   const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []) as File[];
     if (files.length === 0) return;
-    
     const currentGallery = editProduct.gallery || [];
-    if (currentGallery.length + files.length > 20) {
-      showNotify("Maximum 20 images allowed", "error");
-      return;
-    }
-
+    if (currentGallery.length + files.length > 20) { showNotify("Max 20 images", "error"); return; }
     const base64Images = await Promise.all(files.map(f => fileToBase64(f)));
     setEditProduct({ ...editProduct, gallery: [...currentGallery, ...base64Images] });
   };
@@ -205,7 +173,7 @@ const App: React.FC = () => {
   };
 
   const saveProduct = async () => {
-    if (!editProduct.title || !editProduct.image) return showNotify("Please complete all fields", "error");
+    if (!editProduct.title || !editProduct.image) return showNotify("Incomplete fields", "error");
     setIsPublishing(true);
     try {
       const payload = {
@@ -224,75 +192,44 @@ const App: React.FC = () => {
       await refreshData();
       setIsEditingProduct(false);
       setEditProduct({ title: '', price: 0, category: 'Themes', image: '', description: '', gallery: [], android_version: '' });
-      showNotify("Product saved successfully");
-    } catch (err) { showNotify("Failed to save product", "error"); } finally { setIsPublishing(false); }
+      showNotify("Product saved");
+    } catch (err) { showNotify("Failed to save", "error"); } finally { setIsPublishing(false); }
   };
 
   const saveVideo = async () => {
-    if (!editVideo.title || !editVideo.url) return showNotify("Please complete all fields", "error");
-    
+    if (!editVideo.title || !editVideo.url) return showNotify("Incomplete fields", "error");
     let vidId = '';
     const url = editVideo.url;
     if (url.includes('v=')) vidId = url.split('v=')[1].split('&')[0];
     else if (url.includes('youtu.be/')) vidId = url.split('youtu.be/')[1].split('?')[0];
     else if (url.includes('shorts/')) vidId = url.split('shorts/')[1].split('?')[0];
     else vidId = url.split('/').pop() || '';
-
-    if (!vidId) return showNotify("Invalid YouTube URL", "error");
-
+    if (!vidId) return showNotify("Invalid URL", "error");
     setIsPublishing(true);
     try {
-      await supabase.from('videos').upsert({ 
-        id: vidId, 
-        title: editVideo.title, 
-        url: editVideo.url 
-      });
+      await supabase.from('videos').upsert({ id: vidId, title: editVideo.title, url: editVideo.url });
       await refreshData();
       setIsEditingVideo(false);
       setEditVideo({ title: '', url: '' });
-      showNotify("Video saved successfully");
-    } catch (err) { 
-      showNotify("Error saving video", "error"); 
-    } finally { 
-      setIsPublishing(false); 
-    }
+      showNotify("Video saved");
+    } catch (err) { showNotify("Error saving", "error"); } finally { setIsPublishing(false); }
   };
 
   const handleDeleteProduct = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this product? This action cannot be undone.")) {
-      try {
-        const { error } = await supabase.from('products').delete().eq( 'id', id);
-        if (error) throw error;
-        showNotify("Product deleted successfully");
-        setDbProducts(prev => prev.filter(p => p.id !== id));
-        refreshData();
-      } catch (err) {
-        showNotify("Error deleting product", "error");
-      }
+    if (window.confirm("Delete product?")) {
+      try { await supabase.from('products').delete().eq('id', id); refreshData(); showNotify("Deleted"); } catch (err) { showNotify("Error", "error"); }
     }
   };
 
   const handleDeleteVideo = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this video?")) {
-      try {
-        const { error } = await supabase.from('videos').delete().eq('id', id);
-        if (error) throw error;
-        showNotify("Video deleted successfully");
-        setDbVideos(prev => prev.filter(v => v.id !== id));
-        refreshData();
-      } catch (err) {
-        showNotify("Error deleting video", "error");
-      }
+    if (window.confirm("Delete video?")) {
+      try { await supabase.from('videos').delete().eq('id', id); refreshData(); showNotify("Deleted"); } catch (err) { showNotify("Error", "error"); }
     }
   };
 
   const handleOrderRedirect = () => {
     if (!currentOrderedProduct) return;
-    const message = `New Order from Mohamed Edge:
-- Product: ${currentOrderedProduct.title}
-- Category: ${currentOrderedProduct.category}
-- Device: ${orderDevice}
-- Price: ${currentOrderedProduct.price} EGP`;
+    const message = `New Order from Mohamed Edge:\n- Product: ${currentOrderedProduct.title}\n- Category: ${currentOrderedProduct.category}\n- Device: ${orderDevice}\n- Price: ${currentOrderedProduct.price} EGP`;
     window.open(`https://t.me/Mohamed_edge?text=${encodeURIComponent(message)}`, '_blank');
   };
 
@@ -345,53 +282,29 @@ const App: React.FC = () => {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                 {filteredProducts.map(p => (
-                  <ProductCard 
-                    key={p.id} 
-                    product={p} 
-                    onPreview={(id) => window.location.hash = `#/preview/${id}`} 
-                    onBuy={(id) => { setOrderProductId(id); window.location.hash = '#/order'; }} 
-                  />
+                  <ProductCard key={p.id} product={p} onPreview={(id) => window.location.hash = `#/preview/${id}`} onBuy={(id) => { setOrderProductId(id); window.location.hash = '#/order'; }} />
                 ))}
-                {filteredProducts.length === 0 && (
-                  <div className="col-span-full py-20 text-center space-y-4 opacity-40">
-                    <i className="fa-solid fa-box-open text-6xl"></i>
-                    <p className="font-black uppercase text-xs tracking-widest">No assets found</p>
-                  </div>
-                )}
               </div>
             </section>
 
             {activeSection === 'Home' && dbVideos.length > 0 && (
               <section className="space-y-8 pb-10">
-                <div className="flex justify-between items-end px-1">
-                  <h2 className="text-2xl font-black tracking-tighter uppercase flex items-center gap-3">
-                    <div className="w-1.5 h-6 bg-red-600 rounded-full shadow-[0_0_10px_rgba(220,38,38,0.5)]"></div> Latest Tutorials
-                  </h2>
-                </div>
+                <h2 className="text-2xl font-black tracking-tighter uppercase flex items-center gap-3">
+                  <div className="w-1.5 h-6 bg-red-600 rounded-full"></div> Latest Tutorials
+                </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   {dbVideos.map((video) => (
-                    <a 
-                      key={video.id} 
-                      href={video.url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="glass-panel overflow-hidden rounded-[2.5rem] shadow-xl group hover:scale-[1.02] active:scale-95 transition-all duration-500 border border-white/20 dark:border-white/5 block"
-                    >
+                    <a key={video.id} href={video.url} target="_blank" rel="noopener noreferrer" className="glass-panel overflow-hidden rounded-[2.5rem] shadow-xl group transition-all border border-white/20 block">
                       <div className="aspect-video w-full bg-zinc-900 relative overflow-hidden">
-                        <img 
-                          src={`https://img.youtube.com/vi/${video.id}/maxresdefault.jpg`} 
-                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
-                          alt={video.title}
-                          onError={(e) => { (e.target as HTMLImageElement).src = `https://img.youtube.com/vi/${video.id}/hqdefault.jpg`; }}
-                        />
-                        <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors flex items-center justify-center">
-                           <div className="w-20 h-20 bg-red-600 text-white rounded-full flex items-center justify-center shadow-2xl shadow-red-600/50 transform group-hover:scale-125 transition-transform duration-500">
-                             <i className="fa-solid fa-play text-3xl ml-1"></i>
+                        <img src={`https://img.youtube.com/vi/${video.id}/maxresdefault.jpg`} className="w-full h-full object-cover transition-transform group-hover:scale-105" alt={video.title} />
+                        <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                           <div className="w-16 h-16 bg-red-600 text-white rounded-full flex items-center justify-center shadow-2xl transform group-hover:scale-110 transition-transform">
+                             <i className="fa-solid fa-play text-2xl ml-1"></i>
                            </div>
                         </div>
                       </div>
                       <div className="p-6">
-                        <h4 className="font-black text-lg tracking-tight uppercase line-clamp-2 leading-tight group-hover:text-red-600 transition-colors">{video.title}</h4>
+                        <h4 className="font-black text-lg tracking-tight uppercase line-clamp-2">{video.title}</h4>
                       </div>
                     </a>
                   ))}
@@ -403,72 +316,53 @@ const App: React.FC = () => {
 
         {activeSection === 'Preview' && selectedProduct && (
           <div className="max-w-6xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-700 pb-20 px-4">
-             <div className="flex items-center mb-8 md:mb-12">
-               <button 
-                onClick={() => { window.location.hash = '#/'; }}
-                className="w-12 h-12 md:w-14 md:h-14 flex items-center justify-center bg-white dark:bg-zinc-800 rounded-full shadow-lg border border-zinc-200 dark:border-zinc-700 active:scale-90 transition-all hover:bg-zinc-50 dark:hover:bg-zinc-700 group"
-                aria-label="Back to Store"
-               >
-                 <i className="fa-solid fa-chevron-left text-zinc-800 dark:text-zinc-200 text-lg group-hover:-translate-x-0.5 transition-transform"></i>
+             <div className="flex items-center mb-8">
+               <button onClick={() => window.location.hash = '#/'} className="w-12 h-12 flex items-center justify-center bg-white dark:bg-zinc-800 rounded-full shadow-lg border border-zinc-200 dark:border-zinc-700 active:scale-90 transition-all hover:bg-zinc-50 dark:hover:bg-zinc-700">
+                 <i className="fa-solid fa-chevron-left text-zinc-800 dark:text-zinc-200"></i>
                </button>
              </div>
 
              <div className="flex flex-col items-center gap-12 lg:gap-20 lg:flex-row lg:items-start lg:justify-between">
-                {/* Hero Mockup Area */}
-                <div className="w-full max-w-[340px] sm:max-w-[400px] lg:max-w-[440px] flex flex-col items-center gap-10">
-                   {/* Refined iPhone Pro Max Mockup with Proportional Buttons */}
-                   <div className={`relative aspect-[1290/2796] w-full rounded-[3.8rem] p-[8px] transition-all duration-700 shadow-[0_60px_120px_-30px_rgba(0,0,0,0.6)] ${
+                {/* Responsive Mockup Area */}
+                <div className="w-full max-w-[340px] sm:max-w-[380px] md:max-w-[420px] lg:max-w-[460px] flex flex-col items-center gap-10">
+                   {/* Refined iPhone Pro Max Mockup with Balanced Scaling */}
+                   <div className={`relative aspect-[1290/2796] w-full rounded-[3.8rem] md:rounded-[4.2rem] p-[7px] md:p-[9px] transition-all duration-700 shadow-[0_60px_120px_-30px_rgba(0,0,0,0.6)] ${
                      isDarkMode 
                      ? 'bg-gradient-to-br from-[#2c2c2e] via-[#3a3a3c] to-[#1c1c1e]' 
                      : 'bg-gradient-to-br from-[#d2d2d7] via-[#e8e8ed] to-[#b8b8bc]'
                    }`}>
-                      {/* Metallic Outer Hedges - Realistic Titanium Shell */}
-                      <div className={`absolute -inset-[3.5px] rounded-[4.1rem] border-[11px] pointer-events-none z-10 transition-colors duration-500 ${
+                      {/* Metallic Bezel - Scaled Proportionally */}
+                      <div className={`absolute -inset-[4px] rounded-[4.1rem] md:rounded-[4.6rem] border-[10px] md:border-[14px] pointer-events-none z-10 transition-colors duration-500 ${
                         isDarkMode 
-                        ? 'border-zinc-700/90 shadow-[inset_0_0_12px_rgba(0,0,0,0.8),0_0_0_1px_rgba(255,255,255,0.05)]' 
-                        : 'border-zinc-300/90 shadow-[inset_0_0_8px_rgba(255,255,255,0.6),0_0_0_1px_rgba(0,0,0,0.05)]'
+                        ? 'border-zinc-700/90 shadow-[inset_0_0_12px_rgba(0,0,0,0.8)]' 
+                        : 'border-zinc-300/90 shadow-[inset_0_0_8px_rgba(255,255,255,0.6)]'
                       }`}></div>
                       
-                      {/* High-Fidelity Physical Buttons - Proportional & Integrated */}
-                      {/* Left Side: Action Button + Volume Up/Down */}
-                      <div className={`absolute -left-[3px] top-[18%] w-[6px] h-[5%] rounded-l-md shadow-sm z-20 border-r border-black/10 transition-colors ${isDarkMode ? 'bg-zinc-600' : 'bg-zinc-400'}`}></div>
-                      <div className={`absolute -left-[3px] top-[26%] w-[6px] h-[9%] rounded-l-md shadow-sm z-20 border-r border-black/10 transition-colors ${isDarkMode ? 'bg-zinc-600' : 'bg-zinc-400'}`}></div>
-                      <div className={`absolute -left-[3px] top-[37.5%] w-[6px] h-[9%] rounded-l-md shadow-sm z-20 border-r border-black/10 transition-colors ${isDarkMode ? 'bg-zinc-600' : 'bg-zinc-400'}`}></div>
-                      
-                      {/* Right Side: Power Button */}
-                      <div className={`absolute -right-[3px] top-[30%] w-[6px] h-[12%] rounded-r-md shadow-sm z-20 border-l border-black/10 transition-colors ${isDarkMode ? 'bg-zinc-600' : 'bg-zinc-400'}`}></div>
+                      {/* Scaled Physical Buttons */}
+                      <div className={`absolute -left-[4px] top-[18%] w-[8px] h-[5%] rounded-l-md z-20 transition-colors ${isDarkMode ? 'bg-zinc-600' : 'bg-zinc-400'}`}></div>
+                      <div className={`absolute -left-[4px] top-[26%] w-[8px] h-[10%] rounded-l-md z-20 transition-colors ${isDarkMode ? 'bg-zinc-600' : 'bg-zinc-400'}`}></div>
+                      <div className={`absolute -left-[4px] top-[38%] w-[8px] h-[10%] rounded-l-md z-20 transition-colors ${isDarkMode ? 'bg-zinc-600' : 'bg-zinc-400'}`}></div>
+                      <div className={`absolute -right-[4px] top-[32%] w-[8px] h-[13%] rounded-r-md z-20 transition-colors ${isDarkMode ? 'bg-zinc-600' : 'bg-zinc-400'}`}></div>
 
-                      {/* Display Viewport - Perfect Squircle Rounding */}
-                      <div className="flex-1 w-full h-full bg-black rounded-[3.3rem] overflow-hidden relative shadow-[inset_0_0_30px_rgba(0,0,0,1)] flex items-center justify-center">
-                         <img 
-                           src={selectedProduct.gallery[previewImageIndex] || selectedProduct.image} 
-                           className="w-full h-full object-cover animate-in fade-in duration-1000 select-none" 
-                           alt="Asset Preview"
-                         />
+                      {/* Content Viewport with Synchronized Corner Radii to Prevent Clipping */}
+                      <div className="flex-1 w-full h-full bg-black rounded-[3.2rem] md:rounded-[3.7rem] overflow-hidden relative shadow-[inset_0_0_30px_rgba(0,0,0,1)] flex items-center justify-center">
+                         <img src={selectedProduct.gallery[previewImageIndex] || selectedProduct.image} className="w-full h-full object-cover animate-in fade-in duration-700 select-none" alt="Asset" />
                          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent pointer-events-none"></div>
                       </div>
                    </div>
 
-                   {/* Gallery Thumbnails Strip - Complete Visibility Wrapping Layout */}
+                   {/* Gallery View - Full Count Visibility */}
                    {selectedProduct.gallery && selectedProduct.gallery.length > 0 && (
                      <div className="w-full space-y-6">
-                        <div className="flex items-center justify-center gap-3 px-4">
-                           <div className="h-px bg-zinc-200 dark:bg-zinc-800 flex-1"></div>
-                           <p className="text-[10px] font-black uppercase text-zinc-400 tracking-[0.3em] whitespace-nowrap opacity-60">Visual Library</p>
-                           <div className="h-px bg-zinc-200 dark:bg-zinc-800 flex-1"></div>
+                        <div className="flex items-center justify-center gap-3 px-4 opacity-50">
+                           <div className="h-px bg-zinc-400 flex-1"></div>
+                           <p className="text-[10px] font-black uppercase tracking-[0.4em] whitespace-nowrap">Explore Gallery</p>
+                           <div className="h-px bg-zinc-400 flex-1"></div>
                         </div>
-                        <div className="flex flex-wrap gap-3 sm:gap-4 py-2 px-1 w-full justify-center">
+                        <div className="flex flex-wrap gap-2 sm:gap-4 py-2 px-1 w-full justify-center">
                            {selectedProduct.gallery.map((img, idx) => (
-                             <button 
-                               key={idx}
-                               onClick={() => setPreviewImageIndex(idx)}
-                               className={`w-[calc(33.33%-8px)] sm:w-20 sm:h-20 md:w-24 md:h-24 aspect-square rounded-2xl overflow-hidden shrink-0 border-[3px] transition-all duration-300 ${
-                                 previewImageIndex === idx 
-                                 ? 'border-[#007AFF] scale-110 shadow-2xl ring-4 ring-[#007AFF]/20 z-10' 
-                                 : 'border-transparent opacity-40 hover:opacity-100 hover:scale-105 hover:z-10'
-                               }`}
-                             >
-                                <img src={img} className="w-full h-full object-cover" alt={`Preview ${idx + 1}`} />
+                             <button key={idx} onClick={() => setPreviewImageIndex(idx)} className={`w-[calc(25%-8px)] sm:w-16 sm:h-16 md:w-20 md:h-20 aspect-square rounded-xl overflow-hidden shrink-0 border-[3px] transition-all duration-300 ${previewImageIndex === idx ? 'border-[#007AFF] scale-110 shadow-2xl z-10' : 'border-transparent opacity-40 hover:opacity-100 hover:scale-105'}`}>
+                                <img src={img} className="w-full h-full object-cover" />
                              </button>
                            ))}
                         </div>
@@ -476,71 +370,66 @@ const App: React.FC = () => {
                    )}
                 </div>
 
-                {/* Content Area - Product Specs & Checkout */}
+                {/* Content Area */}
                 <div className="w-full lg:flex-1 lg:pt-10 flex flex-col gap-10">
                    <div className="space-y-8 text-center lg:text-left">
                       <div className="flex flex-wrap justify-center lg:justify-start gap-4">
-                         <div className="px-5 py-2 bg-[#007AFF]/10 text-[#007AFF] font-black text-[10px] uppercase tracking-widest rounded-full border border-[#007AFF]/20 shadow-sm">
+                         <div className="px-5 py-2 bg-[#007AFF]/10 text-[#007AFF] font-black text-[10px] uppercase rounded-full border border-[#007AFF]/20">
                            {selectedProduct.category}
                          </div>
                          {selectedProduct.android_version && (
-                            <div className="px-5 py-2 bg-orange-500/10 text-orange-600 font-black text-[10px] uppercase tracking-widest rounded-full border border-orange-500/20 shadow-sm">
+                            <div className="px-5 py-2 bg-orange-500/10 text-orange-600 font-black text-[10px] uppercase rounded-full border border-orange-500/20">
                               <i className="fa-brands fa-android mr-2 text-xs"></i>{selectedProduct.android_version}
                             </div>
                          )}
                       </div>
                       
                       <div className="space-y-4">
-                        <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-zinc-900 dark:text-zinc-100 tracking-tighter leading-none uppercase">
+                        <h2 className="text-4xl sm:text-5xl md:text-6xl font-black text-zinc-900 dark:text-zinc-100 tracking-tighter leading-none uppercase">
                           {selectedProduct.title}
                         </h2>
-                        <p className="text-zinc-500 dark:text-zinc-400 font-medium text-lg sm:text-xl md:text-2xl italic leading-relaxed max-w-xl mx-auto lg:mx-0 opacity-80">
+                        <p className="text-zinc-500 dark:text-zinc-400 font-medium text-lg md:text-xl italic leading-relaxed max-w-xl mx-auto lg:mx-0 opacity-80">
                           "{selectedProduct.description}"
                         </p>
                       </div>
                    </div>
 
-                   {/* Features Section */}
+                   {/* Specs Grid */}
                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full">
-                      <div className="flex items-center gap-6 p-6 sm:p-8 bg-zinc-50 dark:bg-zinc-900/40 rounded-[2.5rem] border border-zinc-100 dark:border-white/5 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-900/60">
-                         <div className="w-12 h-12 sm:w-14 sm:h-14 bg-[#007AFF]/10 rounded-2xl flex items-center justify-center shrink-0">
-                            <i className="fa-solid fa-mobile-screen-button text-[#007AFF] text-xl sm:text-2xl"></i>
+                      <div className="flex items-center gap-6 p-6 bg-zinc-50 dark:bg-zinc-900/40 rounded-[2.5rem] border border-zinc-100 dark:border-white/5">
+                         <div className="w-12 h-12 bg-[#007AFF]/10 rounded-2xl flex items-center justify-center shrink-0">
+                            <i className="fa-solid fa-mobile-screen-button text-[#007AFF] text-xl"></i>
                          </div>
-                         <div className="flex flex-col min-w-0">
-                            <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1 truncate">Platform Architecture</span>
-                            <span className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-zinc-100 uppercase truncate">{selectedProduct.compatibility}</span>
+                         <div className="flex flex-col">
+                            <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Architecture</span>
+                            <span className="text-lg font-bold text-zinc-900 dark:text-zinc-100 uppercase">{selectedProduct.compatibility}</span>
                          </div>
                       </div>
-                      <div className="flex items-center gap-6 p-6 sm:p-8 bg-zinc-50 dark:bg-zinc-900/40 rounded-[2.5rem] border border-zinc-100 dark:border-white/5 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-900/60">
-                         <div className="w-12 h-12 sm:w-14 sm:h-14 bg-orange-500/10 rounded-2xl flex items-center justify-center shrink-0">
-                            <i className="fa-solid fa-crown text-orange-500 text-xl sm:text-2xl"></i>
+                      <div className="flex items-center gap-6 p-6 bg-zinc-50 dark:bg-zinc-900/40 rounded-[2.5rem] border border-zinc-100 dark:border-white/5">
+                         <div className="w-12 h-12 bg-orange-500/10 rounded-2xl flex items-center justify-center shrink-0">
+                            <i className="fa-solid fa-crown text-orange-500 text-xl"></i>
                          </div>
-                         <div className="flex flex-col min-w-0">
-                            <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1 truncate">Digital License</span>
-                            <span className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-zinc-100 uppercase truncate">{selectedProduct.is_premium ? 'Premium Asset' : 'Free Resource'}</span>
+                         <div className="flex flex-col">
+                            <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Type</span>
+                            <span className="text-lg font-bold text-zinc-900 dark:text-zinc-100 uppercase">{selectedProduct.is_premium ? 'Premium' : 'Standard'}</span>
                          </div>
                       </div>
                    </div>
 
-                   {/* Purchase Interface */}
+                   {/* CTA Section */}
                    <div className="mt-6 flex flex-col gap-10 bg-white dark:bg-zinc-900/40 lg:bg-transparent rounded-[3.5rem] p-10 lg:p-0 shadow-2xl lg:shadow-none">
-                      <div className="text-center lg:text-left group">
-                        <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.5em] mb-3 opacity-60">Asset Pricing</p>
-                        <span className="text-6xl sm:text-7xl font-black text-zinc-900 dark:text-zinc-100 tracking-tighter group-hover:text-[#007AFF] transition-colors duration-500">
+                      <div className="text-center lg:text-left">
+                        <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.5em] mb-3 opacity-60">Price</p>
+                        <span className="text-6xl font-black text-zinc-900 dark:text-zinc-100 tracking-tighter">
                           {selectedProduct.price === 0 ? 'FREE' : `${selectedProduct.price.toFixed(2)} EGP`}
                         </span>
                       </div>
-                      
-                      <button 
-                        onClick={() => { setOrderProductId(selectedProduct.id); window.location.hash = '#/order'; }}
-                        className="w-full py-8 sm:py-10 bg-[#007AFF] text-white rounded-[3rem] font-black text-xl sm:text-2xl shadow-[0_25px_60px_-15px_rgba(0,122,255,0.4)] active:scale-95 transition-all flex items-center justify-center gap-6 hover:bg-blue-600 hover:shadow-blue-500/60 group/btn"
-                      >
-                         <i className="fa-solid fa-cart-arrow-down text-2xl sm:text-3xl group-hover/btn:translate-y-1 transition-transform"></i>
-                         <span className="uppercase tracking-tight">{selectedProduct.price === 0 ? 'Secure Download' : 'Confirm Order'}</span>
+                      <button onClick={() => { setOrderProductId(selectedProduct.id); window.location.hash = '#/order'; }} className="w-full py-8 bg-[#007AFF] text-white rounded-[2.5rem] font-black text-xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-6 hover:bg-blue-600">
+                         <i className="fa-solid fa-cart-arrow-down text-2xl"></i>
+                         <span className="uppercase">{selectedProduct.price === 0 ? 'Download Now' : 'Purchase Asset'}</span>
                       </button>
-                      
                       <p className="text-center lg:text-left text-[10px] font-bold text-zinc-400 uppercase tracking-widest px-6 opacity-60">
-                        Orders are handled via secure private Telegram channel (@Mohamed_edge)
+                        Secure transaction via @Mohamed_edge Telegram service
                       </p>
                    </div>
                 </div>
@@ -557,27 +446,25 @@ const App: React.FC = () => {
                     <i className="fa-brands fa-telegram text-[#0088CC] text-xl"></i> @Mohamed_edge
                   </div>
                </div>
-
                <div className="space-y-6">
                   <div className="grid grid-cols-2 gap-4">
                     {['Realme', 'Oppo'].map(d => (
-                      <button key={d} onClick={() => setOrderDevice(d as any)} className={`py-6 rounded-3xl font-black text-xl border-2 transition-all ${orderDevice === d ? 'bg-[#007AFF] text-white border-[#007AFF] shadow-xl shadow-blue-500/20' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 border-transparent'}`}>{d}</button>
+                      <button key={d} onClick={() => setOrderDevice(d as any)} className={`py-6 rounded-3xl font-black text-xl border-2 transition-all ${orderDevice === d ? 'bg-[#007AFF] text-white border-[#007AFF] shadow-xl' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 border-transparent'}`}>{d}</button>
                     ))}
                   </div>
                   <select className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black border-2 border-transparent focus:border-[#007AFF] outline-none" value={orderProductId} onChange={e => setOrderProductId(e.target.value)}>
-                    <option value="">Choose Asset...</option>
+                    <option value="">Select Product...</option>
                     {dbProducts.map(p => <option key={p.id} value={p.id}>{p.title} - {p.price} EGP</option>)}
                   </select>
-
                   {currentOrderedProduct && (
                     <div className="space-y-6 animate-in zoom-in-95 duration-300">
                       <div className="p-8 bg-orange-500/10 border-2 border-dashed border-orange-500/30 rounded-[2.5rem] space-y-4 text-center">
-                        <p className="text-orange-600 font-black text-sm uppercase">Vodafone Cash Transfer</p>
+                        <p className="text-orange-600 font-black text-sm uppercase">Vodafone Cash</p>
                         <div className="text-2xl font-black tracking-widest text-orange-600">01091931466</div>
-                        <p className="text-[10px] font-bold text-zinc-500">Please send a screenshot to Telegram after payment</p>
+                        <p className="text-[10px] font-bold text-zinc-500">Send proof screenshot on Telegram</p>
                       </div>
-                      <button onClick={handleOrderRedirect} className="w-full py-7 bg-[#0088CC] text-white rounded-3xl font-black text-xl shadow-xl flex items-center justify-center gap-4">
-                        <i className="fa-brands fa-telegram text-2xl"></i> Send to Telegram
+                      <button onClick={handleOrderRedirect} className="w-full py-7 bg-[#0088CC] text-white rounded-3xl font-black text-xl shadow-xl flex items-center justify-center gap-4 hover:scale-[1.02] transition-transform">
+                        <i className="fa-brands fa-telegram text-2xl"></i> Chat on Telegram
                       </button>
                     </div>
                   )}
@@ -605,13 +492,11 @@ const App: React.FC = () => {
                       <h3 className="font-black text-xl uppercase">{editProduct.id ? 'Edit Product' : 'Add New Product'}</h3>
                       <button onClick={() => setIsEditingProduct(false)} className="text-zinc-400 hover:text-red-600"><i className="fa-solid fa-xmark text-xl"></i></button>
                     </div>
-                    
                     <div className="space-y-2">
                       <label className="text-[10px] font-black uppercase text-zinc-400 ml-4">Product Info</label>
                       <input className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black" value={editProduct.title} onChange={e => setEditProduct({...editProduct, title: e.target.value})} placeholder="Title" />
                       <textarea className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black" value={editProduct.description} onChange={e => setEditProduct({...editProduct, description: e.target.value})} placeholder="Description" rows={3} />
                     </div>
-
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                            <label className="text-[10px] font-black uppercase text-zinc-400 ml-4">Price (EGP)</label>
@@ -620,60 +505,38 @@ const App: React.FC = () => {
                         <div className="space-y-2">
                            <label className="text-[10px] font-black uppercase text-zinc-400 ml-4">Category</label>
                            <select className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black" value={editProduct.category} onChange={e => setEditProduct({...editProduct, category: e.target.value as any})}>
-                               <option value="Themes">Themes</option>
-                               <option value="Widgets">Widgets</option>
-                               <option value="Walls">Wallpapers</option>
+                               <option value="Themes">Themes</option><option value="Widgets">Widgets</option><option value="Walls">Wallpapers</option>
                            </select>
                         </div>
-                        <div className="space-y-2 md:col-span-2">
-                           <label className="text-[10px] font-black uppercase text-zinc-400 ml-4">Android Version (e.g. Android 14/15)</label>
-                           <input 
-                            className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black border-2 border-transparent focus:border-[#007AFF] outline-none" 
-                            value={editProduct.android_version} 
-                            onChange={e => setEditProduct({...editProduct, android_version: e.target.value})} 
-                            placeholder="Android 14 / 15 / ColorOS 15" 
-                           />
-                        </div>
                     </div>
-
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase text-zinc-400 ml-4">Main Cover Image</label>
+                      <label className="text-[10px] font-black uppercase text-zinc-400 ml-4">Cover Image</label>
                       <div className="aspect-video bg-zinc-100 dark:bg-zinc-800 rounded-3xl overflow-hidden relative border-2 border-dashed border-zinc-300">
-                          {editProduct.image ? <img src={editProduct.image} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center flex-col gap-2"><i className="fa-solid fa-image text-3xl text-zinc-300"></i><span className="text-[10px] font-bold text-zinc-400 uppercase">Click to upload cover</span></div>}
+                          {editProduct.image ? <img src={editProduct.image} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center flex-col gap-2"><i className="fa-solid fa-image text-3xl text-zinc-300"></i><span className="text-[10px] font-bold text-zinc-400 uppercase">Upload Cover</span></div>}
                           <input type="file" accept="image/*" onChange={async e => { if(e.target.files?.[0]) setEditProduct({...editProduct, image: await fileToBase64(e.target.files[0])}); }} className="absolute inset-0 opacity-0 cursor-pointer" />
                       </div>
                     </div>
-
                     <div className="space-y-4">
-                       <label className="text-[10px] font-black uppercase text-zinc-400 ml-4 flex justify-between">
-                         <span>Gallery Images (Max 20)</span>
-                         <span className={editProduct.gallery?.length === 20 ? 'text-red-500' : 'text-[#007AFF]'}>{editProduct.gallery?.length || 0} / 20</span>
-                       </label>
+                       <label className="text-[10px] font-black uppercase text-zinc-400 ml-4 flex justify-between"><span>Gallery (Max 20)</span><span className={editProduct.gallery?.length === 20 ? 'text-red-500' : 'text-[#007AFF]'}>{editProduct.gallery?.length || 0} / 20</span></label>
                        <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-7 gap-3">
                           {(editProduct.gallery || []).map((img, idx) => (
                             <div key={idx} className="aspect-square rounded-2xl overflow-hidden relative group">
                                <img src={img} className="w-full h-full object-cover" />
-                               <button 
-                                 onClick={() => removeGalleryImage(idx)}
-                                 className="absolute top-1 right-1 bg-red-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px] shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                               >
-                                 <i className="fa-solid fa-xmark"></i>
-                               </button>
+                               <button onClick={() => removeGalleryImage(idx)} className="absolute top-1 right-1 bg-red-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity"><i className="fa-solid fa-xmark"></i></button>
                             </div>
                           ))}
                           {(editProduct.gallery?.length || 0) < 20 && (
-                            <div className="aspect-square rounded-2xl bg-zinc-100 dark:bg-zinc-800 border-2 border-dashed border-zinc-300 flex items-center justify-center relative hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">
+                            <div className="aspect-square rounded-2xl bg-zinc-100 dark:bg-zinc-800 border-2 border-dashed border-zinc-300 flex items-center justify-center relative hover:bg-zinc-200 transition-colors">
                                <i className="fa-solid fa-plus text-zinc-400"></i>
                                <input type="file" multiple accept="image/*" onChange={handleGalleryUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
                             </div>
                           )}
                        </div>
                     </div>
-
                     <div className="flex gap-4 pt-4">
                       <button onClick={() => setIsEditingProduct(false)} className="flex-1 py-5 bg-zinc-200 dark:bg-zinc-800 rounded-2xl font-black uppercase text-[10px]">Cancel</button>
                       <button onClick={saveProduct} disabled={isPublishing} className="flex-[3] py-5 bg-[#007AFF] text-white rounded-2xl font-black uppercase text-[10px] shadow-lg">
-                        {isPublishing ? 'Saving...' : 'Save Asset'}
+                        {isPublishing ? 'Saving...' : 'Save Product'}
                       </button>
                     </div>
                   </div>
@@ -685,109 +548,42 @@ const App: React.FC = () => {
                         <img src={p.image} className="w-16 h-16 rounded-2xl object-cover" />
                         <div>
                           <p className="font-black text-lg">{p.title}</p>
-                          <div className="flex items-center gap-2">
-                             <p className="text-[10px] font-black text-[#007AFF]">{p.category} • {p.price} EGP</p>
-                             <p className="text-[10px] font-bold text-zinc-400">• {p.gallery?.length || 0} Images</p>
-                          </div>
+                          <p className="text-[10px] font-black text-[#007AFF]">{p.category} • {p.price} EGP</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <button 
-                          onClick={() => { 
-                            setEditProduct(p); 
-                            setIsEditingProduct(true); 
-                            window.scrollTo({ top: 0, behavior: 'smooth' });
-                          }} 
-                          className="w-10 h-10 flex items-center justify-center bg-blue-500/10 text-[#007AFF] rounded-full hover:bg-[#007AFF] hover:text-white transition-all"
-                        >
-                          <i className="fa-solid fa-pen-to-square text-xs"></i>
-                        </button>
-                        <button 
-                          onClick={() => handleDeleteProduct(p.id)} 
-                          className="w-10 h-10 flex items-center justify-center bg-red-600 rounded-full hover:bg-red-700 hover:text-white transition-all"
-                        >
-                          <i className="fa-solid fa-trash text-xs"></i>
-                        </button>
+                        <button onClick={() => { setEditProduct(p); setIsEditingProduct(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="w-10 h-10 flex items-center justify-center bg-blue-500/10 text-blue-600 rounded-full hover:bg-blue-600 hover:text-white transition-all"><i className="fa-solid fa-pen-to-square text-xs"></i></button>
+                        <button onClick={() => handleDeleteProduct(p.id)} className="w-10 h-10 flex items-center justify-center bg-red-500/10 text-red-600 rounded-full hover:bg-red-600 hover:text-white transition-all"><i className="fa-solid fa-trash text-xs"></i></button>
                       </div>
                     </div>
                   ))}
-                  {dbProducts.length === 0 && !isLoading && (
-                    <div className="p-10 text-center border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-3xl text-zinc-400 font-bold">
-                       Product list is currently empty
-                    </div>
-                  )}
                 </div>
               </div>
             )}
 
             {adminTab === 'Videos' && (
               <div className="space-y-8">
-                <button 
-                  onClick={() => { setEditVideo({ title: '', url: '' }); setIsEditingVideo(true); }} 
-                  className="w-full py-6 bg-red-600 text-white rounded-3xl font-black uppercase text-xs shadow-xl flex items-center justify-center gap-3"
-                >
-                  <i className="fa-brands fa-youtube text-xl"></i> Add YouTube Tutorial
-                </button>
-
+                <button onClick={() => { setEditVideo({ title: '', url: '' }); setIsEditingVideo(true); }} className="w-full py-6 bg-red-600 text-white rounded-3xl font-black uppercase text-xs shadow-xl">Add Tutorial</button>
                 {isEditingVideo && (
-                  <div id="video-form" className="glass-panel p-10 rounded-[3rem] space-y-8 border-4 border-red-600/10 animate-in slide-in-from-top-4 duration-300">
-                    <div className="flex justify-between items-center">
-                      <h3 className="font-black text-xl uppercase">Configure YouTube Video</h3>
-                      <button onClick={() => setIsEditingVideo(false)} className="text-zinc-400 hover:text-red-600"><i className="fa-solid fa-xmark text-xl"></i></button>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black uppercase text-zinc-400 ml-4">Video Info</label>
-                      <input 
-                        className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black border-2 border-transparent focus:border-red-600 outline-none transition-all" 
-                        value={editVideo.title} 
-                        onChange={e => setEditVideo({...editVideo, title: e.target.value})} 
-                        placeholder="Video Title (e.g., How to Install Themes)" 
-                      />
-                      <input 
-                        className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black border-2 border-transparent focus:border-red-600 outline-none transition-all" 
-                        value={editVideo.url} 
-                        onChange={e => setEditVideo({...editVideo, url: e.target.value})} 
-                        placeholder="YouTube URL (https://www.youtube.com/watch?v=...)" 
-                      />
-                    </div>
+                  <div className="glass-panel p-10 rounded-[3rem] space-y-8 border-4 border-red-600/10 animate-in slide-in-from-top-4 duration-300">
+                    <input className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black" value={editVideo.title} onChange={e => setEditVideo({...editVideo, title: e.target.value})} placeholder="Video Title" />
+                    <input className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black" value={editVideo.url} onChange={e => setEditVideo({...editVideo, url: e.target.value})} placeholder="YouTube URL" />
                     <div className="flex gap-4">
                       <button onClick={() => setIsEditingVideo(false)} className="flex-1 py-5 bg-zinc-200 dark:bg-zinc-800 rounded-2xl font-black uppercase text-[10px]">Cancel</button>
-                      <button onClick={saveVideo} disabled={isPublishing} className="flex-[3] py-5 bg-red-600 text-white rounded-2xl font-black uppercase text-[10px] shadow-lg">
-                        {isPublishing ? 'Saving...' : 'Save Video'}
-                      </button>
+                      <button onClick={saveVideo} disabled={isPublishing} className="flex-[3] py-5 bg-red-600 text-white rounded-2xl font-black uppercase text-[10px] shadow-lg">{isPublishing ? 'Saving...' : 'Save Video'}</button>
                     </div>
                   </div>
                 )}
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {dbVideos.map(vid => (
                     <div key={vid.id} className="p-5 glass-panel rounded-3xl flex items-center justify-between group hover:border-red-600/30 transition-all">
                       <div className="flex items-center gap-4 flex-1 min-w-0">
-                        <div className="w-24 aspect-video rounded-xl overflow-hidden shrink-0 bg-zinc-900">
-                           <img src={`https://img.youtube.com/vi/${vid.id}/mqdefault.jpg`} className="w-full h-full object-cover" alt={vid.title} />
-                        </div>
-                        <div className="truncate">
-                          <p className="font-black text-sm truncate">{vid.title}</p>
-                          <p className="text-[10px] font-bold text-red-600 uppercase tracking-widest mt-1">YouTube Video</p>
-                        </div>
+                        <div className="w-24 aspect-video rounded-xl overflow-hidden shrink-0 bg-zinc-900"><img src={`https://img.youtube.com/vi/${vid.id}/mqdefault.jpg`} className="w-full h-full object-cover" /></div>
+                        <p className="font-black text-sm truncate">{vid.title}</p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <button 
-                          onClick={() => {
-                            setEditVideo(vid);
-                            setIsEditingVideo(true);
-                            window.scrollTo({ top: 0, behavior: 'smooth' });
-                          }} 
-                          className="w-10 h-10 flex items-center justify-center bg-blue-500/10 text-blue-600 rounded-full hover:bg-blue-600 hover:text-white transition-all"
-                        >
-                          <i className="fa-solid fa-pen-to-square text-xs"></i>
-                        </button>
-                        <button 
-                          onClick={() => handleDeleteVideo(vid.id)} 
-                          className="w-10 h-10 flex items-center justify-center bg-red-500/10 text-red-600 rounded-full hover:bg-red-600 hover:text-white transition-all"
-                        >
-                          <i className="fa-solid fa-trash text-xs"></i>
-                        </button>
+                        <button onClick={() => { setEditVideo(vid); setIsEditingVideo(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="w-10 h-10 flex items-center justify-center bg-blue-500/10 text-blue-600 rounded-full hover:bg-blue-600 hover:text-white transition-all"><i className="fa-solid fa-pen-to-square text-xs"></i></button>
+                        <button onClick={() => handleDeleteVideo(vid.id)} className="w-10 h-10 flex items-center justify-center bg-red-500/10 text-red-600 rounded-full hover:bg-red-600 hover:text-white transition-all"><i className="fa-solid fa-trash text-xs"></i></button>
                       </div>
                     </div>
                   ))}
@@ -801,30 +597,20 @@ const App: React.FC = () => {
                     <label className="text-[10px] font-black uppercase text-zinc-400">Admin Password</label>
                     <input type="password" placeholder="••••" className="w-full p-8 rounded-[2rem] bg-zinc-100 dark:bg-zinc-800 font-black text-xl" onBlur={e => e.target.value && updateSetting('admin_password', e.target.value)} />
                  </section>
-
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                     <section className="space-y-4">
-                        <label className="text-[10px] font-black uppercase text-zinc-400">Site Logo (Header)</label>
-                        <div className="aspect-square w-32 mx-auto md:mx-0 rounded-full overflow-hidden relative border-4 border-[#007AFF]/20 bg-zinc-100 dark:bg-zinc-800 shadow-xl group">
+                        <label className="text-[10px] font-black uppercase text-zinc-400">Header Logo</label>
+                        <div className="aspect-square w-32 rounded-full overflow-hidden relative border-4 border-[#007AFF]/20 bg-zinc-100 dark:bg-zinc-800 shadow-xl group">
                            <img src={siteLogo} className="w-full h-full object-cover" />
-                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                              <i className="fa-solid fa-camera text-white"></i>
-                           </div>
-                           <input type="file" accept="image/*" onChange={e => handleLogoUpload(e, 'site')} className="absolute inset-0 opacity-0 cursor-pointer" title="Change Site Logo" />
+                           <input type="file" accept="image/*" onChange={e => handleLogoUpload(e, 'site')} className="absolute inset-0 opacity-0 cursor-pointer" />
                         </div>
-                        <p className="text-[9px] text-zinc-400 font-bold uppercase tracking-wider text-center md:text-left">Recommended: 1:1 Aspect Ratio (Square)</p>
                     </section>
-
                     <section className="space-y-4">
-                        <label className="text-[10px] font-black uppercase text-zinc-400">Loader Logo (Splash Screen)</label>
-                        <div className="aspect-square w-32 mx-auto md:mx-0 rounded-full overflow-hidden relative border-4 border-[#007AFF]/20 bg-zinc-100 dark:bg-zinc-800 shadow-xl group">
+                        <label className="text-[10px] font-black uppercase text-zinc-400">Loader Logo</label>
+                        <div className="aspect-square w-32 rounded-full overflow-hidden relative border-4 border-[#007AFF]/20 bg-zinc-100 dark:bg-zinc-800 shadow-xl group">
                            <img src={loaderLogo} className="w-full h-full object-cover" />
-                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                              <i className="fa-solid fa-camera text-white"></i>
-                           </div>
-                           <input type="file" accept="image/*" onChange={e => handleLogoUpload(e, 'loader')} className="absolute inset-0 opacity-0 cursor-pointer" title="Change Loader Logo" />
+                           <input type="file" accept="image/*" onChange={e => handleLogoUpload(e, 'loader')} className="absolute inset-0 opacity-0 cursor-pointer" />
                         </div>
-                        <p className="text-[9px] text-zinc-400 font-bold uppercase tracking-wider text-center md:text-left">Visible during the initial app load</p>
                     </section>
                  </div>
               </div>
@@ -841,13 +627,7 @@ const App: React.FC = () => {
       )}
 
       {!isAdminMode && activeSection !== 'Preview' && (
-        <BottomNav 
-          activeSection={activeSection} 
-          onSectionChange={(s) => {
-            if (s === 'Home') window.location.hash = '#/';
-            else window.location.hash = `#/${s.toLowerCase()}`;
-          }} 
-        />
+        <BottomNav activeSection={activeSection} onSectionChange={(s) => { if (s === 'Home') window.location.hash = '#/'; else window.location.hash = `#/${s.toLowerCase()}`; }} />
       )}
     </div>
   );
