@@ -324,9 +324,9 @@ const App: React.FC = () => {
              <button onClick={() => window.location.hash = '#/'} className="w-10 h-10 mb-8 flex items-center justify-center bg-white dark:bg-zinc-800 rounded-full shadow-lg border border-zinc-200 dark:border-zinc-700 hover:scale-110 transition-transform"><i className="fa-solid fa-chevron-left"></i></button>
              
              <div className="flex flex-col lg:flex-row items-center lg:items-start gap-12 lg:gap-16 xl:gap-24">
-                {/* Responsive Mockup - Ultra Realistic Frame */}
+                {/* Responsive Mockup - Realistic Frame with 40px corner radius */}
                 <div className="w-full flex flex-col items-center gap-8 lg:w-auto shrink-0">
-                   <div className="relative aspect-[1290/2796] w-full max-w-[300px] sm:max-w-[320px] md:max-w-[380px] lg:max-w-[420px] rounded-[58px] bg-[#1a1a1c] p-3.5 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.6)] ring-1 ring-zinc-100/10 outline outline-[1px] outline-zinc-600 overflow-hidden">
+                   <div className="relative aspect-[1290/2796] w-full max-w-[300px] sm:max-w-[320px] md:max-w-[380px] lg:max-w-[420px] rounded-[40px] bg-[#1a1a1c] p-3.5 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.6)] ring-1 ring-zinc-100/10 outline outline-[1px] outline-zinc-600 overflow-hidden">
                       
                       {/* Hardware Buttons Silhouettes */}
                       <div className="absolute left-0 top-[20%] w-[3px] h-12 bg-[#2a2a2c] rounded-r-sm"></div>
@@ -334,19 +334,14 @@ const App: React.FC = () => {
                       <div className="absolute left-0 top-[36%] w-[3px] h-16 bg-[#2a2a2c] rounded-r-sm"></div>
                       <div className="absolute right-0 top-[26%] w-[3px] h-24 bg-[#2a2a2c] rounded-l-sm"></div>
 
-                      {/* Screen Area - No Gaps */}
-                      <div className="relative w-full h-full rounded-[44px] overflow-hidden bg-black ring-1 ring-white/10 shadow-[inset_0_0_20px_rgba(0,0,0,0.8)]">
+                      {/* Screen Area - No Gaps, adjusted corner radius */}
+                      <div className="relative w-full h-full rounded-[28px] overflow-hidden bg-black ring-1 ring-white/10 shadow-[inset_0_0_20px_rgba(0,0,0,0.8)]">
                         <img 
                           src={selectedProduct.gallery[previewImageIndex] || selectedProduct.image} 
                           className="relative z-10 w-full h-full object-cover transition-opacity duration-500" 
                           alt="" 
                         />
                         
-                        {/* Dynamic Island */}
-                        <div className="absolute top-4 left-1/2 -translate-x-1/2 w-[120px] h-[36px] bg-black rounded-[20px] z-20 flex items-center justify-end px-4 border border-white/5">
-                           <div className="w-2.5 h-2.5 rounded-full bg-blue-900/20 ring-1 ring-white/5 blur-[0.5px]"></div>
-                        </div>
-
                         {/* Subtle Screen Highlight */}
                         <div className="absolute inset-0 z-15 bg-gradient-to-tr from-transparent via-white/[0.03] to-transparent pointer-events-none"></div>
                       </div>
@@ -480,7 +475,7 @@ const App: React.FC = () => {
                       className="w-full py-6 sm:py-9 bg-[#0088CC] text-white rounded-[1.5rem] sm:rounded-[2.5rem] font-black text-lg sm:text-2xl shadow-2xl shadow-[#0088CC]/25 flex items-center justify-center gap-4 hover:scale-[1.02] active:scale-95 transition-all group"
                     >
                       <i className="fa-brands fa-telegram text-2xl sm:text-4xl group-hover:rotate-12 transition-transform"></i>
-                      Message Support
+                      Order via Telegram
                     </button>
                   </div>
                 ) : (
