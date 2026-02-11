@@ -20,14 +20,22 @@ const fileToBase64 = (file: File): Promise<string> => {
   });
 };
 
-// وظيفة حفظ آمنة في التخزين المحلي لتجنب خطأ المساحة
+// وظيفة حفظ آمنة في التخزين المحلي مع حد أعلى (4 ميجابايت) لدعم الشعارات الكبيرة
 const safeLocalStorageSet = (key: string, value: string) => {
   try {
-    // إذا كانت الصورة أكبر من 1 ميجابايت تقريباً، لا نخزنها محلياً لتجنب الامتلاء
-    if (value.length > 1000000) return;
+    if (!value) return;
+    // زيادة الحد إلى 4 ميجابايت لأن الشعارات الـ Base64 تكون ثقيلة
+    if (value.length > 4000000) {
+      console.warn("Image exceeds 4MB limit for local cache. Skipping.");
+      return;
+    }
     localStorage.setItem(key, value);
   } catch (e) {
-    console.warn("Storage quota exceeded, skipping local cache.");
+    console.warn("Storage quota exceeded or error occurred while caching logo.");
+    // إذا امتلأت الذاكرة، حاول تنظيفها ثم جرب مرة أخرى أو اكتفِ بـ Supabase
+    try {
+      localStorage.removeItem(key);
+    } catch(err) {}
   }
 };
 
@@ -190,14 +198,6 @@ const App: React.FC = () => {
     }
   };
 
-  const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []) as File[];
-    const currentGallery = editProduct.gallery || [];
-    if (currentGallery.length + files.length > 20) return showNotify("Max 20 images limit reached", "error");
-    const base64Images = await Promise.all(files.map(f => fileToBase64(f)));
-    setEditProduct({ ...editProduct, gallery: [...currentGallery, ...base64Images] });
-  };
-
   const saveProduct = async () => {
     if (!editProduct.title || !editProduct.image) return showNotify("Title and Cover are required", "error");
     setIsPublishing(true);
@@ -225,21 +225,6 @@ const App: React.FC = () => {
     } catch (err: any) { 
       showNotify(err.message || "Save Error", "error"); 
     } finally { setIsPublishing(false); }
-  };
-
-  const saveVideo = async () => {
-    if (!editVideo.title || !editVideo.url) return showNotify("All fields are required", "error");
-    let vidId = editVideo.url.includes('v=') ? editVideo.url.split('v=')[1].split('&')[0] : editVideo.url.split('/').pop()?.split('?')[0];
-    if (!vidId) return showNotify("Invalid YouTube Link", "error");
-    setIsPublishing(true);
-    try {
-      const { error } = await supabase.from('videos').upsert({ id: vidId, title: editVideo.title, url: editVideo.url });
-      if (error) throw error;
-      await refreshData();
-      setIsEditingVideo(false);
-      setEditVideo({ title: '', url: '' });
-      showNotify("Video Updated");
-    } catch (err: any) { showNotify(err.message, "error"); } finally { setIsPublishing(false); }
   };
 
   const handleDeleteProduct = async (id: string) => {
@@ -485,15 +470,15 @@ const App: React.FC = () => {
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10 border-t border-zinc-100 dark:border-zinc-800 pt-10">
                     <section className="space-y-4">
                       <label className="text-[10px] font-black uppercase text-zinc-400">Navigation Brand</label>
-                      <div className="w-32 h-32 rounded-full overflow-hidden relative border-4 border-[#007AFF]/20 bg-zinc-100">
-                        <img src={siteLogo} className="w-full h-full object-cover" />
+                      <div className="w-32 h-32 rounded-full overflow-hidden relative border-4 border-[#007AFF]/20 bg-zinc-100 flex items-center justify-center">
+                        <img key={siteLogo} src={siteLogo} className="w-full h-full object-cover" />
                         <input type="file" accept="image/*" onChange={e => handleLogoUpload(e, 'site')} className="absolute inset-0 opacity-0 cursor-pointer" />
                       </div>
                     </section>
                     <section className="space-y-4">
                       <label className="text-[10px] font-black uppercase text-zinc-400">Splash Identity</label>
-                      <div className="w-32 h-32 rounded-full overflow-hidden relative border-4 border-[#007AFF]/20 bg-zinc-100">
-                        <img src={loaderLogo} className="w-full h-full object-cover" />
+                      <div className="w-32 h-32 rounded-full overflow-hidden relative border-4 border-[#007AFF]/20 bg-zinc-100 flex items-center justify-center">
+                        <img key={loaderLogo} src={loaderLogo} className="w-full h-full object-cover" />
                         <input type="file" accept="image/*" onChange={e => handleLogoUpload(e, 'loader')} className="absolute inset-0 opacity-0 cursor-pointer" />
                       </div>
                     </section>

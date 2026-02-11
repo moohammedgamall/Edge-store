@@ -83,7 +83,7 @@
     <div id="static-loader">
         <div style="position: relative;">
             <div style="width: 100px; height: 100px; border-radius: 50%; overflow: hidden; border: 4px solid white; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); background: white;">
-                <img id="loader-img" fetchpriority="high" style="width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.3s ease;" alt="">
+                <img id="loader-img" fetchpriority="high" style="width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.3s ease;" alt="Mohamed Edge">
             </div>
             <div class="spinner-ring" style="position: absolute; top: -16px; left: -16px; right: -16px; bottom: -16px; border-radius: 50%; border: 2px dashed #007AFF;"></div>
         </div>
@@ -96,7 +96,14 @@
 
     <script>
         (function() {
-            const cachedLoaderLogo = localStorage.getItem('cached_loader_logo') || "https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa";
+            const defaultLogo = "https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa";
+            let cachedLoaderLogo = localStorage.getItem('cached_loader_logo');
+            
+            // تحقق من صحة البيانات المخزنة
+            if (!cachedLoaderLogo || cachedLoaderLogo.length < 50) {
+              cachedLoaderLogo = defaultLogo;
+            }
+
             const isDark = localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
             
             const loaderImg = document.getElementById('loader-img');
@@ -108,8 +115,17 @@
             }
 
             if (loaderImg) {
+                loaderImg.onerror = function() {
+                  console.warn("Loader logo failed, falling back to default");
+                  this.src = defaultLogo;
+                };
                 loaderImg.src = cachedLoaderLogo;
-                loaderImg.onload = () => { loaderImg.style.opacity = '1'; };
+                // إظهار الصورة فوراً إذا كانت محملة مسبقاً في الذاكرة
+                if (loaderImg.complete) {
+                  loaderImg.style.opacity = '1';
+                } else {
+                  loaderImg.onload = () => { loaderImg.style.opacity = '1'; };
+                }
             }
         })();
     </script>
