@@ -35,7 +35,6 @@ const App: React.FC = () => {
   const [siteLogo, setSiteLogo] = useState<string>(() => localStorage.getItem('cached_site_logo') || "https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
   const [loaderLogo, setLoaderLogo] = useState<string>(() => localStorage.getItem('cached_loader_logo') || "https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
   
-  // Initialize admin password from localStorage fallback if available
   const [adminPassword, setAdminPassword] = useState(() => localStorage.getItem('admin_pass_cache') || '1234');
   const [newPassInput, setNewPassInput] = useState('');
 
@@ -106,12 +105,11 @@ const App: React.FC = () => {
   const handleAuth = () => {
     const input = passwordInput.trim();
     const currentPass = adminPassword.trim();
-    // Check against live state, localStorage fallback, and default emergency pass
     if (input === currentPass || input === localStorage.getItem('admin_pass_cache') || input === '1234') {
       setIsAdminMode(true);
       setIsAuthModalOpen(false);
       setPasswordInput('');
-      setActiveSection('Admin'); // Set section immediately
+      setActiveSection('Admin');
       window.location.hash = '#/admin';
       showNotify("Logged in successfully");
     } else {
@@ -152,9 +150,7 @@ const App: React.FC = () => {
 
   const updateSetting = async (key: string, value: string) => {
     try {
-      // Use explicit onConflict for settings keys
       await supabase.from('settings').upsert({ key, value }, { onConflict: 'key' });
-      
       if (key === 'admin_password') {
         const pass = value.trim();
         setAdminPassword(pass);
@@ -350,14 +346,8 @@ const App: React.FC = () => {
              </div>
 
              <div className="flex flex-col items-center gap-12 lg:gap-20 lg:flex-row lg:items-start lg:justify-between">
-                {/* iPhone Mockup Area - Dynamic Finish based on Theme */}
                 <div className="w-full max-w-[340px] sm:max-w-[380px] md:max-w-[420px] lg:max-w-[460px] flex flex-col items-center gap-10">
-                   
-                   {/* Custom High-Fidelity Mockup Container */}
                    <div className="relative aspect-[1290/2796] w-full group">
-                      
-                      {/* Frame: Outer Titanium Border - Concentric Radius Logic (R_outer 54px) */}
-                      {/* Finish: Light Titanium in Dark Mode, Black Titanium in Light Mode */}
                       <div className={`absolute -inset-[4px] rounded-[54px] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.8)] transition-all duration-500 ${
                         isDarkMode ? 'bg-[#D4D4D2]' : 'bg-[#1C1C1E]'
                       }`}>
@@ -366,17 +356,11 @@ const App: React.FC = () => {
                             ? 'from-[#EBEBEB] via-[#D4D4D2] to-[#B7B7B5]' 
                             : 'from-[#2C2C2E] via-[#1C1C1E] to-[#0A0A0A]'
                          }`}></div>
-                         
-                         {/* Subtle metallic edge highlight */}
                          <div className={`absolute inset-[1.5px] rounded-[52.5px] border transition-all duration-500 pointer-events-none ${
                            isDarkMode ? 'border-white/40' : 'border-white/5'
                          }`}></div>
                       </div>
-                      
-                      {/* Bezel: Inner Edge with Synchronized Radius (54 - 12 = 42px) */}
                       <div className="absolute inset-[8px] rounded-[42px] bg-black shadow-[inset_0_0_15px_rgba(0,0,0,0.9)] transition-all">
-                        
-                        {/* Display Area with Concentric Radius (42 - 6 = 36px) */}
                         <div className="absolute inset-[6px] rounded-[36px] overflow-hidden bg-black shadow-[inset_0_0_30px_rgba(0,0,0,0.95)]">
                            <img 
                              src={selectedProduct.gallery[previewImageIndex] || selectedProduct.image} 
@@ -384,20 +368,15 @@ const App: React.FC = () => {
                              alt="Display Asset" 
                              style={{ imageRendering: 'high-quality' }}
                            />
-                           
-                           {/* Screen Gloss Reflection Overlay */}
                            <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent pointer-events-none z-10"></div>
                         </div>
                       </div>
-
-                      {/* Physical Buttons - Titanium matching */}
                       <div className={`absolute -left-[4px] top-[18%] w-[4px] h-[4%] rounded-l-sm shadow-sm z-20 transition-all ${isDarkMode ? 'bg-[#B7B7B5]' : 'bg-[#2C2C2E]'}`}></div>
                       <div className={`absolute -left-[4px] top-[26%] w-[4px] h-[9%] rounded-l-sm shadow-sm z-20 transition-all ${isDarkMode ? 'bg-[#B7B7B5]' : 'bg-[#2C2C2E]'}`}></div>
                       <div className={`absolute -left-[4px] top-[37%] w-[4px] h-[9%] rounded-l-sm shadow-sm z-20 transition-all ${isDarkMode ? 'bg-[#B7B7B5]' : 'bg-[#2C2C2E]'}`}></div>
                       <div className={`absolute -right-[4px] top-[30%] w-[4px] h-[12%] rounded-r-sm shadow-sm z-20 transition-all ${isDarkMode ? 'bg-[#B7B7B5]' : 'bg-[#2C2C2E]'}`}></div>
                    </div>
 
-                   {/* Gallery Assets Navigation */}
                    {selectedProduct.gallery && selectedProduct.gallery.length > 0 && (
                      <div className="w-full space-y-6">
                         <div className="flex items-center justify-center gap-3 px-4 opacity-50">
@@ -422,7 +401,6 @@ const App: React.FC = () => {
                    )}
                 </div>
 
-                {/* Content Area - Responsive Font Sizes */}
                 <div className="w-full lg:flex-1 lg:pt-10 flex flex-col gap-8 md:gap-10">
                    <div className="space-y-6 md:space-y-8 text-center lg:text-left">
                       <div className="flex flex-wrap justify-center lg:justify-start gap-2 md:gap-3">
@@ -446,19 +424,22 @@ const App: React.FC = () => {
                       </div>
                    </div>
 
-                   {/* Specs Grid - Proportional Text */}
+                   {/* Specs Grid - Optimized for all screens */}
                    <div className="grid grid-cols-2 gap-3 md:gap-4 w-full">
-                      <div className="flex flex-col gap-1 p-5 md:p-6 bg-zinc-50 dark:bg-zinc-900/40 rounded-[1.5rem] md:rounded-[2rem] border border-zinc-100 dark:border-white/5 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-900/60">
-                         <span className="text-[8px] sm:text-[9px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest">Support</span>
-                         <span className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-zinc-900 dark:text-zinc-100 uppercase truncate">Realme & Oppo</span>
+                      <div className="flex flex-col gap-1 p-4 sm:p-5 md:p-6 bg-zinc-50 dark:bg-zinc-900/40 rounded-[1.5rem] md:rounded-[2rem] border border-zinc-100 dark:border-white/5 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-900/60 min-w-0">
+                         <span className="text-[7.5px] sm:text-[9px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest block">Support</span>
+                         <span className="text-xs sm:text-sm md:text-lg lg:text-xl font-black text-zinc-900 dark:text-zinc-100 uppercase break-words leading-tight">
+                            Realme & Oppo
+                         </span>
                       </div>
-                      <div className="flex flex-col gap-1 p-5 md:p-6 bg-zinc-50 dark:bg-zinc-900/40 rounded-[1.5rem] md:rounded-[2rem] border border-zinc-100 dark:border-white/5 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-900/60">
-                         <span className="text-[8px] sm:text-[9px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest">Asset Type</span>
-                         <span className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-zinc-900 dark:text-zinc-100 uppercase">{selectedProduct.is_premium ? 'Premium' : 'Standard'}</span>
+                      <div className="flex flex-col gap-1 p-4 sm:p-5 md:p-6 bg-zinc-50 dark:bg-zinc-900/40 rounded-[1.5rem] md:rounded-[2rem] border border-zinc-100 dark:border-white/5 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-900/60 min-w-0">
+                         <span className="text-[7.5px] sm:text-[9px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest block">Asset Type</span>
+                         <span className="text-xs sm:text-sm md:text-lg lg:text-xl font-black text-zinc-900 dark:text-zinc-100 uppercase break-words leading-tight">
+                            {selectedProduct.is_premium ? 'Premium' : 'Standard'}
+                         </span>
                       </div>
                    </div>
 
-                   {/* CTA Section - Responsive elements */}
                    <div className="mt-2 md:mt-4 flex flex-col gap-6 md:gap-8 bg-white dark:bg-zinc-900/40 lg:bg-transparent rounded-[2.5rem] md:rounded-[3.5rem] p-8 md:p-10 lg:p-0 shadow-2xl lg:shadow-none border border-zinc-100 dark:border-white/5 lg:border-none">
                       <div className="text-center lg:text-left">
                         <p className="text-[9px] md:text-[10px] font-black text-zinc-400 uppercase tracking-[0.4em] mb-1 md:mb-2 opacity-60">Listing Price</p>
