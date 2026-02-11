@@ -35,6 +35,7 @@ const App: React.FC = () => {
   const [siteLogo, setSiteLogo] = useState<string>(() => localStorage.getItem('cached_site_logo') || "https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
   const [loaderLogo, setLoaderLogo] = useState<string>(() => localStorage.getItem('cached_loader_logo') || "https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
   const [adminPassword, setAdminPassword] = useState('1234');
+  const [newPassInput, setNewPassInput] = useState('');
 
   const [orderDevice, setOrderDevice] = useState<'Realme' | 'Oppo'>('Realme');
   const [orderProductId, setOrderProductId] = useState<string>('');
@@ -611,8 +612,29 @@ const App: React.FC = () => {
             {adminTab === 'Settings' && (
               <div className="glass-panel p-10 rounded-[3rem] space-y-12">
                  <section className="space-y-4">
-                    <label className="text-[10px] font-black uppercase text-zinc-400">Admin Password</label>
-                    <input type="password" placeholder="••••" className="w-full p-8 rounded-[2rem] bg-zinc-100 dark:bg-zinc-800 font-black text-xl" onBlur={e => e.target.value && updateSetting('admin_password', e.target.value)} />
+                    <label className="text-[10px] font-black uppercase text-zinc-400">Admin Control Panel Access</label>
+                    <div className="flex flex-col gap-4">
+                      <input 
+                        type="password" 
+                        placeholder="Enter New Admin Password" 
+                        className="w-full p-8 rounded-[2rem] bg-zinc-100 dark:bg-zinc-800 font-black text-xl outline-none focus:ring-4 ring-blue-500/10 border border-transparent focus:border-blue-500 transition-all" 
+                        value={newPassInput}
+                        onChange={e => setNewPassInput(e.target.value)}
+                      />
+                      <button 
+                        onClick={() => {
+                          if (newPassInput.trim()) {
+                            updateSetting('admin_password', newPassInput.trim());
+                            setNewPassInput('');
+                          } else {
+                            showNotify("Please enter a valid password", "error");
+                          }
+                        }}
+                        className="py-6 bg-[#007AFF] text-white rounded-[2rem] font-black uppercase text-xs shadow-xl active:scale-95 transition-transform"
+                      >
+                        Update Admin Password
+                      </button>
+                    </div>
                  </section>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                     <section className="space-y-4">
