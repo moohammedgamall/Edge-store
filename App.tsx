@@ -323,36 +323,34 @@ const App: React.FC = () => {
           <div className="max-w-6xl mx-auto pb-20 px-4 animate-in fade-in slide-in-from-bottom-8">
              <button onClick={() => window.location.hash = '#/'} className="w-10 h-10 mb-8 flex items-center justify-center bg-white dark:bg-zinc-800 rounded-full shadow-lg border border-zinc-200 dark:border-zinc-700 hover:scale-110 transition-transform"><i className="fa-solid fa-chevron-left"></i></button>
              
-             <div className="flex flex-col lg:flex-row items-center lg:items-center xl:items-start gap-10 lg:gap-16 xl:gap-24">
-                {/* Responsive Mockup - Sleeker 50px Corner Radius Frame */}
+             <div className="flex flex-col lg:flex-row items-center lg:items-start gap-12 lg:gap-16 xl:gap-24">
+                {/* Responsive Mockup - Sleeker Frame */}
                 <div className="w-full flex flex-col items-center gap-8 lg:w-auto shrink-0">
-                   <div className="relative aspect-[1290/2796] w-full max-w-[280px] sm:max-w-[320px] md:max-w-[360px] lg:max-w-[400px] xl:max-w-[440px] rounded-[50px] bg-zinc-900 p-[12px] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.6)] ring-1 ring-zinc-100/10 outline outline-[6px] outline-zinc-900">
-                      
-                      {/* Screen Area - Back to Sleek Version */}
-                      <div className="relative w-full h-full rounded-[38px] overflow-hidden bg-black shadow-[inset_0_0_40px_rgba(0,0,0,1)] ring-1 ring-white/5">
-                        {/* Background subtle blur for edge consistency */}
+                   <div className="relative aspect-[1290/2796] w-full max-w-[300px] sm:max-w-[320px] md:max-w-[380px] lg:max-w-[420px] rounded-[50px] bg-zinc-900 p-3 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.6)] ring-1 ring-zinc-100/10 outline outline-8 outline-zinc-900 overflow-hidden">
+                      {/* Screen Area */}
+                      <div className="relative w-full h-full rounded-[38px] overflow-hidden bg-black ring-1 ring-white/10">
+                        {/* Blurred background fill */}
                         <img 
                           src={selectedProduct.gallery[previewImageIndex] || selectedProduct.image} 
                           aria-hidden="true"
-                          className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-40 scale-125"
+                          className="absolute inset-0 w-full h-full object-cover blur-3xl opacity-40 scale-125"
                         />
-                        {/* Main Preview Image */}
+                        {/* Main Content */}
                         <img 
                           src={selectedProduct.gallery[previewImageIndex] || selectedProduct.image} 
-                          className="relative z-10 w-full h-full object-contain transition-opacity duration-700" 
+                          className="relative z-10 w-full h-full object-contain" 
                           alt="" 
                         />
-                        <div className="absolute inset-0 z-20 bg-gradient-to-tr from-transparent via-white/5 to-transparent pointer-events-none"></div>
                       </div>
                    </div>
                    
                    {/* Thumbnail Selection */}
-                   <div className="flex flex-wrap gap-2 md:gap-3 justify-center max-w-full">
+                   <div className="flex flex-wrap gap-3 justify-center max-w-full">
                       {(selectedProduct.gallery.length > 0 ? selectedProduct.gallery : [selectedProduct.image]).map((img, idx) => (
                         <button 
                           key={idx} 
                           onClick={() => setPreviewImageIndex(idx)} 
-                          className={`w-12 h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl overflow-hidden border-2 transition-all duration-300 ${previewImageIndex === idx ? 'border-[#007AFF] scale-110 shadow-lg shadow-blue-500/20' : 'border-transparent opacity-50 grayscale hover:opacity-100 hover:grayscale-0'}`}
+                          className={`w-14 h-14 rounded-2xl overflow-hidden border-2 transition-all duration-300 ${previewImageIndex === idx ? 'border-[#007AFF] scale-110 shadow-lg shadow-blue-500/20' : 'border-transparent opacity-50 grayscale hover:opacity-100 hover:grayscale-0'}`}
                         >
                           <img src={img} className="w-full h-full object-cover" alt="" />
                         </button>
@@ -361,8 +359,8 @@ const App: React.FC = () => {
                 </div>
 
                 {/* Text Content Section */}
-                <div className="flex-1 w-full max-w-2xl space-y-10 lg:space-y-14 py-4 lg:py-6">
-                   <div className="space-y-6 md:space-y-10 text-center lg:text-left flex flex-col items-center lg:items-start">
+                <div className="flex-1 w-full max-w-2xl space-y-10 lg:space-y-14 py-6">
+                   <div className="space-y-6 md:space-y-8 text-center lg:text-left flex flex-col items-center lg:items-start">
                       <div className="flex flex-wrap gap-3 justify-center lg:justify-start">
                         <span className="px-5 py-2 bg-zinc-100 dark:bg-zinc-800 rounded-full font-black text-[10px] md:text-[11px] uppercase border border-white/5 tracking-widest">{selectedProduct.category}</span>
                         {selectedProduct.android_version && (
@@ -373,46 +371,44 @@ const App: React.FC = () => {
                         )}
                       </div>
                       
-                      <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black tracking-tighter uppercase leading-[1.1] md:leading-[1.15] break-words max-w-[90%] lg:max-w-full mx-auto lg:mx-0">
+                      {/* Title - Showing fully */}
+                      <h2 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-black tracking-tighter uppercase leading-[1.1] break-words w-full">
                         {selectedProduct.title}
                       </h2>
                       
-                      <p className="text-zinc-500 dark:text-zinc-400 text-sm md:text-base lg:text-lg font-medium leading-relaxed italic max-w-prose border-l-0 lg:border-l-4 border-[#007AFF] lg:pl-6 py-1">
+                      <p className="text-zinc-500 dark:text-zinc-400 text-sm md:text-base lg:text-xl font-medium leading-relaxed italic max-w-prose">
                         "{selectedProduct.description}"
                       </p>
                    </div>
 
                    {/* Stats Grid */}
                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="p-7 md:p-9 bg-zinc-50 dark:bg-zinc-900/60 rounded-[2.2rem] md:rounded-[2.8rem] border border-white/5 shadow-sm text-center lg:text-left">
+                      <div className="p-8 bg-zinc-50 dark:bg-zinc-900/60 rounded-[2.5rem] border border-white/5 shadow-sm text-center lg:text-left">
                         <span className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.25em] block mb-2">Support</span>
-                        <span className="font-black text-lg md:text-xl uppercase tracking-tight">Realme & Oppo</span>
+                        <span className="font-black text-xl uppercase tracking-tight">Realme & Oppo</span>
                       </div>
-                      <div className="p-7 md:p-9 bg-zinc-50 dark:bg-zinc-900/60 rounded-[2.2rem] md:rounded-[2.8rem] border border-white/5 shadow-sm text-center lg:text-left">
-                        <span className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.25em] block mb-2">Asset Status</span>
-                        <span className="font-black text-lg md:text-xl uppercase tracking-tight">{selectedProduct.is_premium ? 'Premium' : 'Public'}</span>
+                      <div className="p-8 bg-zinc-50 dark:bg-zinc-900/60 rounded-[2.5rem] border border-white/5 shadow-sm text-center lg:text-left">
+                        <span className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.25em] block mb-2">Status</span>
+                        <span className="font-black text-xl uppercase tracking-tight">{selectedProduct.is_premium ? 'Premium' : 'Public'}</span>
                       </div>
                    </div>
 
                    {/* Pricing & CTA */}
-                   <div className="space-y-8 md:space-y-10 p-8 md:p-12 bg-white dark:bg-zinc-900/40 rounded-[2.8rem] md:rounded-[3.5rem] border border-zinc-100 dark:border-white/5 shadow-2xl">
-                      <div className="flex flex-col sm:flex-row items-center sm:items-end justify-between gap-6">
+                   <div className="p-10 md:p-14 bg-white dark:bg-zinc-900/40 rounded-[3.5rem] border border-zinc-100 dark:border-white/5 shadow-2xl space-y-10">
+                      <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
                         <div className="text-center sm:text-left">
-                          <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3">One-Time License Fee</p>
-                          <span className="text-4xl md:text-5xl font-black tracking-tighter text-[#007AFF] dark:text-blue-400">
+                          <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3">One-Time License</p>
+                          <span className="text-4xl md:text-6xl font-black tracking-tighter text-[#007AFF]">
                             {selectedProduct.price === 0 ? 'FREE' : `${selectedProduct.price} EGP`}
                           </span>
                         </div>
-                        <div className="hidden md:flex flex-col items-end">
-                          <i className="fa-solid fa-medal text-[#007AFF] text-3xl opacity-30 mb-2"></i>
-                          <span className="text-[9px] font-black uppercase text-zinc-400 tracking-tighter">Lifetime Access</span>
-                        </div>
+                        <i className="fa-solid fa-certificate text-[#007AFF] text-5xl opacity-20 hidden md:block"></i>
                       </div>
                       <button 
                         onClick={() => { setOrderProductId(selectedProduct.id); window.location.hash = '#/order'; }} 
-                        className="w-full py-6 md:py-8 bg-[#007AFF] text-white rounded-[1.8rem] md:rounded-[2.2rem] font-black text-lg md:text-xl shadow-2xl shadow-blue-500/40 active:scale-95 transition-all flex items-center justify-center gap-4 group"
+                        className="w-full py-8 bg-[#007AFF] text-white rounded-[2rem] font-black text-xl shadow-2xl shadow-blue-500/40 active:scale-95 transition-all flex items-center justify-center gap-4"
                       >
-                        <i className="fa-solid fa-cart-shopping group-hover:scale-110 transition-transform"></i>
+                        <i className="fa-solid fa-cart-shopping"></i>
                         PROCEED TO ORDER
                       </button>
                    </div>
@@ -422,7 +418,62 @@ const App: React.FC = () => {
         )}
 
         {activeSection === 'Order' && (
-          <div className="max-w-2xl mx-auto"><div className="glass-panel p-10 rounded-[3rem] space-y-10 text-center"><h2 className="text-3xl font-black uppercase tracking-tighter">Secure Order</h2><div className="inline-flex items-center gap-3 px-6 py-3 bg-zinc-100 dark:bg-zinc-800 rounded-2xl font-black text-sm"><i className="fa-brands fa-telegram text-[#0088CC] text-xl"></i> @Mohamed_edge</div><div className="space-y-6"><div className="grid grid-cols-2 gap-4">{['Realme', 'Oppo'].map(d => <button key={d} onClick={() => setOrderDevice(d as any)} className={`py-6 rounded-3xl font-black text-xl border-2 transition-all ${orderDevice === d ? 'bg-[#007AFF] text-white border-[#007AFF] shadow-xl' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 border-transparent'}`}>{d}</button>)}</div><select className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black" value={orderProductId} onChange={e => setOrderProductId(e.target.value)}><option value="">Select Asset...</option>{dbProducts.map(p => <option key={p.id} value={p.id}>{p.title} - {p.price} EGP</option>)}</select>{currentOrderedProduct && <div className="space-y-6"><div className="p-8 bg-orange-500/10 border-2 border-dashed border-orange-500/30 rounded-[2.5rem] space-y-2"><p className="text-orange-600 font-black text-sm uppercase">Vodafone Cash Wallet</p><div className="text-2xl font-black tracking-widest text-orange-600">01091931466</div></div><button onClick={handleOrderRedirect} className="w-full py-7 bg-[#0088CC] text-white rounded-3xl font-black text-xl shadow-xl flex items-center justify-center gap-4 hover:scale-[1.02] transition-transform"><i className="fa-brands fa-telegram text-2xl"></i> Connect on Telegram</button></div>}</div></div></div>
+          <div className="max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-8">
+            <div className="glass-panel p-10 md:p-16 rounded-[4rem] space-y-12 text-center shadow-3xl">
+              <div className="space-y-4">
+                <div className="w-20 h-20 bg-[#007AFF]/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <i className="fa-solid fa-shield-halved text-[#007AFF] text-3xl"></i>
+                </div>
+                <h2 className="text-3xl md:text-4xl font-black uppercase tracking-tighter">Secure Order</h2>
+                <p className="text-zinc-500 font-medium text-sm">Select your device and asset to proceed via Telegram.</p>
+              </div>
+
+              <div className="space-y-8">
+                {/* Device Selection Grid - Consistent Sizes */}
+                <div className="grid grid-cols-2 gap-4">
+                  {['Realme', 'Oppo'].map(d => (
+                    <button 
+                      key={d} 
+                      onClick={() => setOrderDevice(d as any)} 
+                      className={`py-8 rounded-[2rem] font-black text-xl border-2 transition-all flex items-center justify-center gap-3 ${orderDevice === d ? 'bg-[#007AFF] text-white border-[#007AFF] shadow-2xl shadow-blue-500/20' : 'bg-zinc-100/50 dark:bg-zinc-800/50 text-zinc-400 border-transparent hover:bg-zinc-200/50'}`}
+                    >
+                      <i className={`fa-solid ${d === 'Realme' ? 'fa-mobile' : 'fa-mobile-screen'}`}></i>
+                      {d}
+                    </button>
+                  ))}
+                </div>
+
+                <select 
+                  className="w-full p-8 rounded-[2rem] bg-zinc-100/50 dark:bg-zinc-800/50 font-black text-lg outline-none border-2 border-transparent focus:border-[#007AFF] transition-all" 
+                  value={orderProductId} 
+                  onChange={e => setOrderProductId(e.target.value)}
+                >
+                  <option value="">Select Asset...</option>
+                  {dbProducts.map(p => <option key={p.id} value={p.id}>{p.title} — {p.price} EGP</option>)}
+                </select>
+
+                {currentOrderedProduct && (
+                  <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500">
+                    <div className="p-10 bg-orange-500/5 border-2 border-dashed border-orange-500/20 rounded-[3rem] space-y-4 relative overflow-hidden">
+                      <div className="absolute top-0 right-0 p-4 opacity-10">
+                        <i className="fa-solid fa-wallet text-6xl text-orange-600"></i>
+                      </div>
+                      <p className="text-orange-600 font-black text-xs uppercase tracking-widest">Vodafone Cash Wallet</p>
+                      <div className="text-3xl md:text-4xl font-black tracking-widest text-orange-600 select-all">01091931466</div>
+                    </div>
+                    
+                    <button 
+                      onClick={handleOrderRedirect} 
+                      className="w-full py-8 bg-[#0088CC] text-white rounded-[2.5rem] font-black text-xl shadow-2xl shadow-blue-500/20 flex items-center justify-center gap-4 hover:scale-[1.02] active:scale-95 transition-all"
+                    >
+                      <i className="fa-brands fa-telegram text-3xl"></i>
+                      Contact on Telegram
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         )}
 
         {activeSection === 'Admin' && isAdminMode && (
