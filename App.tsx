@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { Section, Product, YoutubeVideo } from './types';
@@ -20,22 +21,13 @@ const fileToBase64 = (file: File): Promise<string> => {
   });
 };
 
-// وظيفة حفظ آمنة في التخزين المحلي مع حد أعلى (4 ميجابايت) لدعم الشعارات الكبيرة
 const safeLocalStorageSet = (key: string, value: string) => {
   try {
     if (!value) return;
-    // زيادة الحد إلى 4 ميجابايت لأن الشعارات الـ Base64 تكون ثقيلة
-    if (value.length > 4000000) {
-      console.warn("Image exceeds 4MB limit for local cache. Skipping.");
-      return;
-    }
+    if (value.length > 4000000) return;
     localStorage.setItem(key, value);
   } catch (e) {
-    console.warn("Storage quota exceeded or error occurred while caching logo.");
-    // إذا امتلأت الذاكرة، حاول تنظيفها ثم جرب مرة أخرى أو اكتفِ بـ Supabase
-    try {
-      localStorage.removeItem(key);
-    } catch(err) {}
+    try { localStorage.removeItem(key); } catch(err) {}
   }
 };
 
@@ -53,7 +45,6 @@ const App: React.FC = () => {
   const [dbProducts, setDbProducts] = useState<Product[]>([]);
   const [dbVideos, setDbVideos] = useState<any[]>([]); 
   
-  // تهيئة الشعارات من التخزين المحلي أولاً لسرعة الظهور
   const [siteLogo, setSiteLogo] = useState<string>(() => localStorage.getItem('cached_site_logo') || "https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
   const [loaderLogo, setLoaderLogo] = useState<string>(() => localStorage.getItem('cached_loader_logo') || "https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
   const [adminPassword, setAdminPassword] = useState<string>("1234");
@@ -104,14 +95,8 @@ const App: React.FC = () => {
       if (settings) {
         settings.forEach(s => {
           if (s.key === 'admin_password') setAdminPassword(s.value);
-          if (s.key === 'site_logo') {
-            setSiteLogo(s.value);
-            safeLocalStorageSet('cached_site_logo', s.value);
-          }
-          if (s.key === 'loader_logo') {
-            setLoaderLogo(s.value);
-            safeLocalStorageSet('cached_loader_logo', s.value);
-          }
+          if (s.key === 'site_logo') { setSiteLogo(s.value); safeLocalStorageSet('cached_site_logo', s.value); }
+          if (s.key === 'loader_logo') { setLoaderLogo(s.value); safeLocalStorageSet('cached_loader_logo', s.value); }
         });
       }
     } catch (err) {
@@ -166,36 +151,22 @@ const App: React.FC = () => {
   const selectedProduct = useMemo(() => dbProducts.find(p => p.id === selectedProductId), [dbProducts, selectedProductId]);
   const currentOrderedProduct = useMemo(() => dbProducts.find(p => p.id === orderProductId), [dbProducts, orderProductId]);
 
-  const updateSetting = async (key: string, value: string) => {
-    try {
-      const { error } = await supabase.from('settings').upsert({ key, value }, { onConflict: 'key' });
-      if (error) throw error;
-      
-      if (key === 'admin_password') setAdminPassword(value);
-      if (key === 'site_logo') {
-        setSiteLogo(value);
-        safeLocalStorageSet('cached_site_logo', value);
-      }
-      if (key === 'loader_logo') {
-        setLoaderLogo(value);
-        safeLocalStorageSet('cached_loader_logo', value);
-      }
-      
-      showNotify("Setting updated successfully");
-    } catch (err: any) { 
-      showNotify(err.message, "error"); 
+  const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []) as File[];
+    const currentGallery = editProduct.gallery || [];
+    
+    if (currentGallery.length + files.length > 20) {
+      return showNotify("Max 20 images limit reached", "error");
     }
+
+    const base64Images = await Promise.all(files.map(f => fileToBase64(f)));
+    setEditProduct({ ...editProduct, gallery: [...currentGallery, ...base64Images] });
   };
 
-  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'site' | 'loader') => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      const base64 = await fileToBase64(file);
-      await updateSetting(type === 'site' ? 'site_logo' : 'loader_logo', base64);
-    } catch (err) { 
-      showNotify("Logo upload failed", "error"); 
-    }
+  const removeGalleryImage = (index: number) => {
+    const currentGallery = [...(editProduct.gallery || [])];
+    currentGallery.splice(index, 1);
+    setEditProduct({ ...editProduct, gallery: currentGallery });
   };
 
   const saveProduct = async () => {
@@ -227,6 +198,40 @@ const App: React.FC = () => {
     } finally { setIsPublishing(false); }
   };
 
+  const saveVideo = async () => {
+    if (!editVideo.title || !editVideo.url) return showNotify("All fields are required", "error");
+    let vidId = editVideo.url.includes('v=') ? editVideo.url.split('v=')[1].split('&')[0] : editVideo.url.split('/').pop()?.split('?')[0];
+    if (!vidId) return showNotify("Invalid YouTube Link", "error");
+    
+    setIsPublishing(true);
+    try {
+      const { error } = await supabase.from('videos').upsert({ 
+        id: vidId, 
+        title: editVideo.title, 
+        url: editVideo.url 
+      });
+      if (error) throw error;
+      await refreshData();
+      setIsEditingVideo(false);
+      setEditVideo({ title: '', url: '' });
+      showNotify("Video Updated");
+    } catch (err: any) { 
+      showNotify(err.message, "error"); 
+    } finally { 
+      setIsPublishing(false); 
+    }
+  };
+
+  const deleteVideo = async (id: string) => {
+    if (!window.confirm("Delete this tutorial?")) return;
+    try {
+      const { error } = await supabase.from('videos').delete().eq('id', id);
+      if (error) throw error;
+      setDbVideos(prev => prev.filter(v => v.id !== id));
+      showNotify("Video Deleted");
+    } catch (err: any) { showNotify(err.message, "error"); }
+  };
+
   const handleDeleteProduct = async (id: string) => {
     if (!window.confirm("Are you sure you want to delete this asset?")) return;
     try { 
@@ -235,6 +240,26 @@ const App: React.FC = () => {
       setDbProducts(prev => prev.filter(p => p.id !== id));
       showNotify("Asset Deleted");
     } catch (err: any) { showNotify(err.message, "error"); }
+  };
+
+  const updateSetting = async (key: string, value: string) => {
+    try {
+      const { error } = await supabase.from('settings').upsert({ key, value }, { onConflict: 'key' });
+      if (error) throw error;
+      if (key === 'admin_password') setAdminPassword(value);
+      if (key === 'site_logo') { setSiteLogo(value); safeLocalStorageSet('cached_site_logo', value); }
+      if (key === 'loader_logo') { setLoaderLogo(value); safeLocalStorageSet('cached_loader_logo', value); }
+      showNotify("Setting updated");
+    } catch (err: any) { showNotify(err.message, "error"); }
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'site' | 'loader') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const base64 = await fileToBase64(file);
+      await updateSetting(type === 'site' ? 'site_logo' : 'loader_logo', base64);
+    } catch (err) { showNotify("Logo upload failed", "error"); }
   };
 
   const handleOrderRedirect = () => {
@@ -306,24 +331,16 @@ const App: React.FC = () => {
         {activeSection === 'Preview' && selectedProduct && (
           <div className="max-w-6xl mx-auto pb-20 px-4 animate-in fade-in slide-in-from-bottom-8">
              <button onClick={() => window.location.hash = '#/'} className="w-10 h-10 mb-8 flex items-center justify-center bg-white dark:bg-zinc-800 rounded-full shadow-lg border border-zinc-200 dark:border-zinc-700 hover:scale-110 transition-transform"><i className="fa-solid fa-chevron-left"></i></button>
-             
              <div className="flex flex-col lg:flex-row items-center lg:items-start gap-12 lg:gap-16 xl:gap-24">
-                {/* Mockup */}
                 <div className="w-full flex flex-col items-center gap-8 lg:w-auto shrink-0">
                    <div className="relative aspect-[1290/2796] w-full max-w-[300px] sm:max-w-[320px] md:max-w-[380px] lg:max-w-[420px] rounded-[40px] bg-[#1a1a1c] p-3 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.6)] ring-1 ring-zinc-100/10 outline outline-[1px] outline-zinc-600 overflow-hidden">
                       <div className="absolute left-0 top-[20%] w-[3px] h-12 bg-[#2a2a2c] rounded-r-sm"></div>
                       <div className="absolute left-0 top-[28%] w-[3px] h-16 bg-[#2a2a2c] rounded-r-sm"></div>
                       <div className="absolute right-0 top-[26%] w-[3px] h-24 bg-[#2a2a2c] rounded-l-sm"></div>
-
                       <div className="relative w-full h-full rounded-[30px] overflow-hidden bg-black ring-1 ring-white/10">
-                        <img 
-                          src={selectedProduct.gallery[previewImageIndex] || selectedProduct.image} 
-                          className="relative z-10 w-full h-full object-cover transition-opacity duration-500" 
-                          alt="" 
-                        />
+                        <img src={selectedProduct.gallery[previewImageIndex] || selectedProduct.image} className="relative z-10 w-full h-full object-cover transition-opacity duration-500" alt="" />
                       </div>
                    </div>
-                   
                    <div className="flex flex-wrap gap-3 justify-center">
                       {(selectedProduct.gallery.length > 0 ? selectedProduct.gallery : [selectedProduct.image]).map((img, idx) => (
                         <button key={idx} onClick={() => setPreviewImageIndex(idx)} className={`w-14 h-14 rounded-2xl overflow-hidden border-2 transition-all ${previewImageIndex === idx ? 'border-[#007AFF] scale-110 shadow-lg' : 'border-transparent opacity-50 grayscale hover:opacity-100 hover:grayscale-0'}`}>
@@ -332,7 +349,6 @@ const App: React.FC = () => {
                       ))}
                    </div>
                 </div>
-
                 <div className="flex-1 w-full max-w-2xl space-y-10 py-6">
                    <div className="space-y-6 text-center lg:text-left flex flex-col items-center lg:items-start">
                       <div className="flex gap-3">
@@ -346,7 +362,6 @@ const App: React.FC = () => {
                       <h2 className="text-4xl lg:text-6xl font-black tracking-tighter uppercase leading-[1.1]">{selectedProduct.title}</h2>
                       <p className="text-zinc-500 dark:text-zinc-400 text-lg font-medium leading-relaxed italic">"{selectedProduct.description}"</p>
                    </div>
-
                    <div className="grid grid-cols-2 gap-4">
                       <div className="p-8 bg-zinc-50 dark:bg-zinc-900/60 rounded-[2.5rem] border border-white/5 shadow-sm text-center">
                         <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block mb-2">Platform</span>
@@ -357,7 +372,6 @@ const App: React.FC = () => {
                         <span className="font-black text-xl uppercase">{selectedProduct.is_premium ? 'Premium' : 'Public'}</span>
                       </div>
                    </div>
-
                    <div className="p-10 bg-white dark:bg-zinc-900/40 rounded-[3.5rem] border border-zinc-100 dark:border-white/5 shadow-2xl space-y-10">
                       <div className="flex items-center justify-between">
                         <div>
@@ -385,7 +399,6 @@ const App: React.FC = () => {
                 <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tighter">Gateway Portal</h2>
                 <p className="text-zinc-500 max-w-md mx-auto">Instant delivery through Mohamed Edge secure Telegram channel. Pick your preferences to continue.</p>
               </div>
-
               <div className="space-y-10 max-w-2xl mx-auto">
                 <div className="grid grid-cols-2 gap-4">
                   {['Realme', 'Oppo'].map(d => (
@@ -394,12 +407,10 @@ const App: React.FC = () => {
                     </button>
                   ))}
                 </div>
-
                 <select className="w-full p-8 rounded-[2rem] bg-zinc-100/50 dark:bg-zinc-800/50 font-black text-xl outline-none border-2 border-transparent focus:border-[#007AFF] transition-all" value={orderProductId} onChange={e => setOrderProductId(e.target.value)}>
                   <option value="">Select Target Asset...</option>
                   {dbProducts.map(p => <option key={p.id} value={p.id}>{p.title} — {p.price} EGP</option>)}
                 </select>
-
                 {currentOrderedProduct && (
                   <div className="space-y-10 animate-in fade-in zoom-in-95">
                     <div className="p-12 bg-orange-500/[0.03] border-2 border-dashed border-orange-500/20 rounded-[3rem] space-y-4">
@@ -429,24 +440,48 @@ const App: React.FC = () => {
                 {isEditingProduct && (
                   <div className="glass-panel p-10 rounded-[3rem] space-y-8 border-4 border-[#007AFF]/10">
                     <div className="flex justify-between items-center"><h3 className="font-black text-xl uppercase">{editProduct.id ? 'Edit' : 'Add'} Product</h3><button onClick={() => setIsEditingProduct(false)} className="text-zinc-400 hover:text-red-600"><i className="fa-solid fa-xmark text-xl"></i></button></div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-4">
-                        <input className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black" value={editProduct.title} onChange={e => setEditProduct({...editProduct, title: e.target.value})} placeholder="Title" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <div className="space-y-6">
+                        <div className="space-y-1"><label className="text-[10px] font-black uppercase text-zinc-400 px-2">Basic Info</label><input className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black" value={editProduct.title} onChange={e => setEditProduct({...editProduct, title: e.target.value})} placeholder="Title" /></div>
                         <textarea className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black" value={editProduct.description} onChange={e => setEditProduct({...editProduct, description: e.target.value})} placeholder="Description" rows={3} />
                         <div className="grid grid-cols-2 gap-4">
                           <input type="number" className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black" value={editProduct.price} onChange={e => setEditProduct({...editProduct, price: Number(e.target.value)})} placeholder="Price" />
                           <input className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black" value={editProduct.android_version} onChange={e => setEditProduct({...editProduct, android_version: e.target.value})} placeholder="Android Version" />
                         </div>
                         <select className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black" value={editProduct.category} onChange={e => setEditProduct({...editProduct, category: e.target.value as any})}><option value="Themes">Themes</option><option value="Widgets">Widgets</option><option value="Walls">Wallpapers</option></select>
+                        <div className="space-y-4">
+                           <label className="text-[10px] font-black uppercase text-zinc-400 px-2">Main Cover</label>
+                           <div className="aspect-video bg-zinc-100 dark:bg-zinc-800 rounded-3xl overflow-hidden relative border-2 border-dashed border-zinc-300">
+                             {editProduct.image ? <img src={editProduct.image} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center flex-col text-zinc-300"><i className="fa-solid fa-image text-3xl"></i><span className="text-[10px] font-bold mt-2">UPLOAD COVER</span></div>}
+                             <input type="file" accept="image/*" onChange={async e => { if(e.target.files?.[0]) setEditProduct({...editProduct, image: await fileToBase64(e.target.files[0])}); }} className="absolute inset-0 opacity-0 cursor-pointer" />
+                           </div>
+                        </div>
                       </div>
+                      
                       <div className="space-y-4">
-                        <div className="aspect-video bg-zinc-100 dark:bg-zinc-800 rounded-3xl overflow-hidden relative border-2 border-dashed border-zinc-300">
-                          {editProduct.image ? <img src={editProduct.image} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center flex-col text-zinc-300"><i className="fa-solid fa-image text-3xl"></i><span className="text-[10px] font-bold mt-2">UPLOAD COVER</span></div>}
-                          <input type="file" accept="image/*" onChange={async e => { if(e.target.files?.[0]) setEditProduct({...editProduct, image: await fileToBase64(e.target.files[0])}); }} className="absolute inset-0 opacity-0 cursor-pointer" />
+                        <div className="flex justify-between items-center px-2">
+                           <label className="text-[10px] font-black uppercase text-zinc-400">Gallery Preview ({editProduct.gallery?.length || 0}/20)</label>
+                           <label className="cursor-pointer text-[#007AFF] font-black text-[10px] uppercase hover:underline">
+                              Upload Multi
+                              <input type="file" multiple accept="image/*" onChange={handleGalleryUpload} className="hidden" />
+                           </label>
+                        </div>
+                        <div className="grid grid-cols-3 gap-3 p-4 bg-zinc-50 dark:bg-zinc-900/40 rounded-[2rem] border border-white/5 min-h-[300px] content-start">
+                          {(editProduct.gallery || []).map((img, idx) => (
+                            <div key={idx} className="aspect-[3/4] rounded-2xl overflow-hidden relative group">
+                              <img src={img} className="w-full h-full object-cover" />
+                              <button onClick={() => removeGalleryImage(idx)} className="absolute top-2 right-2 w-6 h-6 bg-red-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <i className="fa-solid fa-xmark text-[10px]"></i>
+                              </button>
+                            </div>
+                          ))}
+                          {(editProduct.gallery || []).length === 0 && (
+                            <div className="col-span-3 flex flex-col items-center justify-center py-20 text-zinc-300 italic text-xs">No gallery images added</div>
+                          )}
                         </div>
                       </div>
                     </div>
-                    <button onClick={saveProduct} disabled={isPublishing} className="w-full py-6 bg-[#007AFF] text-white rounded-3xl font-black uppercase text-sm shadow-xl">{isPublishing ? 'PUBLISHING...' : 'SAVE CHANGES'}</button>
+                    <button onClick={saveProduct} disabled={isPublishing} className="w-full py-6 bg-[#007AFF] text-white rounded-3xl font-black uppercase text-sm shadow-xl">{isPublishing ? 'PUBLISHING...' : 'SAVE PRODUCT'}</button>
                   </div>
                 )}
                 <div className="space-y-4">{dbProducts.map(p => (
@@ -455,6 +490,33 @@ const App: React.FC = () => {
                     <div className="flex gap-2"><button onClick={() => { setEditProduct(p); setIsEditingProduct(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="w-10 h-10 flex items-center justify-center bg-blue-500/10 text-blue-600 rounded-full"><i className="fa-solid fa-pen"></i></button><button onClick={() => handleDeleteProduct(p.id)} className="w-10 h-10 flex items-center justify-center bg-red-500/10 text-red-600 rounded-full"><i className="fa-solid fa-trash"></i></button></div>
                   </div>
                 ))}</div>
+              </div>
+            )}
+
+            {adminTab === 'Videos' && (
+              <div className="space-y-8">
+                <button onClick={() => { setEditVideo({ title: '', url: '' }); setIsEditingVideo(true); }} className="w-full py-6 bg-red-600 text-white rounded-3xl font-black uppercase text-xs shadow-xl">Add Tutorial Video</button>
+                {isEditingVideo && (
+                  <div className="glass-panel p-10 rounded-[3rem] space-y-6 border-4 border-red-600/10">
+                    <div className="flex justify-between items-center"><h3 className="font-black text-xl uppercase">New Tutorial</h3><button onClick={() => setIsEditingVideo(false)} className="text-zinc-400 hover:text-red-600"><i className="fa-solid fa-xmark text-xl"></i></button></div>
+                    <div className="space-y-4">
+                      <input className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black" value={editVideo.title} onChange={e => setEditVideo({...editVideo, title: e.target.value})} placeholder="Video Title" />
+                      <input className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black" value={editVideo.url} onChange={e => setEditVideo({...editVideo, url: e.target.value})} placeholder="YouTube URL (https://...)" />
+                      <button onClick={saveVideo} disabled={isPublishing} className="w-full py-6 bg-red-600 text-white rounded-3xl font-black uppercase text-sm shadow-xl">{isPublishing ? 'SAVING...' : 'PUBLISH VIDEO'}</button>
+                    </div>
+                  </div>
+                )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {dbVideos.map(v => (
+                    <div key={v.id} className="p-4 glass-panel rounded-3xl flex items-center justify-between">
+                       <div className="flex items-center gap-4">
+                          <img src={`https://img.youtube.com/vi/${v.id}/default.jpg`} className="w-20 h-12 rounded-lg object-cover" />
+                          <p className="font-black text-xs uppercase line-clamp-1">{v.title}</p>
+                       </div>
+                       <button onClick={() => deleteVideo(v.id)} className="w-8 h-8 flex items-center justify-center bg-red-500/10 text-red-600 rounded-full"><i className="fa-solid fa-trash text-xs"></i></button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
