@@ -324,17 +324,31 @@ const App: React.FC = () => {
              <button onClick={() => window.location.hash = '#/'} className="w-10 h-10 mb-8 flex items-center justify-center bg-white dark:bg-zinc-800 rounded-full shadow-lg border border-zinc-200 dark:border-zinc-700 hover:scale-110 transition-transform"><i className="fa-solid fa-chevron-left"></i></button>
              
              <div className="flex flex-col lg:flex-row items-center lg:items-start gap-12 lg:gap-16 xl:gap-24">
-                {/* Responsive Mockup - Sleeker Frame with 50px Outer Corner */}
+                {/* Responsive Mockup - Ultra Realistic Frame */}
                 <div className="w-full flex flex-col items-center gap-8 lg:w-auto shrink-0">
-                   <div className="relative aspect-[1290/2796] w-full max-w-[300px] sm:max-w-[320px] md:max-w-[380px] lg:max-w-[420px] rounded-[50px] bg-zinc-900 p-3 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.6)] ring-1 ring-zinc-100/10 outline outline-8 outline-zinc-900 overflow-hidden">
-                      {/* Screen Area - Using object-cover to ELIMINATE GAPS */}
-                      <div className="relative w-full h-full rounded-[38px] overflow-hidden bg-black ring-1 ring-white/10">
+                   <div className="relative aspect-[1290/2796] w-full max-w-[300px] sm:max-w-[320px] md:max-w-[380px] lg:max-w-[420px] rounded-[58px] bg-[#1a1a1c] p-3.5 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.6)] ring-1 ring-zinc-100/10 outline outline-[1px] outline-zinc-600 overflow-hidden">
+                      
+                      {/* Hardware Buttons Silhouettes */}
+                      <div className="absolute left-0 top-[20%] w-[3px] h-12 bg-[#2a2a2c] rounded-r-sm"></div>
+                      <div className="absolute left-0 top-[28%] w-[3px] h-16 bg-[#2a2a2c] rounded-r-sm"></div>
+                      <div className="absolute left-0 top-[36%] w-[3px] h-16 bg-[#2a2a2c] rounded-r-sm"></div>
+                      <div className="absolute right-0 top-[26%] w-[3px] h-24 bg-[#2a2a2c] rounded-l-sm"></div>
+
+                      {/* Screen Area - No Gaps */}
+                      <div className="relative w-full h-full rounded-[44px] overflow-hidden bg-black ring-1 ring-white/10 shadow-[inset_0_0_20px_rgba(0,0,0,0.8)]">
                         <img 
                           src={selectedProduct.gallery[previewImageIndex] || selectedProduct.image} 
-                          className="relative z-10 w-full h-full object-cover" 
+                          className="relative z-10 w-full h-full object-cover transition-opacity duration-500" 
                           alt="" 
                         />
-                        <div className="absolute inset-0 z-20 bg-gradient-to-tr from-transparent via-white/5 to-transparent pointer-events-none"></div>
+                        
+                        {/* Dynamic Island */}
+                        <div className="absolute top-4 left-1/2 -translate-x-1/2 w-[120px] h-[36px] bg-black rounded-[20px] z-20 flex items-center justify-end px-4 border border-white/5">
+                           <div className="w-2.5 h-2.5 rounded-full bg-blue-900/20 ring-1 ring-white/5 blur-[0.5px]"></div>
+                        </div>
+
+                        {/* Subtle Screen Highlight */}
+                        <div className="absolute inset-0 z-15 bg-gradient-to-tr from-transparent via-white/[0.03] to-transparent pointer-events-none"></div>
                       </div>
                    </div>
                    
@@ -365,7 +379,6 @@ const App: React.FC = () => {
                         )}
                       </div>
                       
-                      {/* Title - Fully visible with responsive sizing */}
                       <h2 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-black tracking-tighter uppercase leading-[1.1] break-words w-full">
                         {selectedProduct.title}
                       </h2>
@@ -412,24 +425,26 @@ const App: React.FC = () => {
         )}
 
         {activeSection === 'Order' && (
-          <div className="max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-8">
-            <div className="glass-panel p-10 md:p-16 rounded-[4rem] space-y-12 text-center shadow-3xl">
+          <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-8 px-2 md:px-0">
+            <div className="glass-panel p-6 sm:p-10 md:p-16 rounded-[2.5rem] sm:rounded-[3.5rem] md:rounded-[4.5rem] space-y-10 sm:space-y-14 text-center shadow-3xl">
               <div className="space-y-4">
-                <div className="w-20 h-20 bg-[#007AFF]/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <i className="fa-solid fa-shield-halved text-[#007AFF] text-3xl"></i>
+                <div className="w-16 h-16 sm:w-24 sm:h-24 bg-[#007AFF]/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <i className="fa-solid fa-shield-halved text-[#007AFF] text-2xl sm:text-4xl"></i>
                 </div>
-                <h2 className="text-3xl md:text-4xl font-black uppercase tracking-tighter">Secure Order</h2>
-                <p className="text-zinc-500 font-medium text-sm">Select your device and asset to proceed via Telegram.</p>
+                <h2 className="text-2xl sm:text-4xl md:text-5xl font-black uppercase tracking-tighter">Checkout Hub</h2>
+                <p className="text-zinc-500 font-medium text-xs sm:text-sm md:text-base max-w-md mx-auto">
+                  Premium assets are delivered instantly via our dedicated Telegram bot. Select your specifications below.
+                </p>
               </div>
 
-              <div className="space-y-8">
-                {/* Device Selection Grid - Consistent High-End Buttons */}
-                <div className="grid grid-cols-2 gap-4 h-24 md:h-28">
+              <div className="space-y-6 sm:space-y-10 max-w-2xl mx-auto">
+                {/* Device Selection Grid - Responsive and Consistent */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {['Realme', 'Oppo'].map(d => (
                     <button 
                       key={d} 
                       onClick={() => setOrderDevice(d as any)} 
-                      className={`h-full rounded-[2rem] font-black text-xl border-2 transition-all flex items-center justify-center gap-3 ${orderDevice === d ? 'bg-[#007AFF] text-white border-[#007AFF] shadow-2xl shadow-blue-500/20' : 'bg-zinc-100/50 dark:bg-zinc-800/50 text-zinc-400 border-transparent hover:bg-zinc-200/50'}`}
+                      className={`py-6 sm:py-8 rounded-[1.5rem] sm:rounded-[2rem] font-black text-lg sm:text-2xl border-2 transition-all flex items-center justify-center gap-4 ${orderDevice === d ? 'bg-[#007AFF] text-white border-[#007AFF] shadow-2xl shadow-blue-500/25' : 'bg-zinc-100/50 dark:bg-zinc-800/50 text-zinc-400 border-transparent hover:bg-zinc-200/50 dark:hover:bg-zinc-800/80'}`}
                     >
                       <i className={`fa-solid ${d === 'Realme' ? 'fa-mobile' : 'fa-mobile-screen'}`}></i>
                       {d}
@@ -437,32 +452,40 @@ const App: React.FC = () => {
                   ))}
                 </div>
 
-                <select 
-                  className="w-full p-8 rounded-[2rem] bg-zinc-100/50 dark:bg-zinc-800/50 font-black text-lg outline-none border-2 border-transparent focus:border-[#007AFF] transition-all" 
-                  value={orderProductId} 
-                  onChange={e => setOrderProductId(e.target.value)}
-                >
-                  <option value="">Select Asset...</option>
-                  {dbProducts.map(p => <option key={p.id} value={p.id}>{p.title} — {p.price} EGP</option>)}
-                </select>
+                <div className="space-y-4 text-left">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 ml-6">Select Your Asset</label>
+                  <select 
+                    className="w-full p-6 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] bg-zinc-100/50 dark:bg-zinc-800/50 font-black text-base sm:text-xl outline-none border-2 border-transparent focus:border-[#007AFF] transition-all appearance-none cursor-pointer" 
+                    value={orderProductId} 
+                    onChange={e => setOrderProductId(e.target.value)}
+                  >
+                    <option value="">Choose Asset...</option>
+                    {dbProducts.map(p => <option key={p.id} value={p.id}>{p.title} — {p.price} EGP</option>)}
+                  </select>
+                </div>
 
-                {currentOrderedProduct && (
-                  <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500">
-                    <div className="p-10 bg-orange-500/5 border-2 border-dashed border-orange-500/20 rounded-[3rem] space-y-4 relative overflow-hidden">
-                      <div className="absolute top-0 right-0 p-4 opacity-10">
-                        <i className="fa-solid fa-wallet text-6xl text-orange-600"></i>
+                {currentOrderedProduct ? (
+                  <div className="space-y-6 sm:space-y-10 animate-in fade-in zoom-in-95 duration-500">
+                    <div className="p-8 sm:p-12 bg-orange-500/[0.03] border-2 border-dashed border-orange-500/20 rounded-[2rem] sm:rounded-[3rem] space-y-4 relative overflow-hidden group">
+                      <div className="absolute -top-4 -right-4 p-8 opacity-10 group-hover:scale-110 transition-transform">
+                        <i className="fa-solid fa-wallet text-6xl sm:text-8xl text-orange-600"></i>
                       </div>
-                      <p className="text-orange-600 font-black text-xs uppercase tracking-widest">Vodafone Cash Wallet</p>
-                      <div className="text-3xl md:text-4xl font-black tracking-widest text-orange-600 select-all">01091931466</div>
+                      <p className="text-orange-600 font-black text-[10px] sm:text-xs uppercase tracking-[0.3em]">Vodafone Cash Wallet</p>
+                      <div className="text-2xl sm:text-4xl md:text-5xl font-black tracking-widest text-orange-600 select-all font-mono">01091931466</div>
+                      <p className="text-zinc-400 text-[10px] font-bold">Tap the number to copy</p>
                     </div>
                     
                     <button 
                       onClick={handleOrderRedirect} 
-                      className="w-full py-8 bg-[#0088CC] text-white rounded-[2.5rem] font-black text-xl shadow-2xl shadow-blue-500/20 flex items-center justify-center gap-4 hover:scale-[1.02] active:scale-95 transition-all"
+                      className="w-full py-6 sm:py-9 bg-[#0088CC] text-white rounded-[1.5rem] sm:rounded-[2.5rem] font-black text-lg sm:text-2xl shadow-2xl shadow-[#0088CC]/25 flex items-center justify-center gap-4 hover:scale-[1.02] active:scale-95 transition-all group"
                     >
-                      <i className="fa-brands fa-telegram text-3xl"></i>
-                      Contact on Telegram
+                      <i className="fa-brands fa-telegram text-2xl sm:text-4xl group-hover:rotate-12 transition-transform"></i>
+                      Message Support
                     </button>
+                  </div>
+                ) : (
+                  <div className="py-12 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-[2.5rem] text-zinc-400 font-black uppercase text-xs tracking-widest">
+                    Pick an asset to see instructions
                   </div>
                 )}
               </div>
