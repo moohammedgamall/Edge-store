@@ -394,58 +394,58 @@ const App: React.FC = () => {
                    )}
                 </div>
 
-                {/* Content Area */}
-                <div className="w-full lg:flex-1 lg:pt-10 flex flex-col gap-10">
-                   <div className="space-y-8 text-center lg:text-left">
-                      <div className="flex flex-wrap justify-center lg:justify-start gap-3">
-                         <div className="px-5 py-2 bg-zinc-100 dark:bg-zinc-900/50 text-zinc-900 dark:text-zinc-100 font-black text-[10px] uppercase rounded-full border border-zinc-200 dark:border-white/5">
+                {/* Content Area - Responsive Font Sizes */}
+                <div className="w-full lg:flex-1 lg:pt-10 flex flex-col gap-8 md:gap-10">
+                   <div className="space-y-6 md:space-y-8 text-center lg:text-left">
+                      <div className="flex flex-wrap justify-center lg:justify-start gap-2 md:gap-3">
+                         <div className="px-4 md:px-5 py-1.5 md:py-2 bg-zinc-100 dark:bg-zinc-900/50 text-zinc-900 dark:text-zinc-100 font-black text-[9px] md:text-[10px] uppercase rounded-full border border-zinc-200 dark:border-white/5">
                            {selectedProduct.category}
                          </div>
                          {selectedProduct.android_version && (
-                            <div className="px-5 py-2 bg-orange-500/10 text-orange-600 font-black text-[10px] uppercase rounded-full border border-orange-500/20">
+                            <div className="px-4 md:px-5 py-1.5 md:py-2 bg-orange-500/10 text-orange-600 font-black text-[9px] md:text-[10px] uppercase rounded-full border border-orange-500/20">
                               <i className="fa-brands fa-android mr-2 text-xs"></i> {selectedProduct.android_version}
                             </div>
                          )}
                       </div>
                       
-                      <div className="space-y-4">
-                        <h2 className="text-4xl sm:text-5xl md:text-7xl font-black text-zinc-900 dark:text-zinc-100 tracking-tighter leading-[0.9] uppercase">
+                      <div className="space-y-3 md:space-y-4">
+                        <h2 className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-black text-zinc-900 dark:text-zinc-100 tracking-tighter leading-tight lg:leading-[1.1] uppercase break-words">
                           {selectedProduct.title}
                         </h2>
-                        <p className="text-zinc-500 dark:text-zinc-400 font-medium text-lg md:text-xl leading-relaxed max-w-xl mx-auto lg:mx-0 opacity-80 italic">
+                        <p className="text-zinc-500 dark:text-zinc-400 font-medium text-base sm:text-lg lg:text-xl leading-relaxed max-w-xl mx-auto lg:mx-0 opacity-80 italic">
                           "{selectedProduct.description}"
                         </p>
                       </div>
                    </div>
 
-                   {/* Specs Grid */}
-                   <div className="grid grid-cols-2 gap-4 w-full">
-                      <div className="flex flex-col gap-1 p-6 bg-zinc-50 dark:bg-zinc-900/40 rounded-[2rem] border border-zinc-100 dark:border-white/5 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-900/60">
-                         <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Support</span>
-                         <span className="text-lg font-bold text-zinc-900 dark:text-zinc-100 uppercase truncate">{selectedProduct.compatibility}</span>
+                   {/* Specs Grid - Proportional Text */}
+                   <div className="grid grid-cols-2 gap-3 md:gap-4 w-full">
+                      <div className="flex flex-col gap-1 p-5 md:p-6 bg-zinc-50 dark:bg-zinc-900/40 rounded-[1.5rem] md:rounded-[2rem] border border-zinc-100 dark:border-white/5 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-900/60">
+                         <span className="text-[8px] sm:text-[9px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest">Support</span>
+                         <span className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-zinc-900 dark:text-zinc-100 uppercase truncate">Realme & Oppo</span>
                       </div>
-                      <div className="flex flex-col gap-1 p-6 bg-zinc-50 dark:bg-zinc-900/40 rounded-[2rem] border border-zinc-100 dark:border-white/5 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-900/60">
-                         <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Asset Type</span>
-                         <span className="text-lg font-bold text-zinc-900 dark:text-zinc-100 uppercase">{selectedProduct.is_premium ? 'Premium' : 'Standard'}</span>
+                      <div className="flex flex-col gap-1 p-5 md:p-6 bg-zinc-50 dark:bg-zinc-900/40 rounded-[1.5rem] md:rounded-[2rem] border border-zinc-100 dark:border-white/5 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-900/60">
+                         <span className="text-[8px] sm:text-[9px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest">Asset Type</span>
+                         <span className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-zinc-900 dark:text-zinc-100 uppercase">{selectedProduct.is_premium ? 'Premium' : 'Standard'}</span>
                       </div>
                    </div>
 
-                   {/* CTA Section */}
-                   <div className="mt-4 flex flex-col gap-8 bg-white dark:bg-zinc-900/40 lg:bg-transparent rounded-[3.5rem] p-10 lg:p-0 shadow-2xl lg:shadow-none">
+                   {/* CTA Section - Responsive elements */}
+                   <div className="mt-2 md:mt-4 flex flex-col gap-6 md:gap-8 bg-white dark:bg-zinc-900/40 lg:bg-transparent rounded-[2.5rem] md:rounded-[3.5rem] p-8 md:p-10 lg:p-0 shadow-2xl lg:shadow-none border border-zinc-100 dark:border-white/5 lg:border-none">
                       <div className="text-center lg:text-left">
-                        <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.5em] mb-2 opacity-60">Listing Price</p>
-                        <span className="text-5xl sm:text-6xl font-black text-zinc-900 dark:text-zinc-100 tracking-tighter">
+                        <p className="text-[9px] md:text-[10px] font-black text-zinc-400 uppercase tracking-[0.4em] mb-1 md:mb-2 opacity-60">Listing Price</p>
+                        <span className="text-4xl sm:text-5xl lg:text-6xl font-black text-zinc-900 dark:text-zinc-100 tracking-tighter">
                           {selectedProduct.price === 0 ? 'FREE' : `${selectedProduct.price.toFixed(2)} EGP`}
                         </span>
                       </div>
                       <button 
                         onClick={() => { setOrderProductId(selectedProduct.id); window.location.hash = '#/order'; }} 
-                        className="w-full py-6 bg-[#007AFF] text-white rounded-[2rem] font-black text-lg shadow-2xl shadow-blue-500/30 active:scale-95 transition-all flex items-center justify-center gap-4 hover:bg-blue-600"
+                        className="w-full py-5 md:py-6 bg-[#007AFF] text-white rounded-[1.5rem] md:rounded-[2rem] font-black text-base md:text-lg lg:text-xl shadow-2xl shadow-blue-500/30 active:scale-95 transition-all flex items-center justify-center gap-3 md:gap-4 hover:bg-blue-600"
                       >
-                         <i className="fa-solid fa-cart-arrow-down text-xl"></i>
+                         <i className="fa-solid fa-cart-arrow-down text-lg md:text-xl"></i>
                          <span className="uppercase">{selectedProduct.price === 0 ? 'Get in' : 'Secure Purchase'}</span>
                       </button>
-                      <p className="text-center lg:text-left text-[10px] font-bold text-zinc-400 uppercase tracking-widest px-6 opacity-60">
+                      <p className="text-center lg:text-left text-[8px] sm:text-[9px] md:text-[10px] font-bold text-zinc-400 uppercase tracking-widest px-4 opacity-60">
                         Asset delivery via @Mohamed_edge Telegram service
                       </p>
                    </div>
