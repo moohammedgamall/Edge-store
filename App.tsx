@@ -73,11 +73,25 @@ const App: React.FC = () => {
   const refreshData = async () => {
     try {
       const prodRes = await supabase.from('products').select('*').order('created_at', { ascending: false });
-      if (!prodRes.error && prodRes.data) {
-        setDbProducts(prodRes.data.map(p => ({ ...p, gallery: Array.isArray(p.gallery) ? p.gallery : [] })));
+      
+      if (prodRes.error) {
+        console.error("Supabase Fetch Error:", prodRes.error.message);
+        // If the table doesn't exist yet, we show mock products to avoid a blank screen
+        if (prodRes.error.code === 'PGRST116' || prodRes.error.message.includes('relation "public.products" does not exist')) {
+          setDbProducts(MOCK_PRODUCTS);
+        } else {
+          showNotify("Database connection error", "error");
+        }
       } else {
-        setDbProducts(MOCK_PRODUCTS);
+        // If we have data, show it. If empty, it stays empty (or show mock if you prefer)
+        if (prodRes.data && prodRes.data.length > 0) {
+          setDbProducts(prodRes.data.map(p => ({ ...p, gallery: Array.isArray(p.gallery) ? p.gallery : [] })));
+        } else {
+          // If database is truly empty, we show mock products as inspiration for the user
+          setDbProducts(MOCK_PRODUCTS);
+        }
       }
+
       const vidRes = await supabase.from('videos').select('*').order('created_at', { ascending: false });
       if (!vidRes.error && vidRes.data) setDbVideos(vidRes.data);
       
@@ -150,7 +164,9 @@ const App: React.FC = () => {
 
   const updateSetting = async (key: string, value: string) => {
     try {
-      await supabase.from('settings').upsert({ key, value }, { onConflict: 'key' });
+      const { error } = await supabase.from('settings').upsert({ key, value }, { onConflict: 'key' });
+      if (error) throw error;
+
       if (key === 'admin_password') {
         const pass = value.trim();
         setAdminPassword(pass);
@@ -211,12 +227,22 @@ const App: React.FC = () => {
         compatibility: 'Realme UI / ColorOS',
         android_version: editProduct.android_version || ''
       };
-      await supabase.from('products').upsert(payload);
+      
+      const { error } = await supabase.from('products').upsert(payload);
+      if (error) {
+        console.error("Save Error:", error.message);
+        throw error;
+      }
+
       await refreshData();
       setIsEditingProduct(false);
       setEditProduct({ title: '', price: 0, category: 'Themes', image: '', description: '', gallery: [], android_version: '' });
-      showNotify("Product saved");
-    } catch (err) { showNotify("Failed to save", "error"); } finally { setIsPublishing(false); }
+      showNotify("Product saved successfully");
+    } catch (err: any) { 
+      showNotify(err.message || "Failed to save product", "error"); 
+    } finally { 
+      setIsPublishing(false); 
+    }
   };
 
   const saveVideo = async () => {
@@ -230,23 +256,42 @@ const App: React.FC = () => {
     if (!vidId) return showNotify("Invalid URL", "error");
     setIsPublishing(true);
     try {
-      await supabase.from('videos').upsert({ id: vidId, title: editVideo.title, url: editVideo.url });
+      const { error } = await supabase.from('videos').upsert({ id: vidId, title: editVideo.title, url: editVideo.url });
+      if (error) throw error;
       await refreshData();
       setIsEditingVideo(false);
       setEditVideo({ title: '', url: '' });
       showNotify("Video saved");
-    } catch (err) { showNotify("Error saving", "error"); } finally { setIsPublishing(false); }
+    } catch (err: any) { 
+      showNotify(err.message || "Error saving video", "error"); 
+    } finally { 
+      setIsPublishing(false); 
+    }
   };
 
   const handleDeleteProduct = async (id: string) => {
     if (window.confirm("Delete product?")) {
-      try { await supabase.from('products').delete().eq('id', id); refreshData(); showNotify("Deleted"); } catch (err) { showNotify("Error", "error"); }
+      try { 
+        const { error } = await supabase.from('products').delete().eq('id', id);
+        if (error) throw error;
+        await refreshData(); 
+        showNotify("Deleted"); 
+      } catch (err: any) { 
+        showNotify(err.message || "Error", "error"); 
+      }
     }
   };
 
   const handleDeleteVideo = async (id: string) => {
     if (window.confirm("Delete video?")) {
-      try { await supabase.from('videos').delete().eq('id', id); refreshData(); showNotify("Deleted"); } catch (err) { showNotify("Error", "error"); }
+      try { 
+        const { error } = await supabase.from('videos').delete().eq('id', id);
+        if (error) throw error;
+        await refreshData(); 
+        showNotify("Deleted"); 
+      } catch (err: any) { 
+        showNotify(err.message || "Error", "error"); 
+      }
     }
   };
 
@@ -300,13 +345,20 @@ const App: React.FC = () => {
               <div className="flex justify-between items-end">
                 <h2 className="text-2xl font-black tracking-tighter uppercase flex items-center gap-3">
                   <div className="w-1.5 h-6 bg-[#007AFF] rounded-full"></div> 
-                  {activeSection === 'Home' ? 'New Release' : activeSection}
+                  {activeSection === 'Home' ? 'Store Showcase' : activeSection}
                 </h2>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                {filteredProducts.map(p => (
-                  <ProductCard key={p.id} product={p} onPreview={(id) => window.location.hash = `#/preview/${id}`} onBuy={(id) => { setOrderProductId(id); window.location.hash = '#/order'; }} />
-                ))}
+                {filteredProducts.length > 0 ? (
+                  filteredProducts.map(p => (
+                    <ProductCard key={p.id} product={p} onPreview={(id) => window.location.hash = `#/preview/${id}`} onBuy={(id) => { setOrderProductId(id); window.location.hash = '#/order'; }} />
+                  ))
+                ) : (
+                  <div className="col-span-full py-20 text-center space-y-4">
+                    <i className="fa-solid fa-box-open text-4xl text-zinc-300"></i>
+                    <p className="font-black text-zinc-400 uppercase text-xs tracking-widest">No products found in this section</p>
+                  </div>
+                )}
               </div>
             </section>
 
@@ -424,7 +476,6 @@ const App: React.FC = () => {
                       </div>
                    </div>
 
-                   {/* Specs Grid - Optimized for all screens */}
                    <div className="grid grid-cols-2 gap-3 md:gap-4 w-full">
                       <div className="flex flex-col gap-1 p-4 sm:p-5 md:p-6 bg-zinc-50 dark:bg-zinc-900/40 rounded-[1.5rem] md:rounded-[2rem] border border-zinc-100 dark:border-white/5 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-900/60 min-w-0">
                          <span className="text-[7.5px] sm:text-[9px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest block">Support</span>
@@ -567,22 +618,30 @@ const App: React.FC = () => {
                     </div>
                   </div>
                 )}
+                
                 <div className="grid grid-cols-1 gap-4">
-                  {dbProducts.map(p => (
-                    <div key={p.id} className="p-5 glass-panel rounded-3xl flex items-center justify-between group hover:border-[#007AFF]/30 transition-all">
-                      <div className="flex items-center gap-4">
-                        <img src={p.image} className="w-16 h-16 rounded-2xl object-cover" />
-                        <div>
-                          <p className="font-black text-lg">{p.title}</p>
-                          <p className="text-[10px] font-black text-[#007AFF]">{p.category} • {p.price} EGP</p>
+                  {dbProducts.length > 0 ? (
+                    dbProducts.map(p => (
+                      <div key={p.id} className="p-5 glass-panel rounded-3xl flex items-center justify-between group hover:border-[#007AFF]/30 transition-all">
+                        <div className="flex items-center gap-4">
+                          <img src={p.image} className="w-16 h-16 rounded-2xl object-cover" />
+                          <div>
+                            <p className="font-black text-lg">{p.title}</p>
+                            <p className="text-[10px] font-black text-[#007AFF]">{p.category} • {p.price} EGP</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => { setEditProduct(p); setIsEditingProduct(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="w-10 h-10 flex items-center justify-center bg-blue-500/10 text-blue-600 rounded-full hover:bg-blue-600 hover:text-white transition-all"><i className="fa-solid fa-pen-to-square text-xs"></i></button>
+                          <button onClick={() => handleDeleteProduct(p.id)} className="w-10 h-10 flex items-center justify-center bg-red-500/10 text-red-600 rounded-full hover:bg-red-600 hover:text-white transition-all"><i className="fa-solid fa-trash text-xs"></i></button>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => { setEditProduct(p); setIsEditingProduct(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="w-10 h-10 flex items-center justify-center bg-blue-500/10 text-blue-600 rounded-full hover:bg-blue-600 hover:text-white transition-all"><i className="fa-solid fa-pen-to-square text-xs"></i></button>
-                        <button onClick={() => handleDeleteProduct(p.id)} className="w-10 h-10 flex items-center justify-center bg-red-500/10 text-red-600 rounded-full hover:bg-red-600 hover:text-white transition-all"><i className="fa-solid fa-trash text-xs"></i></button>
-                      </div>
+                    ))
+                  ) : (
+                    <div className="py-20 text-center space-y-4 glass-panel rounded-3xl">
+                      <i className="fa-solid fa-database text-4xl text-zinc-200"></i>
+                      <p className="text-zinc-400 font-bold uppercase text-[10px] tracking-widest">Inventory is empty</p>
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
             )}
