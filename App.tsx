@@ -62,7 +62,6 @@ const App: React.FC = () => {
     const nextMode = !isDarkMode;
     setIsDarkMode(nextMode);
     
-    // Immediate DOM manipulation for speed
     if (nextMode) {
       document.documentElement.classList.add('dark');
     } else {
@@ -323,15 +322,16 @@ const App: React.FC = () => {
         {activeSection === 'Preview' && selectedProduct && (
           <div className="max-w-6xl mx-auto pb-20 px-4 animate-in fade-in slide-in-from-bottom-8">
              <button onClick={() => window.location.hash = '#/'} className="w-10 h-10 mb-8 flex items-center justify-center bg-white dark:bg-zinc-800 rounded-full shadow-lg border border-zinc-200 dark:border-zinc-700 hover:scale-110 transition-transform"><i className="fa-solid fa-chevron-left"></i></button>
-             <div className="flex flex-col items-center lg:flex-row lg:items-start gap-12 lg:gap-20">
-                {/* Black Titanium iPhone 15 Pro Mockup */}
-                <div className="w-full max-w-[420px] flex flex-col gap-10">
-                   <div className="relative aspect-[1290/2796] w-full rounded-[50px] bg-gradient-to-br from-[#1c1c1c] via-[#0f0f0f] to-[#1c1c1c] p-[12px] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.6)] ring-1 ring-white/10 outline outline-[6px] outline-[#252525]">
+             
+             <div className="flex flex-col lg:flex-row items-center lg:items-center xl:items-start gap-10 lg:gap-16 xl:gap-24">
+                {/* Black Titanium iPhone 15 Pro Mockup - Responsive Scaling */}
+                <div className="w-full flex flex-col items-center gap-8 lg:w-auto shrink-0">
+                   <div className="relative aspect-[1290/2796] w-full max-w-[280px] sm:max-w-[320px] md:max-w-[360px] lg:max-w-[400px] xl:max-w-[440px] rounded-[50px] bg-gradient-to-br from-[#1c1c1c] via-[#0f0f0f] to-[#1c1c1c] p-[10px] md:p-[12px] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.6)] ring-1 ring-white/10 outline outline-[4px] md:outline-[6px] outline-[#252525] transition-all duration-500">
                       {/* Fluid Side Buttons */}
-                      <div className="absolute -left-[6px] top-28 w-[3px] h-8 bg-[#333] rounded-l-full border-y border-white/5"></div>
-                      <div className="absolute -left-[6px] top-44 w-[3px] h-16 bg-[#333] rounded-l-full border-y border-white/5"></div>
-                      <div className="absolute -left-[6px] top-64 w-[3px] h-16 bg-[#333] rounded-l-full border-y border-white/5"></div>
-                      <div className="absolute -right-[6px] top-48 w-[3px] h-24 bg-[#333] rounded-r-full border-y border-white/5"></div>
+                      <div className="absolute -left-[4px] md:-left-[6px] top-28 w-[2px] md:w-[3px] h-8 bg-[#333] rounded-l-full border-y border-white/5"></div>
+                      <div className="absolute -left-[4px] md:-left-[6px] top-44 w-[2px] md:w-[3px] h-16 bg-[#333] rounded-l-full border-y border-white/5"></div>
+                      <div className="absolute -left-[4px] md:-left-[6px] top-64 w-[2px] md:w-[3px] h-16 bg-[#333] rounded-l-full border-y border-white/5"></div>
+                      <div className="absolute -right-[4px] md:-right-[6px] top-48 w-[2px] md:w-[3px] h-24 bg-[#333] rounded-r-full border-y border-white/5"></div>
 
                       <div className="relative w-full h-full rounded-[40px] overflow-hidden bg-black shadow-inner ring-1 ring-white/5">
                         <img 
@@ -339,20 +339,16 @@ const App: React.FC = () => {
                           className="w-full h-full object-cover transition-opacity duration-500" 
                           alt="" 
                         />
-                        
-                        {/* Dynamic Island Removed */}
-
-                        {/* Home Indicator Removed */}
                       </div>
                    </div>
                    
-                   {/* Gallery Thumbnails */}
-                   <div className="flex flex-wrap gap-3 justify-center">
+                   {/* Gallery Thumbnails - Responsive Wrapper */}
+                   <div className="flex flex-wrap gap-2 md:gap-3 justify-center max-w-full">
                       {(selectedProduct.gallery.length > 0 ? selectedProduct.gallery : [selectedProduct.image]).map((img, idx) => (
                         <button 
                           key={idx} 
                           onClick={() => setPreviewImageIndex(idx)} 
-                          className={`w-14 h-14 rounded-2xl overflow-hidden border-2 transition-all duration-300 ${previewImageIndex === idx ? 'border-[#007AFF] scale-110 shadow-lg shadow-blue-500/20' : 'border-transparent opacity-50 grayscale hover:opacity-100 hover:grayscale-0'}`}
+                          className={`w-12 h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl overflow-hidden border-2 transition-all duration-300 ${previewImageIndex === idx ? 'border-[#007AFF] scale-110 shadow-lg shadow-blue-500/20' : 'border-transparent opacity-50 grayscale hover:opacity-100 hover:grayscale-0'}`}
                         >
                           <img src={img} className="w-full h-full object-cover" alt="" />
                         </button>
@@ -360,44 +356,56 @@ const App: React.FC = () => {
                    </div>
                 </div>
 
-                <div className="flex-1 space-y-10 py-6">
-                   <div className="space-y-6">
-                      <div className="flex flex-wrap gap-2">
-                        <span className="px-5 py-2 bg-zinc-100 dark:bg-zinc-800 rounded-full font-black text-[10px] uppercase border border-white/5 tracking-widest">{selectedProduct.category}</span>
+                {/* Product Details Section - Responsive Layout */}
+                <div className="flex-1 w-full max-w-3xl space-y-8 lg:space-y-10 py-4 lg:py-6">
+                   <div className="space-y-4 md:space-y-6 text-center lg:text-left">
+                      <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
+                        <span className="px-4 md:px-5 py-1.5 md:py-2 bg-zinc-100 dark:bg-zinc-800 rounded-full font-black text-[9px] md:text-[10px] uppercase border border-white/5 tracking-widest">{selectedProduct.category}</span>
                         {selectedProduct.android_version && (
-                          <span className="px-5 py-2 bg-orange-500/10 text-orange-600 rounded-full font-black text-[10px] uppercase border border-orange-500/20 flex items-center gap-2">
+                          <span className="px-4 md:px-5 py-1.5 md:py-2 bg-orange-500/10 text-orange-600 rounded-full font-black text-[9px] md:text-[10px] uppercase border border-orange-500/20 flex items-center gap-2">
                             <i className="fa-brands fa-android"></i>
                             {selectedProduct.android_version}
                           </span>
                         )}
                       </div>
-                      <h2 className="text-4xl md:text-7xl font-black tracking-tighter uppercase leading-[0.9]">{selectedProduct.title}</h2>
-                      <p className="text-zinc-500 text-lg md:text-xl font-medium leading-relaxed italic border-l-4 border-[#007AFF] pl-6 py-2">
+                      <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black tracking-tighter uppercase leading-[0.95] break-words">
+                        {selectedProduct.title}
+                      </h2>
+                      <p className="text-zinc-500 text-base md:text-lg lg:text-xl font-medium leading-relaxed italic border-l-0 lg:border-l-4 border-[#007AFF] lg:pl-6 py-2">
                         "{selectedProduct.description}"
                       </p>
                    </div>
-                   <div className="grid grid-cols-2 gap-4">
-                      <div className="p-8 bg-zinc-50 dark:bg-zinc-900/60 rounded-[2.5rem] border border-white/5 shadow-sm">
-                        <span className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] block mb-2">Support</span>
-                        <span className="font-black text-xl uppercase tracking-tight">Realme & Oppo</span>
+
+                   {/* Stats Grid - Responsive Column Count */}
+                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="p-6 md:p-8 bg-zinc-50 dark:bg-zinc-900/60 rounded-[2rem] md:rounded-[2.5rem] border border-white/5 shadow-sm text-center lg:text-left">
+                        <span className="text-[9px] md:text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] block mb-2">Support</span>
+                        <span className="font-black text-lg md:text-xl uppercase tracking-tight">Realme & Oppo</span>
                       </div>
-                      <div className="p-8 bg-zinc-50 dark:bg-zinc-900/60 rounded-[2.5rem] border border-white/5 shadow-sm">
-                        <span className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] block mb-2">Asset Status</span>
-                        <span className="font-black text-xl uppercase tracking-tight">{selectedProduct.is_premium ? 'Premium' : 'Public'}</span>
+                      <div className="p-6 md:p-8 bg-zinc-50 dark:bg-zinc-900/60 rounded-[2rem] md:rounded-[2.5rem] border border-white/5 shadow-sm text-center lg:text-left">
+                        <span className="text-[9px] md:text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] block mb-2">Asset Status</span>
+                        <span className="font-black text-lg md:text-xl uppercase tracking-tight">{selectedProduct.is_premium ? 'Premium' : 'Public'}</span>
                       </div>
                    </div>
-                   <div className="space-y-8 p-10 bg-white dark:bg-zinc-900/40 rounded-[3rem] border border-zinc-100 dark:border-white/5 shadow-2xl">
-                      <div className="flex items-end justify-between">
-                        <div>
-                          <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2">Price for Unlimited License</p>
-                          <span className="text-6xl font-black tracking-tighter">{selectedProduct.price === 0 ? 'FREE' : `${selectedProduct.price} EGP`}</span>
+
+                   {/* Pricing & CTA - Responsive Padding & Layout */}
+                   <div className="space-y-6 md:space-y-8 p-6 md:p-10 bg-white dark:bg-zinc-900/40 rounded-[2.5rem] md:rounded-[3rem] border border-zinc-100 dark:border-white/5 shadow-2xl">
+                      <div className="flex flex-col sm:flex-row items-center sm:items-end justify-between gap-4">
+                        <div className="text-center sm:text-left">
+                          <p className="text-[9px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2">Price for Unlimited License</p>
+                          <span className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter">
+                            {selectedProduct.price === 0 ? 'FREE' : `${selectedProduct.price} EGP`}
+                          </span>
                         </div>
-                        <div className="hidden sm:block text-right">
-                          <i className="fa-solid fa-guarantee text-[#007AFF] text-4xl opacity-20 mb-2 block"></i>
+                        <div className="hidden md:block text-right">
+                          <i className="fa-solid fa-guarantee text-[#007AFF] text-3xl lg:text-4xl opacity-20 mb-2 block"></i>
                           <span className="text-[8px] font-black uppercase text-zinc-400 tracking-tighter">Lifetime Updates</span>
                         </div>
                       </div>
-                      <button onClick={() => { setOrderProductId(selectedProduct.id); window.location.hash = '#/order'; }} className="w-full py-7 bg-[#007AFF] text-white rounded-[2rem] font-black text-xl shadow-2xl shadow-blue-500/40 active:scale-95 transition-all flex items-center justify-center gap-4">
+                      <button 
+                        onClick={() => { setOrderProductId(selectedProduct.id); window.location.hash = '#/order'; }} 
+                        className="w-full py-5 md:py-7 bg-[#007AFF] text-white rounded-[1.5rem] md:rounded-[2rem] font-black text-lg md:text-xl shadow-2xl shadow-blue-500/40 active:scale-95 transition-all flex items-center justify-center gap-3 md:gap-4"
+                      >
                         <i className="fa-solid fa-cart-shopping"></i>
                         PROCEED TO ORDER
                       </button>
