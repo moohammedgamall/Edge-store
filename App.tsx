@@ -402,110 +402,139 @@ const App: React.FC = () => {
         )}
 
         {activeSection === 'Preview' && selectedProduct && (
-          <div className="max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-700 pb-20">
-             <div className="flex items-center mb-10 px-4">
+          <div className="max-w-6xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-700 pb-20 px-4">
+             <div className="flex items-center mb-8 md:mb-12">
                <button 
                 onClick={() => { window.location.hash = '#/'; }}
-                className="w-14 h-14 flex items-center justify-center bg-white dark:bg-zinc-800 rounded-full shadow-lg border border-zinc-200 dark:border-zinc-700 active:scale-90 transition-all hover:bg-zinc-50 dark:hover:bg-zinc-700"
+                className="w-12 h-12 md:w-14 md:h-14 flex items-center justify-center bg-white dark:bg-zinc-800 rounded-full shadow-lg border border-zinc-200 dark:border-zinc-700 active:scale-90 transition-all hover:bg-zinc-50 dark:hover:bg-zinc-700 group"
                 aria-label="Back to Store"
                >
-                 <i className="fa-solid fa-chevron-left text-zinc-800 dark:text-zinc-200 text-xl"></i>
+                 <i className="fa-solid fa-chevron-left text-zinc-800 dark:text-zinc-200 text-lg group-hover:-translate-x-0.5 transition-transform"></i>
                </button>
              </div>
 
-             <div className="flex flex-col items-center gap-12">
-                {/* Refined iPhone Mockup - High-Fidelity "Natural Titanium" Bezel Aesthetic */}
-                <div className="relative w-full max-w-[360px] md:max-w-[420px] mx-auto group">
-                   <div className={`relative aspect-[1290/2796] w-full rounded-[4.5rem] p-[8px] transition-all shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] ${
+             <div className="flex flex-col items-center gap-12 lg:gap-20 lg:flex-row lg:items-start lg:justify-between">
+                {/* Hero Mockup Area */}
+                <div className="w-full max-w-[340px] sm:max-w-[400px] lg:max-w-[440px] flex flex-col items-center gap-10">
+                   {/* Refined iPhone Pro Max Mockup */}
+                   <div className={`relative aspect-[1290/2796] w-full rounded-[4.5rem] p-[8px] transition-all duration-700 shadow-[0_60px_120px_-30px_rgba(0,0,0,0.6)] ${
                      isDarkMode 
                      ? 'bg-gradient-to-br from-[#2c2c2e] via-[#3a3a3c] to-[#1c1c1e]' 
                      : 'bg-gradient-to-br from-[#d2d2d7] via-[#e8e8ed] to-[#b8b8bc]'
                    }`}>
-                      {/* Metallic Bezel Highlight - Simulating Brushed Titanium for iPhone 17 Pro look */}
-                      <div className={`absolute -inset-[3px] rounded-[4.8rem] border-[10px] pointer-events-none z-10 transition-colors duration-500 ${
+                      {/* Metallic Outer Hedges - Natural Titanium Look */}
+                      <div className={`absolute -inset-[3.5px] rounded-[4.8rem] border-[11px] pointer-events-none z-10 transition-colors duration-500 ${
                         isDarkMode 
-                        ? 'border-zinc-700/80 shadow-[inset_0_0_20px_rgba(0,0,0,0.8)]' 
-                        : 'border-zinc-300/80 shadow-[inset_0_0_15px_rgba(255,255,255,0.5)]'
+                        ? 'border-zinc-700/90 shadow-[inset_0_0_12px_rgba(0,0,0,0.8),0_0_0_1px_rgba(255,255,255,0.05)]' 
+                        : 'border-zinc-300/90 shadow-[inset_0_0_8px_rgba(255,255,255,0.6),0_0_0_1px_rgba(0,0,0,0.05)]'
                       }`}></div>
                       
-                      {/* Inner Pure Black Display Area (OLED Simulation) */}
-                      <div className="flex-1 w-full h-full bg-black rounded-[3.8rem] overflow-hidden relative shadow-[inset_0_0_40px_rgba(0,0,0,1)]">
-                         {/* Asset Display with object-cover to fill entire frame */}
+                      {/* Physical Buttons Simulation */}
+                      <div className={`absolute -left-[14px] top-[18%] w-[4.5px] h-[6.5%] rounded-r-[4px] shadow-sm z-20 ${isDarkMode ? 'bg-zinc-700' : 'bg-zinc-300'}`}></div>
+                      <div className={`absolute -left-[14px] top-[27%] w-[4.5px] h-[10.5%] rounded-r-[4px] shadow-sm z-20 ${isDarkMode ? 'bg-zinc-700' : 'bg-zinc-300'}`}></div>
+                      <div className={`absolute -left-[14px] top-[40%] w-[4.5px] h-[10.5%] rounded-r-[4px] shadow-sm z-20 ${isDarkMode ? 'bg-zinc-700' : 'bg-zinc-300'}`}></div>
+                      <div className={`absolute -right-[14px] top-[32%] w-[4.5px] h-[13%] rounded-l-[4px] shadow-sm z-20 ${isDarkMode ? 'bg-zinc-700' : 'bg-zinc-300'}`}></div>
+
+                      {/* Display Viewport */}
+                      <div className="flex-1 w-full h-full bg-black rounded-[3.8rem] overflow-hidden relative shadow-[inset_0_0_30px_rgba(0,0,0,1)] flex items-center justify-center">
                          <img 
                            src={selectedProduct.gallery[previewImageIndex] || selectedProduct.image} 
-                           className="w-full h-full object-cover animate-in fade-in duration-700" 
-                           alt="Asset Preview"
+                           className="w-full h-full object-cover animate-in fade-in duration-1000 select-none" 
+                           alt="Preview View"
                          />
+                         <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent pointer-events-none"></div>
                       </div>
-
-                      {/* Side Buttons Simulation */}
-                      <div className={`absolute -left-[14px] top-[18%] w-[4px] h-[6%] rounded-r-lg ${isDarkMode ? 'bg-zinc-700' : 'bg-zinc-300'}`}></div>
-                      <div className={`absolute -left-[14px] top-[26%] w-[4px] h-[10%] rounded-r-lg ${isDarkMode ? 'bg-zinc-700' : 'bg-zinc-300'}`}></div>
-                      <div className={`absolute -left-[14px] top-[38%] w-[4px] h-[10%] rounded-r-lg ${isDarkMode ? 'bg-zinc-700' : 'bg-zinc-300'}`}></div>
-                      <div className={`absolute -right-[14px] top-[30%] w-[4px] h-[12%] rounded-l-lg ${isDarkMode ? 'bg-zinc-700' : 'bg-zinc-300'}`}></div>
                    </div>
 
-                   {/* Gallery Thumbnails Below Mockup */}
+                   {/* Gallery Thumbnails Strip - Displayed below the hero mockup */}
                    {selectedProduct.gallery && selectedProduct.gallery.length > 0 && (
-                     <div className="mt-8 flex gap-4 overflow-x-auto no-scrollbar py-2 px-1 max-w-full justify-center">
-                        {selectedProduct.gallery.map((img, idx) => (
-                          <button 
-                            key={idx}
-                            onClick={() => setPreviewImageIndex(idx)}
-                            className={`w-16 h-16 md:w-20 md:h-20 rounded-2xl overflow-hidden shrink-0 border-4 transition-all ${
-                              previewImageIndex === idx 
-                              ? 'border-[#007AFF] scale-110 shadow-xl' 
-                              : 'border-transparent opacity-50 hover:opacity-100 hover:scale-105'
-                            }`}
-                          >
-                             <img src={img} className="w-full h-full object-cover" />
-                          </button>
-                        ))}
+                     <div className="w-full space-y-4">
+                        <p className="text-[10px] font-black uppercase text-zinc-400 tracking-[0.3em] text-center opacity-60">Asset Gallery Preview</p>
+                        <div className="flex gap-4 overflow-x-auto no-scrollbar py-4 px-2 max-w-full scroll-smooth justify-center">
+                           {selectedProduct.gallery.map((img, idx) => (
+                             <button 
+                               key={idx}
+                               onClick={() => setPreviewImageIndex(idx)}
+                               className={`w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-2xl overflow-hidden shrink-0 border-[3px] transition-all duration-300 ${
+                                 previewImageIndex === idx 
+                                 ? 'border-[#007AFF] scale-110 shadow-2xl ring-4 ring-[#007AFF]/20 z-10' 
+                                 : 'border-transparent opacity-40 hover:opacity-100 hover:scale-105'
+                               }`}
+                             >
+                                <img src={img} className="w-full h-full object-cover" alt={`Preview ${idx + 1}`} />
+                             </button>
+                           ))}
+                        </div>
                      </div>
                    )}
                 </div>
 
-                {/* Product Details - Professional UI */}
-                <div className="w-full max-w-2xl glass-panel rounded-[3.5rem] p-10 md:p-14 space-y-10">
-                   <div className="space-y-6 text-center">
-                      <div className="flex flex-wrap justify-center gap-3">
-                         <span className="px-5 py-1.5 bg-[#007AFF]/10 text-[#007AFF] font-black text-[10px] uppercase tracking-widest rounded-full border border-[#007AFF]/20">{selectedProduct.category}</span>
+                {/* Content Area - Info & Purchase */}
+                <div className="w-full lg:flex-1 lg:pt-10 flex flex-col gap-10">
+                   <div className="space-y-8 text-center lg:text-left">
+                      <div className="flex flex-wrap justify-center lg:justify-start gap-4">
+                         <div className="px-5 py-2 bg-[#007AFF]/10 text-[#007AFF] font-black text-[10px] uppercase tracking-widest rounded-full border border-[#007AFF]/20 shadow-sm">
+                           {selectedProduct.category}
+                         </div>
                          {selectedProduct.android_version && (
-                            <span className="px-5 py-1.5 bg-orange-500/10 text-orange-600 font-black text-[10px] uppercase tracking-widest rounded-full border border-orange-500/20">
-                              <i className="fa-brands fa-android mr-2"></i>{selectedProduct.android_version}
-                            </span>
+                            <div className="px-5 py-2 bg-orange-500/10 text-orange-600 font-black text-[10px] uppercase tracking-widest rounded-full border border-orange-500/20 shadow-sm">
+                              <i className="fa-brands fa-android mr-2 text-xs"></i>{selectedProduct.android_version}
+                            </div>
                          )}
                       </div>
-                      <h2 className="text-4xl md:text-5xl font-black text-zinc-900 dark:text-zinc-100 tracking-tighter leading-tight uppercase">{selectedProduct.title}</h2>
-                      <p className="text-zinc-500 dark:text-zinc-400 font-medium text-lg italic leading-relaxed max-w-lg mx-auto">"{selectedProduct.description}"</p>
-                   </div>
-
-                   <div className="grid grid-cols-2 gap-4 py-4">
-                      <div className="flex flex-col items-center p-6 bg-zinc-50 dark:bg-zinc-800/40 rounded-3xl border border-zinc-100 dark:border-zinc-700/50">
-                         <i className="fa-solid fa-mobile-screen text-[#007AFF] text-xl mb-3"></i>
-                         <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1">Compatibility</span>
-                         <span className="text-sm font-bold uppercase">{selectedProduct.compatibility}</span>
-                      </div>
-                      <div className="flex flex-col items-center p-6 bg-zinc-50 dark:bg-zinc-800/40 rounded-3xl border border-zinc-100 dark:border-zinc-700/50">
-                         <i className="fa-solid fa-bolt-lightning text-orange-500 text-xl mb-3"></i>
-                         <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1">Type</span>
-                         <span className="text-sm font-bold uppercase">{selectedProduct.is_premium ? 'Premium' : 'Standard'}</span>
+                      
+                      <div className="space-y-4">
+                        <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-zinc-900 dark:text-zinc-100 tracking-tighter leading-none uppercase drop-shadow-sm">
+                          {selectedProduct.title}
+                        </h2>
+                        <p className="text-zinc-500 dark:text-zinc-400 font-medium text-lg sm:text-xl md:text-2xl italic leading-relaxed max-w-xl mx-auto lg:mx-0 opacity-80">
+                          "{selectedProduct.description}"
+                        </p>
                       </div>
                    </div>
 
-                   <div className="pt-6 flex flex-col gap-6">
-                      <div className="text-center">
-                        <span className="text-5xl font-black text-zinc-900 dark:text-zinc-100">
+                   {/* Specs Grid */}
+                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full">
+                      <div className="flex items-center gap-6 p-6 sm:p-8 bg-zinc-50 dark:bg-zinc-900/40 rounded-[2.5rem] border border-zinc-100 dark:border-white/5 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-900/60">
+                         <div className="w-12 h-12 sm:w-14 sm:h-14 bg-[#007AFF]/10 rounded-2xl flex items-center justify-center shrink-0">
+                            <i className="fa-solid fa-mobile-screen-button text-[#007AFF] text-xl sm:text-2xl"></i>
+                         </div>
+                         <div className="flex flex-col min-w-0">
+                            <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1 truncate">Architecture</span>
+                            <span className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-zinc-100 uppercase truncate">{selectedProduct.compatibility}</span>
+                         </div>
+                      </div>
+                      <div className="flex items-center gap-6 p-6 sm:p-8 bg-zinc-50 dark:bg-zinc-900/40 rounded-[2.5rem] border border-zinc-100 dark:border-white/5 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-900/60">
+                         <div className="w-12 h-12 sm:w-14 sm:h-14 bg-orange-500/10 rounded-2xl flex items-center justify-center shrink-0">
+                            <i className="fa-solid fa-crown text-orange-500 text-xl sm:text-2xl"></i>
+                         </div>
+                         <div className="flex flex-col min-w-0">
+                            <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1 truncate">Premium Access</span>
+                            <span className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-zinc-100 uppercase truncate">{selectedProduct.is_premium ? 'Exclusive' : 'Standard'}</span>
+                         </div>
+                      </div>
+                   </div>
+
+                   {/* Pricing & CTA */}
+                   <div className="mt-6 flex flex-col gap-10 bg-white dark:bg-zinc-900/40 lg:bg-transparent rounded-[3.5rem] p-10 lg:p-0 shadow-2xl lg:shadow-none">
+                      <div className="text-center lg:text-left group">
+                        <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.5em] mb-3 opacity-60">One-Time License Fee</p>
+                        <span className="text-6xl sm:text-7xl font-black text-zinc-900 dark:text-zinc-100 tracking-tighter group-hover:text-[#007AFF] transition-colors duration-500">
                           {selectedProduct.price === 0 ? 'FREE' : `${selectedProduct.price.toFixed(2)} EGP`}
                         </span>
                       </div>
+                      
                       <button 
                         onClick={() => { setOrderProductId(selectedProduct.id); window.location.hash = '#/order'; }}
-                        className="w-full py-8 bg-[#007AFF] text-white rounded-[2.5rem] font-black text-xl shadow-2xl shadow-blue-500/40 active:scale-95 transition-all flex items-center justify-center gap-4 hover:bg-blue-600 group"
+                        className="w-full py-8 sm:py-10 bg-[#007AFF] text-white rounded-[3rem] font-black text-xl sm:text-2xl shadow-[0_25px_60px_-15px_rgba(0,122,255,0.4)] active:scale-95 transition-all flex items-center justify-center gap-6 hover:bg-blue-600 hover:shadow-blue-500/60 group/btn"
                       >
-                         <i className="fa-solid fa-circle-arrow-down text-2xl group-hover:translate-y-1 transition-transform"></i>
-                         {selectedProduct.price === 0 ? 'DOWNLOAD NOW' : 'SECURE PURCHASE'}
+                         <i className="fa-solid fa-cart-arrow-down text-2xl sm:text-3xl group-hover/btn:translate-y-1 transition-transform"></i>
+                         <span className="uppercase tracking-tight">{selectedProduct.price === 0 ? 'Instant Download' : 'Continue to Checkout'}</span>
                       </button>
+                      
+                      <p className="text-center lg:text-left text-[10px] font-bold text-zinc-400 uppercase tracking-widest px-6 opacity-60">
+                        Secure transaction processed via Mohamed Edge verified network
+                      </p>
                    </div>
                 </div>
              </div>
@@ -668,7 +697,7 @@ const App: React.FC = () => {
                         </button>
                         <button 
                           onClick={() => handleDeleteProduct(p.id)} 
-                          className="w-10 h-10 flex items-center justify-center bg-red-500/10 text-red-600 rounded-full hover:bg-red-600 hover:text-white transition-all"
+                          className="w-10 h-10 flex items-center justify-center bg-red-600 rounded-full hover:bg-red-700 hover:text-white transition-all"
                         >
                           <i className="fa-solid fa-trash text-xs"></i>
                         </button>
