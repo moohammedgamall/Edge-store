@@ -75,7 +75,6 @@ const App: React.FC = () => {
       const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: false });
       
       if (error) {
-        // Only show mock if table is missing or strictly inaccessible
         if (error.code === '42P01' || error.message.includes('does not exist')) {
           setDbProducts(MOCK_PRODUCTS);
         } else {
@@ -83,13 +82,9 @@ const App: React.FC = () => {
           setDbProducts([]);
         }
       } else {
-        // If query succeeded, use what we have (even if empty)
-        // If the user wants to see some data when empty, they can, but for admin clarity we should show empty if DB is empty
         if (data && data.length > 0) {
           setDbProducts(data.map(p => ({ ...p, gallery: Array.isArray(p.gallery) ? p.gallery : [] })));
         } else {
-          // If totally empty, we can choose to show mock for visitors but empty for admin
-          // For now, let's keep it empty to prove deletion worked
           setDbProducts([]);
         }
       }
@@ -145,8 +140,13 @@ const App: React.FC = () => {
       } else if (['#/themes', '#/widgets', '#/walls'].includes(hash)) {
         setActiveSection(hash.replace('#/', '').charAt(0).toUpperCase() + hash.replace('#/', '').slice(1) as any);
       } else if (hash === '#/admin') {
-        if (isAdminMode) setActiveSection('Admin');
-        else window.location.hash = '#/';
+        if (isAdminMode) {
+          setActiveSection('Admin');
+        } else {
+          // If accessing /#/admin directly, trigger login
+          setIsAuthModalOpen(true);
+          setActiveSection('Home'); // Temporarily keep them on Home background
+        }
       } else {
         setActiveSection('Home');
       }
@@ -157,9 +157,7 @@ const App: React.FC = () => {
   }, [isAdminMode]);
 
   const filteredProducts = useMemo(() => {
-    // If dbProducts is empty, and we aren't loading, maybe show mock on home for visitors only
     const displayList = (dbProducts.length === 0 && !isAdminMode && activeSection === 'Home') ? MOCK_PRODUCTS : dbProducts;
-    
     if (activeSection === 'Home') return displayList;
     return displayList.filter(p => p.category === activeSection);
   }, [dbProducts, activeSection, isAdminMode]);
@@ -282,12 +280,8 @@ const App: React.FC = () => {
       try { 
         const { error } = await supabase.from('products').delete().eq('id', id);
         if (error) throw error;
-        
-        // Optimistically update UI
         setDbProducts(prev => prev.filter(p => p.id !== id));
         showNotify("Product deleted successfully");
-        
-        // Sync with server
         await refreshData(); 
       } catch (err: any) { 
         showNotify(`Deletion failed: ${err.message}`, "error"); 
@@ -300,7 +294,6 @@ const App: React.FC = () => {
       try { 
         const { error } = await supabase.from('videos').delete().eq('id', id);
         if (error) throw error;
-        
         setDbVideos(prev => prev.filter(v => v.id !== id));
         showNotify("Video removed");
         await refreshData(); 
@@ -346,7 +339,15 @@ const App: React.FC = () => {
               autoFocus 
             />
             <div className="grid grid-cols-2 gap-3">
-              <button onClick={() => setIsAuthModalOpen(false)} className="py-4 text-[10px] font-black uppercase text-zinc-400">Cancel</button>
+              <button 
+                onClick={() => {
+                  setIsAuthModalOpen(false);
+                  if (window.location.hash === '#/admin') window.location.hash = '#/';
+                }} 
+                className="py-4 text-[10px] font-black uppercase text-zinc-400"
+              >
+                Cancel
+              </button>
               <button onClick={handleAuth} className="py-4 bg-[#007AFF] text-white rounded-2xl font-black uppercase text-[10px] shadow-lg">Login</button>
             </div>
           </div>
