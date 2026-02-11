@@ -72,23 +72,25 @@ const App: React.FC = () => {
 
   const refreshData = async () => {
     try {
-      const prodRes = await supabase.from('products').select('*').order('created_at', { ascending: false });
+      const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: false });
       
-      if (prodRes.error) {
-        console.error("Supabase Fetch Error:", prodRes.error.message);
-        // If the table doesn't exist yet, we show mock products to avoid a blank screen
-        if (prodRes.error.code === 'PGRST116' || prodRes.error.message.includes('relation "public.products" does not exist')) {
+      if (error) {
+        // Only show mock if table is missing or strictly inaccessible
+        if (error.code === '42P01' || error.message.includes('does not exist')) {
           setDbProducts(MOCK_PRODUCTS);
         } else {
-          showNotify("Database connection error", "error");
+          showNotify(`Database: ${error.message}`, "error");
+          setDbProducts([]);
         }
       } else {
-        // If we have data, show it. If empty, it stays empty (or show mock if you prefer)
-        if (prodRes.data && prodRes.data.length > 0) {
-          setDbProducts(prodRes.data.map(p => ({ ...p, gallery: Array.isArray(p.gallery) ? p.gallery : [] })));
+        // If query succeeded, use what we have (even if empty)
+        // If the user wants to see some data when empty, they can, but for admin clarity we should show empty if DB is empty
+        if (data && data.length > 0) {
+          setDbProducts(data.map(p => ({ ...p, gallery: Array.isArray(p.gallery) ? p.gallery : [] })));
         } else {
-          // If database is truly empty, we show mock products as inspiration for the user
-          setDbProducts(MOCK_PRODUCTS);
+          // If totally empty, we can choose to show mock for visitors but empty for admin
+          // For now, let's keep it empty to prove deletion worked
+          setDbProducts([]);
         }
       }
 
@@ -155,12 +157,22 @@ const App: React.FC = () => {
   }, [isAdminMode]);
 
   const filteredProducts = useMemo(() => {
-    if (activeSection === 'Home') return dbProducts;
-    return dbProducts.filter(p => p.category === activeSection);
-  }, [dbProducts, activeSection]);
+    // If dbProducts is empty, and we aren't loading, maybe show mock on home for visitors only
+    const displayList = (dbProducts.length === 0 && !isAdminMode && activeSection === 'Home') ? MOCK_PRODUCTS : dbProducts;
+    
+    if (activeSection === 'Home') return displayList;
+    return displayList.filter(p => p.category === activeSection);
+  }, [dbProducts, activeSection, isAdminMode]);
 
-  const selectedProduct = useMemo(() => dbProducts.find(p => p.id === selectedProductId), [dbProducts, selectedProductId]);
-  const currentOrderedProduct = useMemo(() => dbProducts.find(p => p.id === orderProductId), [dbProducts, orderProductId]);
+  const selectedProduct = useMemo(() => {
+    const list = dbProducts.length > 0 ? dbProducts : MOCK_PRODUCTS;
+    return list.find(p => p.id === selectedProductId);
+  }, [dbProducts, selectedProductId]);
+
+  const currentOrderedProduct = useMemo(() => {
+    const list = dbProducts.length > 0 ? dbProducts : MOCK_PRODUCTS;
+    return list.find(p => p.id === orderProductId);
+  }, [dbProducts, orderProductId]);
 
   const updateSetting = async (key: string, value: string) => {
     try {
@@ -181,9 +193,8 @@ const App: React.FC = () => {
         localStorage.setItem('cached_loader_logo', value);
         showNotify("Loader logo updated");
       }
-    } catch (err) {
-      console.error("Update Setting Error:", err);
-      showNotify("Failed to sync settings", "error");
+    } catch (err: any) {
+      showNotify(`Settings error: ${err.message}`, "error");
     }
   };
 
@@ -229,10 +240,7 @@ const App: React.FC = () => {
       };
       
       const { error } = await supabase.from('products').upsert(payload);
-      if (error) {
-        console.error("Save Error:", error.message);
-        throw error;
-      }
+      if (error) throw error;
 
       await refreshData();
       setIsEditingProduct(false);
@@ -270,27 +278,34 @@ const App: React.FC = () => {
   };
 
   const handleDeleteProduct = async (id: string) => {
-    if (window.confirm("Delete product?")) {
+    if (window.confirm("Confirm deletion? This cannot be undone.")) {
       try { 
         const { error } = await supabase.from('products').delete().eq('id', id);
         if (error) throw error;
+        
+        // Optimistically update UI
+        setDbProducts(prev => prev.filter(p => p.id !== id));
+        showNotify("Product deleted successfully");
+        
+        // Sync with server
         await refreshData(); 
-        showNotify("Deleted"); 
       } catch (err: any) { 
-        showNotify(err.message || "Error", "error"); 
+        showNotify(`Deletion failed: ${err.message}`, "error"); 
       }
     }
   };
 
   const handleDeleteVideo = async (id: string) => {
-    if (window.confirm("Delete video?")) {
+    if (window.confirm("Delete tutorial?")) {
       try { 
         const { error } = await supabase.from('videos').delete().eq('id', id);
         if (error) throw error;
+        
+        setDbVideos(prev => prev.filter(v => v.id !== id));
+        showNotify("Video removed");
         await refreshData(); 
-        showNotify("Deleted"); 
       } catch (err: any) { 
-        showNotify(err.message || "Error", "error"); 
+        showNotify(`Error: ${err.message}`, "error"); 
       }
     }
   };
@@ -345,7 +360,7 @@ const App: React.FC = () => {
               <div className="flex justify-between items-end">
                 <h2 className="text-2xl font-black tracking-tighter uppercase flex items-center gap-3">
                   <div className="w-1.5 h-6 bg-[#007AFF] rounded-full"></div> 
-                  {activeSection === 'Home' ? 'Store Showcase' : activeSection}
+                  {activeSection === 'Home' ? 'Showcase' : activeSection}
                 </h2>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -354,9 +369,9 @@ const App: React.FC = () => {
                     <ProductCard key={p.id} product={p} onPreview={(id) => window.location.hash = `#/preview/${id}`} onBuy={(id) => { setOrderProductId(id); window.location.hash = '#/order'; }} />
                   ))
                 ) : (
-                  <div className="col-span-full py-20 text-center space-y-4">
+                  <div className="col-span-full py-20 text-center space-y-4 glass-panel rounded-[2rem] border-dashed border-2 border-zinc-200 dark:border-zinc-800">
                     <i className="fa-solid fa-box-open text-4xl text-zinc-300"></i>
-                    <p className="font-black text-zinc-400 uppercase text-xs tracking-widest">No products found in this section</p>
+                    <p className="font-black text-zinc-400 uppercase text-xs tracking-widest">Section is currently empty</p>
                   </div>
                 )}
               </div>
@@ -531,7 +546,7 @@ const App: React.FC = () => {
                   </div>
                   <select className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black border-2 border-transparent focus:border-[#007AFF] outline-none" value={orderProductId} onChange={e => setOrderProductId(e.target.value)}>
                     <option value="">Select Asset...</option>
-                    {dbProducts.map(p => <option key={p.id} value={p.id}>{p.title} - {p.price} EGP</option>)}
+                    {(dbProducts.length > 0 ? dbProducts : MOCK_PRODUCTS).map(p => <option key={p.id} value={p.id}>{p.title} - {p.price} EGP</option>)}
                   </select>
                   {currentOrderedProduct && (
                     <div className="space-y-6 animate-in zoom-in-95 duration-300">
@@ -637,9 +652,10 @@ const App: React.FC = () => {
                       </div>
                     ))
                   ) : (
-                    <div className="py-20 text-center space-y-4 glass-panel rounded-3xl">
+                    <div className="py-20 text-center space-y-4 glass-panel rounded-3xl border-2 border-dashed border-zinc-200 dark:border-zinc-800">
                       <i className="fa-solid fa-database text-4xl text-zinc-200"></i>
                       <p className="text-zinc-400 font-bold uppercase text-[10px] tracking-widest">Inventory is empty</p>
+                      <p className="text-[8px] text-zinc-400 uppercase">Only real database products are shown here</p>
                     </div>
                   )}
                 </div>
