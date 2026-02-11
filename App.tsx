@@ -416,14 +416,14 @@ const App: React.FC = () => {
              <div className="flex flex-col items-center gap-12 lg:gap-20 lg:flex-row lg:items-start lg:justify-between">
                 {/* Hero Mockup Area */}
                 <div className="w-full max-w-[340px] sm:max-w-[400px] lg:max-w-[440px] flex flex-col items-center gap-10">
-                   {/* Refined iPhone Pro Max Mockup */}
-                   <div className={`relative aspect-[1290/2796] w-full rounded-[4.5rem] p-[8px] transition-all duration-700 shadow-[0_60px_120px_-30px_rgba(0,0,0,0.6)] ${
+                   {/* Refined iPhone Pro Max Mockup with Adjusted Corner Rounding */}
+                   <div className={`relative aspect-[1290/2796] w-full rounded-[3.8rem] p-[8px] transition-all duration-700 shadow-[0_60px_120px_-30px_rgba(0,0,0,0.6)] ${
                      isDarkMode 
                      ? 'bg-gradient-to-br from-[#2c2c2e] via-[#3a3a3c] to-[#1c1c1e]' 
                      : 'bg-gradient-to-br from-[#d2d2d7] via-[#e8e8ed] to-[#b8b8bc]'
                    }`}>
-                      {/* Metallic Outer Hedges - Natural Titanium Look */}
-                      <div className={`absolute -inset-[3.5px] rounded-[4.8rem] border-[11px] pointer-events-none z-10 transition-colors duration-500 ${
+                      {/* Metallic Outer Hedges - Adjusted for realism */}
+                      <div className={`absolute -inset-[3.5px] rounded-[4.1rem] border-[11px] pointer-events-none z-10 transition-colors duration-500 ${
                         isDarkMode 
                         ? 'border-zinc-700/90 shadow-[inset_0_0_12px_rgba(0,0,0,0.8),0_0_0_1px_rgba(255,255,255,0.05)]' 
                         : 'border-zinc-300/90 shadow-[inset_0_0_8px_rgba(255,255,255,0.6),0_0_0_1px_rgba(0,0,0,0.05)]'
@@ -435,8 +435,8 @@ const App: React.FC = () => {
                       <div className={`absolute -left-[14px] top-[40%] w-[4.5px] h-[10.5%] rounded-r-[4px] shadow-sm z-20 ${isDarkMode ? 'bg-zinc-700' : 'bg-zinc-300'}`}></div>
                       <div className={`absolute -right-[14px] top-[32%] w-[4.5px] h-[13%] rounded-l-[4px] shadow-sm z-20 ${isDarkMode ? 'bg-zinc-700' : 'bg-zinc-300'}`}></div>
 
-                      {/* Display Viewport */}
-                      <div className="flex-1 w-full h-full bg-black rounded-[3.8rem] overflow-hidden relative shadow-[inset_0_0_30px_rgba(0,0,0,1)] flex items-center justify-center">
+                      {/* Display Viewport - Adjusted Rounding */}
+                      <div className="flex-1 w-full h-full bg-black rounded-[3.3rem] overflow-hidden relative shadow-[inset_0_0_30px_rgba(0,0,0,1)] flex items-center justify-center">
                          <img 
                            src={selectedProduct.gallery[previewImageIndex] || selectedProduct.image} 
                            className="w-full h-full object-cover animate-in fade-in duration-1000 select-none" 
@@ -446,19 +446,24 @@ const App: React.FC = () => {
                       </div>
                    </div>
 
-                   {/* Gallery Thumbnails Strip - Displayed below the hero mockup */}
+                   {/* Gallery Thumbnails Strip - Full Visibility Layout */}
                    {selectedProduct.gallery && selectedProduct.gallery.length > 0 && (
-                     <div className="w-full space-y-4">
-                        <p className="text-[10px] font-black uppercase text-zinc-400 tracking-[0.3em] text-center opacity-60">Asset Gallery Preview</p>
-                        <div className="flex gap-4 overflow-x-auto no-scrollbar py-4 px-2 max-w-full scroll-smooth justify-center">
+                     <div className="w-full space-y-6">
+                        <div className="flex items-center justify-center gap-3 px-4">
+                           <div className="h-px bg-zinc-200 dark:bg-zinc-800 flex-1"></div>
+                           <p className="text-[10px] font-black uppercase text-zinc-400 tracking-[0.3em] whitespace-nowrap opacity-60">Complete Asset View</p>
+                           <div className="h-px bg-zinc-200 dark:bg-zinc-800 flex-1"></div>
+                        </div>
+                        {/* Changed from overflow-x-auto to flex-wrap for "full count" visibility */}
+                        <div className="flex flex-wrap gap-3 sm:gap-4 py-2 px-1 w-full justify-center">
                            {selectedProduct.gallery.map((img, idx) => (
                              <button 
                                key={idx}
                                onClick={() => setPreviewImageIndex(idx)}
-                               className={`w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-2xl overflow-hidden shrink-0 border-[3px] transition-all duration-300 ${
+                               className={`w-[calc(33.33%-8px)] sm:w-20 sm:h-20 md:w-24 md:h-24 aspect-square rounded-2xl overflow-hidden shrink-0 border-[3px] transition-all duration-300 ${
                                  previewImageIndex === idx 
                                  ? 'border-[#007AFF] scale-110 shadow-2xl ring-4 ring-[#007AFF]/20 z-10' 
-                                 : 'border-transparent opacity-40 hover:opacity-100 hover:scale-105'
+                                 : 'border-transparent opacity-40 hover:opacity-100 hover:scale-105 hover:z-10'
                                }`}
                              >
                                 <img src={img} className="w-full h-full object-cover" alt={`Preview ${idx + 1}`} />
