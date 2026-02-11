@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { Section, Product, YoutubeVideo } from './types';
@@ -323,59 +322,59 @@ const App: React.FC = () => {
              </div>
 
              <div className="flex flex-col items-center gap-12 lg:gap-20 lg:flex-row lg:items-start lg:justify-between">
-                {/* Responsive High-Fidelity Mockup Area */}
+                {/* iPhone Mockup Area - Inspired by Desert Titanium Reference */}
                 <div className="w-full max-w-[340px] sm:max-w-[380px] md:max-w-[420px] lg:max-w-[460px] flex flex-col items-center gap-10">
-                   {/* Realistic iPhone Pro Max Mockup with Perfected Corner Radii */}
-                   <div className={`relative aspect-[1290/2796] w-full rounded-[55px] p-[10px] transition-all duration-700 shadow-[0_60px_120px_-30px_rgba(0,0,0,0.6)] ${
-                     isDarkMode 
-                     ? 'bg-gradient-to-br from-[#1c1c1e] via-[#3a3a3c] to-[#1c1c1e]' 
-                     : 'bg-gradient-to-br from-[#d2d2d7] via-[#e8e8ed] to-[#b8b8bc]'
-                   }`}>
-                      {/* Metallic Titanium Bezel with Optimized Edge Radii */}
-                      <div className={`absolute -inset-[3px] rounded-[58px] border-[10px] pointer-events-none z-10 transition-colors duration-500 ${
-                        isDarkMode 
-                        ? 'border-zinc-700/80 shadow-[inset_0_0_12px_rgba(0,0,0,0.8),0_0_0_1px_rgba(255,255,255,0.05)]' 
-                        : 'border-zinc-300/80 shadow-[inset_0_0_8px_rgba(255,255,255,0.6),0_0_0_1px_rgba(0,0,0,0.05)]'
-                      }`}></div>
+                   
+                   {/* Custom High-Fidelity Mockup Container with 50px Corner Radius */}
+                   <div className="relative aspect-[1290/2796] w-full group">
                       
-                      {/* Slim Physical Buttons Proportionally Placed */}
-                      <div className={`absolute -left-[4px] top-[18%] w-[6px] h-[4%] rounded-l-md z-20 border-r border-black/10 transition-colors ${isDarkMode ? 'bg-zinc-600' : 'bg-zinc-400'}`}></div>
-                      <div className={`absolute -left-[4px] top-[26%] w-[6px] h-[9%] rounded-l-md z-20 border-r border-black/10 transition-colors ${isDarkMode ? 'bg-zinc-600' : 'bg-zinc-400'}`}></div>
-                      <div className={`absolute -left-[4px] top-[37.5%] w-[6px] h-[9%] rounded-l-md z-20 border-r border-black/10 transition-colors ${isDarkMode ? 'bg-zinc-600' : 'bg-zinc-400'}`}></div>
-                      <div className={`absolute -right-[4px] top-[30%] w-[6px] h-[12%] rounded-r-md z-20 border-l border-black/10 transition-colors ${isDarkMode ? 'bg-zinc-600' : 'bg-zinc-400'}`}></div>
-
-                      {/* Display Viewport - Perfect Corner Synchrony (48px) to Prevent Clipping */}
-                      <div className="flex-1 w-full h-full bg-black rounded-[48px] overflow-hidden relative shadow-[inset_0_0_30px_rgba(0,0,0,1)] flex items-center justify-center">
-                         <img 
-                           src={selectedProduct.gallery[previewImageIndex] || selectedProduct.image} 
-                           className="w-full h-full object-cover animate-in fade-in duration-500 select-none" 
-                           alt="Asset Preview" 
-                         />
-                         <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent pointer-events-none"></div>
-                         
-                         {/* Optional: Dynamic Island for Realism */}
-                         <div className="absolute top-[3%] left-1/2 -translate-x-1/2 w-[30%] h-[2.5%] bg-black rounded-full z-20 shadow-lg border border-white/5"></div>
+                      {/* Frame: Outer Desert Titanium Border with Exact 50px Radius */}
+                      <div className="absolute -inset-[3.5px] rounded-[50px] bg-gradient-to-br from-[#E2B78D] via-[#C19A6B] to-[#917052] border border-white/20 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.6)]"></div>
+                      
+                      {/* Bezel: Inner Deep Black Edge with Synchronized Radius */}
+                      <div className="absolute inset-[6px] rounded-[46px] bg-black p-[5.5px] shadow-[inset_0_0_15px_rgba(255,255,255,0.05)]">
+                        
+                        {/* Display Area with 42px Radius to avoid clipping and display content more fully */}
+                        <div className="relative w-full h-full rounded-[42px] overflow-hidden bg-black shadow-[inset_0_0_30px_rgba(0,0,0,0.8)]">
+                           <img 
+                             src={selectedProduct.gallery[previewImageIndex] || selectedProduct.image} 
+                             className="w-full h-full object-cover animate-in fade-in duration-700 select-none" 
+                             alt="Display Asset" 
+                             style={{ imageRendering: 'high-quality' }}
+                           />
+                           
+                           {/* Screen Gloss Reflection */}
+                           <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent pointer-events-none z-10"></div>
+                        </div>
                       </div>
+
+                      {/* Physical Buttons - Integrated and Subtle */}
+                      <div className="absolute -left-[3px] top-[18%] w-[4px] h-[4%] bg-[#A8825C] rounded-l shadow-sm z-20"></div>
+                      <div className="absolute -left-[3px] top-[26%] w-[4px] h-[9%] bg-[#A8825C] rounded-l shadow-sm z-20"></div>
+                      <div className="absolute -left-[3px] top-[37%] w-[4px] h-[9%] bg-[#A8825C] rounded-l shadow-sm z-20"></div>
+                      <div className="absolute -right-[3px] top-[30%] w-[4px] h-[12%] bg-[#A8825C] rounded-r shadow-sm z-20"></div>
+
+                      {/* No Dynamic Island Overlay - As requested */}
                    </div>
 
-                   {/* Gallery View - Full Count Visibility */}
+                   {/* Gallery Assets Navigation */}
                    {selectedProduct.gallery && selectedProduct.gallery.length > 0 && (
                      <div className="w-full space-y-6">
                         <div className="flex items-center justify-center gap-3 px-4 opacity-50">
                            <div className="h-px bg-zinc-400 flex-1"></div>
-                           <p className="text-[10px] font-black uppercase tracking-[0.4em] whitespace-nowrap">Visual Assets</p>
+                           <p className="text-[10px] font-black uppercase tracking-[0.4em] whitespace-nowrap">Asset Gallery</p>
                            <div className="h-px bg-zinc-400 flex-1"></div>
                         </div>
-                        <div className="flex flex-wrap gap-2 sm:gap-4 py-2 px-1 w-full justify-center">
+                        <div className="flex flex-wrap gap-3 py-2 px-1 w-full justify-center">
                            {selectedProduct.gallery.map((img, idx) => (
                              <button 
                                key={idx} 
                                onClick={() => setPreviewImageIndex(idx)} 
-                               className={`w-[calc(25%-8px)] sm:w-16 sm:h-16 md:w-20 md:h-20 aspect-square rounded-xl overflow-hidden shrink-0 border-[3px] transition-all duration-300 ${
-                                 previewImageIndex === idx ? 'border-[#007AFF] scale-110 shadow-2xl z-10 ring-4 ring-blue-500/20' : 'border-transparent opacity-40 hover:opacity-100 hover:scale-105'
+                               className={`w-14 h-14 sm:w-16 sm:h-16 aspect-square rounded-[1.25rem] overflow-hidden shrink-0 border-2 transition-all duration-300 ${
+                                 previewImageIndex === idx ? 'border-[#007AFF] scale-110 shadow-xl z-10 ring-4 ring-blue-500/10' : 'border-transparent opacity-40 hover:opacity-100 hover:scale-105'
                                }`}
                              >
-                                <img src={img} className="w-full h-full object-cover" alt={`Preview ${idx + 1}`} />
+                                <img src={img} className="w-full h-full object-cover" alt={`Slide ${idx + 1}`} />
                              </button>
                            ))}
                         </div>
@@ -386,66 +385,56 @@ const App: React.FC = () => {
                 {/* Content Area */}
                 <div className="w-full lg:flex-1 lg:pt-10 flex flex-col gap-10">
                    <div className="space-y-8 text-center lg:text-left">
-                      <div className="flex flex-wrap justify-center lg:justify-start gap-4">
-                         <div className="px-5 py-2 bg-[#007AFF]/10 text-[#007AFF] font-black text-[10px] uppercase rounded-full border border-[#007AFF]/20 shadow-sm">
+                      <div className="flex flex-wrap justify-center lg:justify-start gap-3">
+                         <div className="px-5 py-2 bg-zinc-100 dark:bg-zinc-900/50 text-zinc-900 dark:text-zinc-100 font-black text-[10px] uppercase rounded-full border border-zinc-200 dark:border-white/5">
                            {selectedProduct.category}
                          </div>
                          {selectedProduct.android_version && (
-                            <div className="px-5 py-2 bg-orange-500/10 text-orange-600 font-black text-[10px] uppercase rounded-full border border-orange-500/20 shadow-sm">
-                              <i className="fa-brands fa-android mr-2 text-xs"></i>{selectedProduct.android_version}
+                            <div className="px-5 py-2 bg-orange-500/10 text-orange-600 font-black text-[10px] uppercase rounded-full border border-orange-500/20">
+                              <i className="fa-brands fa-android mr-2 text-xs"></i> {selectedProduct.android_version}
                             </div>
                          )}
                       </div>
                       
                       <div className="space-y-4">
-                        <h2 className="text-4xl sm:text-5xl md:text-6xl font-black text-zinc-900 dark:text-zinc-100 tracking-tighter leading-none uppercase">
+                        <h2 className="text-4xl sm:text-5xl md:text-7xl font-black text-zinc-900 dark:text-zinc-100 tracking-tighter leading-[0.9] uppercase">
                           {selectedProduct.title}
                         </h2>
-                        <p className="text-zinc-500 dark:text-zinc-400 font-medium text-lg md:text-xl italic leading-relaxed max-w-xl mx-auto lg:mx-0 opacity-80">
+                        <p className="text-zinc-500 dark:text-zinc-400 font-medium text-lg md:text-xl leading-relaxed max-w-xl mx-auto lg:mx-0 opacity-80 italic">
                           "{selectedProduct.description}"
                         </p>
                       </div>
                    </div>
 
                    {/* Specs Grid */}
-                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full">
-                      <div className="flex items-center gap-6 p-6 bg-zinc-50 dark:bg-zinc-900/40 rounded-[2.5rem] border border-zinc-100 dark:border-white/5 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-900/60">
-                         <div className="w-12 h-12 bg-[#007AFF]/10 rounded-2xl flex items-center justify-center shrink-0">
-                            <i className="fa-solid fa-mobile-screen-button text-[#007AFF] text-xl"></i>
-                         </div>
-                         <div className="flex flex-col">
-                            <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Platform</span>
-                            <span className="text-lg font-bold text-zinc-900 dark:text-zinc-100 uppercase">{selectedProduct.compatibility}</span>
-                         </div>
+                   <div className="grid grid-cols-2 gap-4 w-full">
+                      <div className="flex flex-col gap-1 p-6 bg-zinc-50 dark:bg-zinc-900/40 rounded-[2rem] border border-zinc-100 dark:border-white/5 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-900/60">
+                         <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Support</span>
+                         <span className="text-lg font-bold text-zinc-900 dark:text-zinc-100 uppercase truncate">{selectedProduct.compatibility}</span>
                       </div>
-                      <div className="flex items-center gap-6 p-6 bg-zinc-50 dark:bg-zinc-900/40 rounded-[2.5rem] border border-zinc-100 dark:border-white/5 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-900/60">
-                         <div className="w-12 h-12 bg-orange-500/10 rounded-2xl flex items-center justify-center shrink-0">
-                            <i className="fa-solid fa-crown text-orange-500 text-xl"></i>
-                         </div>
-                         <div className="flex flex-col">
-                            <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Type</span>
-                            <span className="text-lg font-bold text-zinc-900 dark:text-zinc-100 uppercase">{selectedProduct.is_premium ? 'Premium Asset' : 'Standard'}</span>
-                         </div>
+                      <div className="flex flex-col gap-1 p-6 bg-zinc-50 dark:bg-zinc-900/40 rounded-[2rem] border border-zinc-100 dark:border-white/5 transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-900/60">
+                         <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Asset Type</span>
+                         <span className="text-lg font-bold text-zinc-900 dark:text-zinc-100 uppercase">{selectedProduct.is_premium ? 'Premium' : 'Standard'}</span>
                       </div>
                    </div>
 
                    {/* CTA Section */}
-                   <div className="mt-6 flex flex-col gap-10 bg-white dark:bg-zinc-900/40 lg:bg-transparent rounded-[3.5rem] p-10 lg:p-0 shadow-2xl lg:shadow-none">
+                   <div className="mt-4 flex flex-col gap-8 bg-white dark:bg-zinc-900/40 lg:bg-transparent rounded-[3.5rem] p-10 lg:p-0 shadow-2xl lg:shadow-none">
                       <div className="text-center lg:text-left">
-                        <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.5em] mb-3 opacity-60">Listing Price</p>
-                        <span className="text-6xl font-black text-zinc-900 dark:text-zinc-100 tracking-tighter">
+                        <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.5em] mb-2 opacity-60">Listing Price</p>
+                        <span className="text-5xl sm:text-6xl font-black text-zinc-900 dark:text-zinc-100 tracking-tighter">
                           {selectedProduct.price === 0 ? 'FREE' : `${selectedProduct.price.toFixed(2)} EGP`}
                         </span>
                       </div>
                       <button 
                         onClick={() => { setOrderProductId(selectedProduct.id); window.location.hash = '#/order'; }} 
-                        className="w-full py-8 bg-[#007AFF] text-white rounded-[2.5rem] font-black text-xl shadow-xl active:scale-95 transition-all flex items-center justify-center gap-6 hover:bg-blue-600 hover:shadow-blue-500/40"
+                        className="w-full py-8 bg-[#007AFF] text-white rounded-[2.5rem] font-black text-xl shadow-2xl shadow-blue-500/30 active:scale-95 transition-all flex items-center justify-center gap-4 hover:bg-blue-600"
                       >
                          <i className="fa-solid fa-cart-arrow-down text-2xl"></i>
-                         <span className="uppercase">{selectedProduct.price === 0 ? 'Get Access' : 'Secure Purchase'}</span>
+                         <span className="uppercase">{selectedProduct.price === 0 ? 'Download' : 'Secure Purchase'}</span>
                       </button>
                       <p className="text-center lg:text-left text-[10px] font-bold text-zinc-400 uppercase tracking-widest px-6 opacity-60">
-                        Delivery handled via @Mohamed_edge Telegram network
+                        Asset delivery via @Mohamed_edge Telegram service
                       </p>
                    </div>
                 </div>
@@ -457,7 +446,7 @@ const App: React.FC = () => {
           <div className="max-w-2xl mx-auto">
             <div className="glass-panel p-10 rounded-[3rem] space-y-10">
                <div className="text-center space-y-4">
-                  <h2 className="text-3xl font-black uppercase tracking-tighter text-zinc-900 dark:text-zinc-100">Secure Order</h2>
+                  <h2 className="text-3xl font-black uppercase tracking-tighter">Secure Order</h2>
                   <div className="inline-flex items-center gap-3 px-6 py-3 bg-zinc-100 dark:bg-zinc-800 rounded-2xl font-black text-sm">
                     <i className="fa-brands fa-telegram text-[#0088CC] text-xl"></i> @Mohamed_edge
                   </div>
@@ -465,10 +454,10 @@ const App: React.FC = () => {
                <div className="space-y-6">
                   <div className="grid grid-cols-2 gap-4">
                     {['Realme', 'Oppo'].map(d => (
-                      <button key={d} onClick={() => setOrderDevice(d as any)} className={`py-6 rounded-3xl font-black text-xl border-2 transition-all ${orderDevice === d ? 'bg-[#007AFF] text-white border-[#007AFF] shadow-xl shadow-blue-500/20' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 border-transparent'}`}>{d}</button>
+                      <button key={d} onClick={() => setOrderDevice(d as any)} className={`py-6 rounded-3xl font-black text-xl border-2 transition-all ${orderDevice === d ? 'bg-[#007AFF] text-white border-[#007AFF] shadow-xl' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 border-transparent'}`}>{d}</button>
                     ))}
                   </div>
-                  <select className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black border-2 border-transparent focus:border-[#007AFF] outline-none text-zinc-900 dark:text-zinc-100" value={orderProductId} onChange={e => setOrderProductId(e.target.value)}>
+                  <select className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black border-2 border-transparent focus:border-[#007AFF] outline-none" value={orderProductId} onChange={e => setOrderProductId(e.target.value)}>
                     <option value="">Select Asset...</option>
                     {dbProducts.map(p => <option key={p.id} value={p.id}>{p.title} - {p.price} EGP</option>)}
                   </select>
@@ -477,7 +466,7 @@ const App: React.FC = () => {
                       <div className="p-8 bg-orange-500/10 border-2 border-dashed border-orange-500/30 rounded-[2.5rem] space-y-4 text-center">
                         <p className="text-orange-600 font-black text-sm uppercase">Vodafone Cash Wallet</p>
                         <div className="text-2xl font-black tracking-widest text-orange-600">01091931466</div>
-                        <p className="text-[10px] font-bold text-zinc-500">Attach receipt on Telegram after transfer</p>
+                        <p className="text-[10px] font-bold text-zinc-500">Send proof screenshot on Telegram</p>
                       </div>
                       <button onClick={handleOrderRedirect} className="w-full py-7 bg-[#0088CC] text-white rounded-3xl font-black text-xl shadow-xl flex items-center justify-center gap-4 hover:scale-[1.02] transition-transform">
                         <i className="fa-brands fa-telegram text-2xl"></i> Connect on Telegram
