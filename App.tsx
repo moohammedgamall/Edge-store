@@ -331,11 +331,7 @@ const App: React.FC = () => {
                           alt="" 
                         />
                         
-                        {/* Dynamic Island */}
-                        <div className="absolute top-4 left-1/2 -translate-x-1/2 w-28 h-7 bg-black rounded-full flex items-center justify-center gap-2 shadow-xl border border-white/5">
-                           <div className="w-2 h-2 rounded-full bg-[#111] border border-white/5"></div>
-                           <div className="w-1 h-1 rounded-full bg-[#222]"></div>
-                        </div>
+                        {/* Dynamic Island Removed */}
 
                         {/* Home Indicator Removed */}
                       </div>
