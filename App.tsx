@@ -402,8 +402,8 @@ const App: React.FC = () => {
         )}
 
         {activeSection === 'Preview' && selectedProduct && (
-          <div className="max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-500 pb-20">
-             <div className="flex items-center mb-8 px-4">
+          <div className="max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-700 pb-20">
+             <div className="flex items-center mb-10 px-4">
                <button 
                 onClick={() => { window.location.hash = '#/'; }}
                 className="w-14 h-14 flex items-center justify-center bg-white dark:bg-zinc-800 rounded-full shadow-lg border border-zinc-200 dark:border-zinc-700 active:scale-90 transition-all hover:bg-zinc-50 dark:hover:bg-zinc-700"
@@ -413,111 +413,100 @@ const App: React.FC = () => {
                </button>
              </div>
 
-             <div className="space-y-16">
-                <div className="w-full max-h-[600px] rounded-[4rem] overflow-hidden shadow-2xl relative border-4 border-white/50 dark:border-white/10 group">
-                   <img 
-                      src={selectedProduct.image} 
-                      className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" 
-                      alt="Cover Featured"
-                   />
-                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex items-end p-12 md:p-20">
-                      <div className="space-y-6">
-                         <h2 className="text-5xl md:text-8xl font-black text-white uppercase tracking-tighter leading-none drop-shadow-2xl">{selectedProduct.title}</h2>
-                         <div className="flex flex-wrap gap-3">
-                           <span className="px-6 py-2 bg-[#007AFF] text-white font-black text-xs uppercase tracking-widest rounded-full shadow-xl">{selectedProduct.category}</span>
-                           {selectedProduct.android_version && (
-                              <span className="px-6 py-2 bg-orange-600 text-white font-bold text-xs uppercase rounded-full shadow-xl">
-                                <i className="fa-brands fa-android mr-2"></i>{selectedProduct.android_version}
-                              </span>
-                           )}
-                         </div>
+             <div className="flex flex-col items-center gap-12">
+                {/* Refined iPhone Mockup - High-Fidelity "Natural Titanium" Bezel Aesthetic */}
+                <div className="relative w-full max-w-[360px] md:max-w-[420px] mx-auto group">
+                   <div className={`relative aspect-[1290/2796] w-full rounded-[4.5rem] p-[8px] transition-all shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] ${
+                     isDarkMode 
+                     ? 'bg-gradient-to-br from-[#2c2c2e] via-[#3a3a3c] to-[#1c1c1e]' 
+                     : 'bg-gradient-to-br from-[#d2d2d7] via-[#e8e8ed] to-[#b8b8bc]'
+                   }`}>
+                      {/* Metallic Bezel Highlight - Simulating Brushed Titanium for iPhone 17 Pro look */}
+                      <div className={`absolute -inset-[3px] rounded-[4.8rem] border-[10px] pointer-events-none z-10 transition-colors duration-500 ${
+                        isDarkMode 
+                        ? 'border-zinc-700/80 shadow-[inset_0_0_20px_rgba(0,0,0,0.8)]' 
+                        : 'border-zinc-300/80 shadow-[inset_0_0_15px_rgba(255,255,255,0.5)]'
+                      }`}></div>
+                      
+                      {/* Inner Pure Black Display Area (OLED Simulation) */}
+                      <div className="flex-1 w-full h-full bg-black rounded-[3.8rem] overflow-hidden relative shadow-[inset_0_0_40px_rgba(0,0,0,1)]">
+                         {/* Asset Display with object-cover to fill entire frame */}
+                         <img 
+                           src={selectedProduct.gallery[previewImageIndex] || selectedProduct.image} 
+                           className="w-full h-full object-cover animate-in fade-in duration-700" 
+                           alt="Asset Preview"
+                         />
                       </div>
+
+                      {/* Side Buttons Simulation */}
+                      <div className={`absolute -left-[14px] top-[18%] w-[4px] h-[6%] rounded-r-lg ${isDarkMode ? 'bg-zinc-700' : 'bg-zinc-300'}`}></div>
+                      <div className={`absolute -left-[14px] top-[26%] w-[4px] h-[10%] rounded-r-lg ${isDarkMode ? 'bg-zinc-700' : 'bg-zinc-300'}`}></div>
+                      <div className={`absolute -left-[14px] top-[38%] w-[4px] h-[10%] rounded-r-lg ${isDarkMode ? 'bg-zinc-700' : 'bg-zinc-300'}`}></div>
+                      <div className={`absolute -right-[14px] top-[30%] w-[4px] h-[12%] rounded-l-lg ${isDarkMode ? 'bg-zinc-700' : 'bg-zinc-300'}`}></div>
                    </div>
+
+                   {/* Gallery Thumbnails Below Mockup */}
+                   {selectedProduct.gallery && selectedProduct.gallery.length > 0 && (
+                     <div className="mt-8 flex gap-4 overflow-x-auto no-scrollbar py-2 px-1 max-w-full justify-center">
+                        {selectedProduct.gallery.map((img, idx) => (
+                          <button 
+                            key={idx}
+                            onClick={() => setPreviewImageIndex(idx)}
+                            className={`w-16 h-16 md:w-20 md:h-20 rounded-2xl overflow-hidden shrink-0 border-4 transition-all ${
+                              previewImageIndex === idx 
+                              ? 'border-[#007AFF] scale-110 shadow-xl' 
+                              : 'border-transparent opacity-50 hover:opacity-100 hover:scale-105'
+                            }`}
+                          >
+                             <img src={img} className="w-full h-full object-cover" />
+                          </button>
+                        ))}
+                     </div>
+                   )}
                 </div>
 
-                <div className="flex flex-col items-center gap-16">
-                    <div className="w-full flex flex-col items-center justify-center relative bg-zinc-100/30 dark:bg-zinc-900/40 p-10 md:p-20 rounded-[4rem]">
-                       {selectedProduct.gallery && selectedProduct.gallery.length > 0 ? (
-                         <>
-                           {/* High-End Smartphone Mockup: edge-to-edge display with zero padding/gaps, no dynamic island for a "natural" look */}
-                           <div 
-                             className={`relative w-full max-w-[1080px] aspect-[1290/2796] rounded-[7.5rem] p-0 border-[14px] flex flex-col overflow-hidden animate-in zoom-in-95 duration-700 transition-all ${
-                               !isDarkMode 
-                               ? 'bg-zinc-950 border-[#1c1c1e] shadow-[0_100px_200px_-50px_rgba(0,0,0,0.8)]' 
-                               : 'bg-[#E5E5E7] border-[#D1D1D6] shadow-[0_100px_200px_-50px_rgba(255,255,255,0.05)]'
-                             }`}
-                           >
-                               {/* Real-feel consistent bezel */}
-                               <div className={`absolute inset-0 border-[2px] rounded-[7.2rem] pointer-events-none z-20 ${isDarkMode ? 'border-white/40' : 'border-white/5'}`}></div>
+                {/* Product Details - Professional UI */}
+                <div className="w-full max-w-2xl glass-panel rounded-[3.5rem] p-10 md:p-14 space-y-10">
+                   <div className="space-y-6 text-center">
+                      <div className="flex flex-wrap justify-center gap-3">
+                         <span className="px-5 py-1.5 bg-[#007AFF]/10 text-[#007AFF] font-black text-[10px] uppercase tracking-widest rounded-full border border-[#007AFF]/20">{selectedProduct.category}</span>
+                         {selectedProduct.android_version && (
+                            <span className="px-5 py-1.5 bg-orange-500/10 text-orange-600 font-black text-[10px] uppercase tracking-widest rounded-full border border-orange-500/20">
+                              <i className="fa-brands fa-android mr-2"></i>{selectedProduct.android_version}
+                            </span>
+                         )}
+                      </div>
+                      <h2 className="text-4xl md:text-5xl font-black text-zinc-900 dark:text-zinc-100 tracking-tighter leading-tight uppercase">{selectedProduct.title}</h2>
+                      <p className="text-zinc-500 dark:text-zinc-400 font-medium text-lg italic leading-relaxed max-w-lg mx-auto">"{selectedProduct.description}"</p>
+                   </div>
 
-                               {/* Full Edge-to-Edge display: 'object-cover' fills the entire frame for a pure high-end digital asset experience */}
-                               <div className="flex-1 w-full bg-black rounded-[6.8rem] overflow-hidden relative flex items-center justify-center">
-                                 <img 
-                                   src={selectedProduct.gallery[previewImageIndex]} 
-                                   className="w-full h-full object-cover transition-opacity duration-700" 
-                                   alt="Full Asset Display"
-                                 />
-                               </div>
-                           </div>
+                   <div className="grid grid-cols-2 gap-4 py-4">
+                      <div className="flex flex-col items-center p-6 bg-zinc-50 dark:bg-zinc-800/40 rounded-3xl border border-zinc-100 dark:border-zinc-700/50">
+                         <i className="fa-solid fa-mobile-screen text-[#007AFF] text-xl mb-3"></i>
+                         <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1">Compatibility</span>
+                         <span className="text-sm font-bold uppercase">{selectedProduct.compatibility}</span>
+                      </div>
+                      <div className="flex flex-col items-center p-6 bg-zinc-50 dark:bg-zinc-800/40 rounded-3xl border border-zinc-100 dark:border-zinc-700/50">
+                         <i className="fa-solid fa-bolt-lightning text-orange-500 text-xl mb-3"></i>
+                         <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1">Type</span>
+                         <span className="text-sm font-bold uppercase">{selectedProduct.is_premium ? 'Premium' : 'Standard'}</span>
+                      </div>
+                   </div>
 
-                           <div className="mt-16 p-6 flex gap-6 overflow-x-auto no-scrollbar max-w-full">
-                              {selectedProduct.gallery.map((img, idx) => (
-                                <button 
-                                  key={idx}
-                                  onClick={() => setPreviewImageIndex(idx)}
-                                  className={`w-24 h-24 rounded-2xl overflow-hidden shrink-0 border-4 transition-all ${previewImageIndex === idx ? 'border-[#007AFF] scale-110 shadow-2xl' : 'border-transparent opacity-60 hover:opacity-100'}`}
-                                >
-                                   <img src={img} className="w-full h-full object-cover" />
-                                </button>
-                              ))}
-                           </div>
-                         </>
-                       ) : (
-                         <div className="text-zinc-400 font-bold uppercase text-sm tracking-widest flex flex-col items-center gap-6 py-20">
-                           <i className="fa-solid fa-camera-retro text-7xl opacity-20"></i>
-                           Interactive gallery coming soon
-                         </div>
-                       )}
-                    </div>
-
-                    <div className="w-full glass-panel rounded-[4rem] p-12 md:p-20 space-y-12">
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
-                           <div className="space-y-8">
-                              <h3 className="text-sm font-black text-[#007AFF] uppercase tracking-[0.3em]">Exclusive Asset Description</h3>
-                              <p className="text-zinc-600 dark:text-zinc-400 font-medium leading-relaxed text-2xl italic">"{selectedProduct.description}"</p>
-                              
-                              <div className="flex flex-wrap gap-4 pt-4">
-                                 <div className="flex items-center gap-4 p-5 bg-zinc-50 dark:bg-zinc-800/40 rounded-3xl border border-zinc-100 dark:border-zinc-700/50">
-                                    <i className="fa-solid fa-mobile-button text-[#007AFF] text-2xl"></i>
-                                    <div className="flex flex-col">
-                                       <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Device Compatibility</span>
-                                       <span className="text-sm font-bold uppercase text-zinc-900 dark:text-zinc-100">{selectedProduct.compatibility}</span>
-                                    </div>
-                                 </div>
-                                 <div className="flex items-center gap-4 p-5 bg-zinc-50 dark:bg-zinc-800/40 rounded-3xl border border-zinc-100 dark:border-zinc-700/50">
-                                    <i className="fa-solid fa-code-merge text-[#007AFF] text-2xl"></i>
-                                    <div className="flex flex-col">
-                                       <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Target OS</span>
-                                       <span className="text-sm font-bold uppercase text-zinc-900 dark:text-zinc-100">{selectedProduct.android_version || 'Universal'}</span>
-                                    </div>
-                                 </div>
-                              </div>
-                           </div>
-
-                           <div className="bg-zinc-900 dark:bg-zinc-800/80 rounded-[3rem] p-12 flex flex-col justify-center items-center gap-8 shadow-3xl">
-                              <div className="text-center space-y-2">
-                                 <p className="text-blue-400 font-black text-xs uppercase tracking-[0.4em]">One-Time Payment</p>
-                                 <div className="text-7xl font-black text-white">
-                                    {selectedProduct.price === 0 ? 'FREE' : `${selectedProduct.price.toFixed(2)} EGP`}
-                                 </div>
-                              </div>
-                              <button onClick={() => { setOrderProductId(selectedProduct.id); window.location.hash = '#/order'; }} className="w-full py-10 bg-[#007AFF] text-white rounded-[2.5rem] font-black text-2xl shadow-2xl shadow-blue-500/40 active:scale-95 transition-all flex items-center justify-center gap-6 hover:bg-blue-600">
-                                 <i className="fa-solid fa-cart-arrow-down"></i>
-                                 {selectedProduct.price === 0 ? 'DOWNLOAD NOW' : 'SECURE CHECKOUT'}
-                              </button>
-                           </div>
-                        </div>
-                    </div>
+                   <div className="pt-6 flex flex-col gap-6">
+                      <div className="text-center">
+                        <span className="text-5xl font-black text-zinc-900 dark:text-zinc-100">
+                          {selectedProduct.price === 0 ? 'FREE' : `${selectedProduct.price.toFixed(2)} EGP`}
+                        </span>
+                      </div>
+                      <button 
+                        onClick={() => { setOrderProductId(selectedProduct.id); window.location.hash = '#/order'; }}
+                        className="w-full py-8 bg-[#007AFF] text-white rounded-[2.5rem] font-black text-xl shadow-2xl shadow-blue-500/40 active:scale-95 transition-all flex items-center justify-center gap-4 hover:bg-blue-600 group"
+                      >
+                         <i className="fa-solid fa-circle-arrow-down text-2xl group-hover:translate-y-1 transition-transform"></i>
+                         {selectedProduct.price === 0 ? 'DOWNLOAD NOW' : 'SECURE PURCHASE'}
+                      </button>
+                   </div>
                 </div>
              </div>
           </div>
