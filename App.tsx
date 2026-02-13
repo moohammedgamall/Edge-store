@@ -7,7 +7,6 @@ import BottomNav from './components/BottomNav';
 import Header from './components/Header';
 import ProductCard from './components/ProductCard';
 
-// إعداد عميل Supabase
 const SUPABASE_URL = 'https://nlqnbfvsghlomuugixlk.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5scW5iZnZzZ2hsb211dWdpeGxrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA0Mjk4NzUsImV4cCI6MjA4NjAwNTg3NX0.KXLd6ISgf31DBNaU33fp0ZYLlxyrr62RfrxwYPIMk34';
 
@@ -60,40 +59,38 @@ const App: React.FC = () => {
     setTimeout(() => setNotification(null), 5000);
   };
 
-  // وظيفة جلب البيانات من السيرفر
   const refreshData = async () => {
     try {
-      // 1. جلب المنتجات
-      const { data: prods, error: prodErr } = await supabase
-        .from('products')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (prodErr) throw prodErr;
-      if (prods) setDbProducts(prods.map(p => ({ ...p, gallery: Array.isArray(p.gallery) ? p.gallery : [] })));
+      // 1. جلب المنتجات بشكل منفصل
+      const prodRes = await supabase.from('products').select('*').order('created_at', { ascending: false });
+      if (prodRes.error) {
+         console.warn("Products missing/error:", prodRes.error.message);
+      } else if (prodRes.data) {
+         setDbProducts(prodRes.data.map(p => ({ ...p, gallery: Array.isArray(p.gallery) ? p.gallery : [] })));
+      }
 
-      // 2. جلب الفيديوهات
-      const { data: vids, error: vidErr } = await supabase
-        .from('videos')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (vidErr) throw vidErr;
-      if (vids) setDbVideos(vids);
-      
-      // 3. جلب الإعدادات
-      const { data: settings, error: settErr } = await supabase.from('settings').select('*');
-      if (settErr) throw settErr;
-      if (settings) {
-        settings.forEach(s => {
+      // 2. جلب الفيديوهات بشكل منفصل
+      const vidRes = await supabase.from('videos').select('*').order('created_at', { ascending: false });
+      if (vidRes.data) setDbVideos(vidRes.data);
+
+      // 3. جلب الإعدادات بشكل منفصل
+      const setRes = await supabase.from('settings').select('*');
+      if (setRes.data) {
+        setRes.data.forEach(s => {
           if (s.key === 'admin_password') setAdminPassword(s.value);
           if (s.key === 'site_logo') setSiteLogo(s.value);
           if (s.key === 'loader_logo') setLoaderLogo(s.value);
         });
       }
+
+      // إذا فشلت المنتجات فقط نظهر التنبيه، لكن نترك الموقع يفتح
+      if (prodRes.error && prodRes.error.code !== 'PGRST116') {
+         showNotify("تأكد من إنشاء جدول المنتجات وتفعيل RLS في Supabase", "error");
+      }
+
     } catch (err: any) {
-      console.error("Database Error:", err.message);
-      showNotify("خطأ في الاتصال بالقاعدة: تأكد من تفعيل أذونات RLS", "error");
+      console.error("Critical Sync Error:", err);
+      showNotify("فشل الاتصال بقاعدة البيانات", "error");
     } finally {
       setIsLoading(false);
     }
@@ -119,7 +116,7 @@ const App: React.FC = () => {
       setIsAuthModalOpen(false);
       setPasswordInput('');
       window.location.hash = '#/admin';
-      showNotify("تم الدخول بنجاح");
+      showNotify("تم الدخول بلوحة التحكم");
     } else {
       showNotify("رمز المرور خاطئ", "error");
     }
@@ -184,12 +181,12 @@ const App: React.FC = () => {
       const { error } = await supabase.from('products').upsert(payload);
       if (error) throw error;
 
-      await refreshData(); // إعادة التحميل من السيرفر فوراً
+      await refreshData();
       setIsEditingProduct(false);
       setEditProduct({ title: '', price: 0, category: 'Themes', image: '', description: '', gallery: [], android_version: '' });
       showNotify("تم حفظ ونشر المنتج بنجاح");
     } catch (err: any) { 
-      showNotify(`خطأ في الحفظ: ${err.message}`, "error"); 
+      showNotify(`خطأ في الحفظ: تأكد من تفعيل صلاحيات RLS للجدول`, "error"); 
     } finally { setIsPublishing(false); }
   };
 
@@ -405,7 +402,6 @@ const App: React.FC = () => {
                     <button onClick={saveProduct} disabled={isPublishing} className="w-full py-6 bg-[#007AFF] text-white rounded-3xl font-black uppercase text-sm shadow-xl">{isPublishing ? 'جاري النشر...' : 'حفظ ونشر على الموقع'}</button>
                   </div>
                 )}
-                {/* List of products to delete or edit */}
                 <div className="space-y-4">
                   {dbProducts.map(p => (
                     <div key={p.id} className="p-5 glass-panel rounded-3xl flex items-center justify-between">
