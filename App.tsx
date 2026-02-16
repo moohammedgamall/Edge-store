@@ -57,7 +57,6 @@ const App: React.FC = () => {
     setTimeout(() => setNotification(null), 6000);
   }, []);
 
-  // جلب البيانات الأساسية فقط (بدون الـ Gallery الضخم) لتجنب الـ Timeout
   const refreshData = async () => {
     try {
       const { data: products, error: prodErr } = await supabase
@@ -67,9 +66,9 @@ const App: React.FC = () => {
 
       if (prodErr) {
         if (prodErr.message.includes('timeout')) {
-          showNotify("اتصال ضعيف أو بيانات ضخمة. يرجى المحاولة لاحقاً", "error");
+          showNotify("Slow connection. Please try again later.", "error");
         } else {
-          showNotify(`خطأ: ${prodErr.message}`, "error");
+          showNotify(`Error: ${prodErr.message}`, "error");
         }
       } else if (products) {
         setDbProducts(products as Product[]);
@@ -87,7 +86,7 @@ const App: React.FC = () => {
         });
       }
     } catch (err: any) {
-      showNotify("فشل الاتصال بقاعدة البيانات", "error");
+      showNotify("Connection failure.", "error");
     } finally {
       setIsLoading(false);
     }
@@ -102,7 +101,7 @@ const App: React.FC = () => {
       if (error) throw error;
       setSelectedProduct({ ...data, gallery: Array.isArray(data.gallery) ? data.gallery : [] });
     } catch (err: any) {
-      showNotify("فشل تحميل تفاصيل المنتج", "error");
+      showNotify("Failed to load details.", "error");
     } finally {
       setIsPreviewLoading(false);
     }
@@ -126,9 +125,9 @@ const App: React.FC = () => {
       setIsAuthModalOpen(false);
       setPasswordInput('');
       window.location.hash = '#/admin';
-      showNotify("مرحباً بك في لوحة التحكم");
+      showNotify("Welcome to the Admin Panel");
     } else {
-      showNotify("رمز المرور خاطئ", "error");
+      showNotify("Invalid Password", "error");
     }
   };
 
@@ -166,13 +165,13 @@ const App: React.FC = () => {
   const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []) as File[];
     const currentGallery = editProduct.gallery || [];
-    if (currentGallery.length + files.length > 20) return showNotify("الحد الأقصى 20 صورة", "error");
+    if (currentGallery.length + files.length > 20) return showNotify("Max 20 images.", "error");
     const base64Images = await Promise.all(files.map(f => fileToBase64(f)));
     setEditProduct({ ...editProduct, gallery: [...currentGallery, ...base64Images] });
   };
 
   const saveProduct = async () => {
-    if (!editProduct.title || !editProduct.image) return showNotify("العنوان وصورة الغلاف مطلوبة", "error");
+    if (!editProduct.title || !editProduct.image) return showNotify("Title and cover are required.", "error");
     setIsPublishing(true);
     try {
       const payload = {
@@ -194,9 +193,9 @@ const App: React.FC = () => {
       await refreshData();
       setIsEditingProduct(false);
       setEditProduct({ title: '', price: 0, category: 'Themes', image: '', description: '', gallery: [], android_version: '' });
-      showNotify("تم الحفظ بنجاح");
+      showNotify("Saved successfully.");
     } catch (err: any) { 
-      showNotify(`خطأ: ${err.message}`, "error"); 
+      showNotify(`Error: ${err.message}`, "error"); 
     } finally { setIsPublishing(false); }
   };
 
@@ -205,7 +204,7 @@ const App: React.FC = () => {
       const { error } = await supabase.from('settings').upsert({ key, value }, { onConflict: 'key' });
       if (error) throw error;
       await refreshData();
-      showNotify("تم التحديث");
+      showNotify("Setting updated.");
     } catch (err: any) { showNotify(err.message, "error"); }
   };
 
@@ -215,7 +214,7 @@ const App: React.FC = () => {
     try {
       const base64 = await fileToBase64(file);
       await updateSetting(type === 'site' ? 'site_logo' : 'loader_logo', base64);
-    } catch (err) { showNotify("فشل رفع الشعار", "error"); }
+    } catch (err) { showNotify("Logo upload failed.", "error"); }
   };
 
   if (isLoading && dbProducts.length === 0) return null;
@@ -228,11 +227,11 @@ const App: React.FC = () => {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-xl">
           <div className="w-full max-w-[340px] glass-panel p-8 rounded-[2.5rem] space-y-6 shadow-3xl text-center">
             <i className="fa-solid fa-lock text-[#007AFF] text-3xl mb-2"></i>
-            <h3 className="font-black uppercase text-sm tracking-widest">لوحة التحكم</h3>
+            <h3 className="font-black uppercase text-sm tracking-widest">Admin Access</h3>
             <input type="password" value={passwordInput} onChange={e => setPasswordInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAuth()} className="w-full p-4 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-center text-2xl font-black outline-none border-2 border-transparent focus:border-[#007AFF]" placeholder="••••" autoFocus />
             <div className="grid grid-cols-2 gap-3">
-              <button onClick={() => { setIsAuthModalOpen(false); window.location.hash = '#/'; }} className="py-4 font-bold text-zinc-400">إلغاء</button>
-              <button onClick={handleAuth} className="py-4 bg-[#007AFF] text-white rounded-2xl font-black">دخول</button>
+              <button onClick={() => { setIsAuthModalOpen(false); window.location.hash = '#/'; }} className="py-4 font-bold text-zinc-400">Cancel</button>
+              <button onClick={handleAuth} className="py-4 bg-[#007AFF] text-white rounded-2xl font-black">Login</button>
             </div>
           </div>
         </div>
@@ -250,7 +249,7 @@ const App: React.FC = () => {
                 {filteredProducts.length === 0 && !isLoading && (
                   <div className="col-span-full py-20 text-center glass-panel rounded-[2rem] border-dashed border-2 border-zinc-200 dark:border-zinc-800 text-zinc-400 font-bold uppercase text-xs flex flex-col items-center gap-4">
                      <i className="fa-solid fa-database text-4xl opacity-20"></i>
-                     <span>لا توجد بيانات متاحة</span>
+                     <span>No data available.</span>
                   </div>
                 )}
               </div>
@@ -258,7 +257,6 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {/* Preview Page with Loader */}
         {activeSection === 'Preview' && (
           <div className="max-w-6xl mx-auto pb-20 px-4">
              <button onClick={() => window.location.hash = '#/'} className="w-10 h-10 mb-8 flex items-center justify-center bg-white dark:bg-zinc-800 rounded-full shadow-lg border border-zinc-200 hover:scale-110 transition-transform"><i className="fa-solid fa-chevron-left"></i></button>
@@ -266,7 +264,7 @@ const App: React.FC = () => {
              {isPreviewLoading ? (
                <div className="flex flex-col items-center justify-center py-40 gap-4">
                  <div className="w-12 h-12 border-4 border-[#007AFF] border-t-transparent rounded-full animate-spin"></div>
-                 <p className="font-black text-xs uppercase tracking-widest text-[#007AFF]">جاري تحميل التفاصيل...</p>
+                 <p className="font-black text-xs uppercase tracking-widest text-[#007AFF]">Loading Details...</p>
                </div>
              ) : selectedProduct && (
                <div className="flex flex-col lg:flex-row items-center lg:items-start gap-12 lg:gap-16 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -293,12 +291,12 @@ const App: React.FC = () => {
                      <div className="p-10 bg-white dark:bg-zinc-900/40 rounded-[3rem] border border-zinc-100 dark:border-white/5 shadow-2xl">
                         <div className="flex items-center justify-between mb-8">
                           <div>
-                            <p className="text-[10px] font-black text-zinc-400 uppercase mb-2">السعر</p>
+                            <p className="text-[10px] font-black text-zinc-400 uppercase mb-2">Price</p>
                             <span className="text-4xl font-black text-[#007AFF]">{selectedProduct.price === 0 ? 'FREE' : `${selectedProduct.price} EGP`}</span>
                           </div>
                           <i className="fa-solid fa-medal text-[#007AFF] text-4xl opacity-20"></i>
                         </div>
-                        <button onClick={() => { setOrderProductId(selectedProduct.id); window.location.hash = '#/order'; }} className="w-full py-6 bg-[#007AFF] text-white rounded-[2rem] font-black text-xl hover:scale-[1.02] transition-all">اطلب الآن</button>
+                        <button onClick={() => { setOrderProductId(selectedProduct.id); window.location.hash = '#/order'; }} className="w-full py-6 bg-[#007AFF] text-white rounded-[2rem] font-black text-xl hover:scale-[1.02] transition-all">Order Now</button>
                      </div>
                   </div>
                </div>
@@ -306,38 +304,115 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {/* Order & Admin Sections remain similar but use refreshData to keep DB light */}
         {activeSection === 'Order' && (
-          <div className="max-w-4xl mx-auto">
-            <div className="glass-panel p-10 md:p-16 rounded-[4.5rem] space-y-14 text-center">
-                <div className="w-24 h-24 bg-[#007AFF]/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <i className="fa-solid fa-shield-halved text-[#007AFF] text-4xl"></i>
-                </div>
-                <h2 className="text-4xl font-black uppercase tracking-tighter">بوابة الطلب</h2>
-                <div className="space-y-10 max-w-2xl mx-auto">
-                <div className="grid grid-cols-2 gap-4">
-                  {['Realme', 'Oppo'].map(d => (
-                    <button key={d} onClick={() => setOrderDevice(d as any)} className={`py-6 rounded-2xl font-black text-xl border-2 transition-all ${orderDevice === d ? 'bg-[#007AFF] text-white border-[#007AFF]' : 'bg-zinc-100 dark:bg-zinc-800 border-transparent'}`}>
-                      {d}
-                    </button>
-                  ))}
-                </div>
-                <select className="w-full p-6 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black" value={orderProductId} onChange={e => setOrderProductId(e.target.value)}>
-                  <option value="">اختر المنتج...</option>
-                  {dbProducts.map(p => <option key={p.id} value={p.id}>{p.title} — {p.price} EGP</option>)}
-                </select>
-                {currentOrderedProduct && (
-                  <div className="space-y-8 animate-in zoom-in-95">
-                    <div className="p-10 bg-orange-500/5 border-2 border-dashed border-orange-500/20 rounded-3xl">
-                      <p className="text-orange-600 font-black text-xs uppercase mb-2">الدفع عبر فودافون كاش</p>
-                      <div className="text-3xl font-black tracking-widest text-orange-600 select-all font-mono">01091931466</div>
-                    </div>
-                    <button onClick={() => window.open(`https://t.me/Mohamed_edge?text=اطلب: ${currentOrderedProduct.title}`, '_blank')} className="w-full py-8 bg-[#0088CC] text-white rounded-[2rem] font-black text-xl shadow-xl flex items-center justify-center gap-4">
-                      <i className="fa-brands fa-telegram text-3xl"></i> تواصل عبر تليجرام
-                    </button>
+          <div className="max-w-5xl mx-auto py-8 lg:py-12">
+            <div className="glass-panel p-8 md:p-12 lg:p-16 rounded-[3rem] lg:rounded-[4rem] space-y-12 shadow-2xl overflow-hidden relative border-white/20">
+                {/* Background Accent */}
+                <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 blur-[100px] -z-10 rounded-full"></div>
+                
+                <div className="text-center space-y-4">
+                   <div className="w-20 h-20 md:w-24 md:h-24 bg-[#007AFF]/10 rounded-3xl flex items-center justify-center mx-auto mb-6 rotate-3">
+                    <i className="fa-solid fa-shield-halved text-[#007AFF] text-3xl md:text-4xl"></i>
                   </div>
-                )}
-              </div>
+                  <h2 className="text-3xl md:text-5xl lg:text-6xl font-black uppercase tracking-tighter leading-none">Checkout Terminal</h2>
+                  <p className="text-zinc-500 dark:text-zinc-400 font-medium max-w-lg mx-auto text-sm md:text-base">Complete your purchase safely by following the instructions below.</p>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+                   {/* Selection Panel */}
+                   <div className="lg:col-span-5 space-y-8">
+                      <div className="space-y-6">
+                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] block">1. Select Device Brand</label>
+                        <div className="grid grid-cols-2 gap-4">
+                          {['Realme', 'Oppo'].map(d => (
+                            <button 
+                              key={d} 
+                              onClick={() => setOrderDevice(d as any)} 
+                              className={`py-6 rounded-2xl font-black text-lg transition-all border-2 flex items-center justify-center gap-3 ${orderDevice === d ? 'bg-[#007AFF] text-white border-[#007AFF] shadow-lg shadow-blue-500/20' : 'bg-zinc-100 dark:bg-zinc-800 border-transparent hover:border-zinc-300 dark:hover:border-zinc-700'}`}
+                            >
+                              <i className={`fa-solid ${d === 'Realme' ? 'fa-mobile-screen' : 'fa-mobile'} text-sm opacity-60`}></i>
+                              {d}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="space-y-6">
+                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] block">2. Choose Your Product</label>
+                        <select 
+                          className="w-full p-6 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black text-zinc-900 dark:text-zinc-100 outline-none focus:ring-4 focus:ring-[#007AFF]/10 transition-all cursor-pointer appearance-none border-2 border-transparent focus:border-[#007AFF]" 
+                          value={orderProductId} 
+                          onChange={e => setOrderProductId(e.target.value)}
+                        >
+                          <option value="">Select Product...</option>
+                          {dbProducts.map(p => <option key={p.id} value={p.id}>{p.title} — {p.price} EGP</option>)}
+                        </select>
+                      </div>
+                   </div>
+
+                   {/* Payment Panel */}
+                   <div className="lg:col-span-7">
+                      {currentOrderedProduct ? (
+                        <div className="space-y-8 animate-in slide-in-from-right-10 duration-500">
+                          <div className="p-8 lg:p-10 bg-white dark:bg-zinc-900 rounded-[2.5rem] border border-zinc-100 dark:border-white/5 shadow-xl relative overflow-hidden group">
+                             <div className="flex items-start justify-between mb-8">
+                                <div>
+                                   <p className="text-[10px] font-black text-[#007AFF] uppercase tracking-widest mb-1">Payment Method</p>
+                                   <h3 className="text-2xl font-black tracking-tight">Vodafone Cash</h3>
+                                </div>
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/a/af/Vodafone_Logo.svg" className="w-10 h-10 object-contain grayscale opacity-20 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700" />
+                             </div>
+
+                             <div className="space-y-4">
+                               <p className="text-xs md:text-sm text-zinc-500 dark:text-zinc-400 font-bold leading-relaxed">
+                                 Before contacting us on Telegram to request the product, please make sure to transfer the product price to this number:
+                               </p>
+                               
+                               <div className="relative group/number">
+                                  <div className="p-6 md:p-8 bg-zinc-50 dark:bg-black/40 rounded-3xl border-2 border-dashed border-zinc-200 dark:border-zinc-800 flex items-center justify-between group-hover/number:border-blue-500 transition-colors">
+                                    <span className="text-2xl md:text-4xl font-black tracking-[0.2em] text-zinc-900 dark:text-zinc-100 select-all font-mono">01091931466</span>
+                                    <button 
+                                      onClick={() => {
+                                        navigator.clipboard.writeText('01091931466');
+                                        showNotify('Number copied to clipboard!');
+                                      }}
+                                      className="w-12 h-12 rounded-full bg-white dark:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-[#007AFF] hover:scale-110 transition-all shadow-sm border border-zinc-100 dark:border-white/5"
+                                    >
+                                      <i className="fa-solid fa-copy"></i>
+                                    </button>
+                                  </div>
+                               </div>
+
+                               <div className="flex items-center gap-3 p-4 bg-blue-50 dark:bg-blue-500/5 rounded-2xl border border-blue-100 dark:border-blue-500/10">
+                                  <i className="fa-solid fa-circle-info text-blue-500 text-sm"></i>
+                                  <span className="text-[10px] md:text-xs font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest">
+                                    Product Price: {currentOrderedProduct.price} EGP
+                                  </span>
+                               </div>
+                             </div>
+                          </div>
+
+                          <button 
+                            onClick={() => window.open(`https://t.me/Mohamed_edge?text=I would like to order: ${currentOrderedProduct.title} for ${orderDevice}. Payment has been sent.`, '_blank')} 
+                            className="w-full py-8 bg-[#0088CC] text-white rounded-[2.5rem] font-black text-xl shadow-2xl flex items-center justify-center gap-4 hover:scale-[1.02] hover:bg-[#0077B5] transition-all group"
+                          >
+                            <i className="fa-brands fa-telegram text-3xl group-hover:rotate-12 transition-transform"></i> 
+                            Confirm on Telegram
+                          </button>
+                          
+                          <p className="text-center text-[9px] font-bold text-zinc-400 uppercase tracking-widest">
+                            Available 24/7 for support and activation
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="h-full min-h-[400px] flex flex-col items-center justify-center text-center p-12 bg-zinc-50 dark:bg-zinc-900/30 rounded-[3rem] border-2 border-dashed border-zinc-200 dark:border-zinc-800 opacity-60">
+                           <i className="fa-solid fa-cart-plus text-6xl mb-6 text-zinc-300"></i>
+                           <h3 className="text-xl font-black uppercase text-zinc-400">Step 3: Checkout</h3>
+                           <p className="text-xs font-medium text-zinc-400 mt-2">Please select a product and brand to view payment details.</p>
+                        </div>
+                      )}
+                   </div>
+                </div>
             </div>
           </div>
         )}
@@ -350,28 +425,28 @@ const App: React.FC = () => {
 
             {adminTab === 'Inventory' && (
               <div className="space-y-8">
-                <button onClick={() => { setEditProduct({ title: '', price: 0, category: 'Themes', image: '', description: '', gallery: [], android_version: '' }); setIsEditingProduct(true); }} className="w-full py-6 bg-[#007AFF] text-white rounded-3xl font-black uppercase text-xs">إضافة منتج جديد</button>
+                <button onClick={() => { setEditProduct({ title: '', price: 0, category: 'Themes', image: '', description: '', gallery: [], android_version: '' }); setIsEditingProduct(true); }} className="w-full py-6 bg-[#007AFF] text-white rounded-3xl font-black uppercase text-xs">Add New Product</button>
                 {isEditingProduct && (
                   <div className="glass-panel p-10 rounded-[3rem] space-y-8 border-4 border-[#007AFF]/10">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       <div className="space-y-4">
-                        <input className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black" value={editProduct.title} onChange={e => setEditProduct({...editProduct, title: e.target.value})} placeholder="اسم المنتج" />
-                        <textarea className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black" value={editProduct.description} onChange={e => setEditProduct({...editProduct, description: e.target.value})} placeholder="الوصف" rows={3} />
+                        <input className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black" value={editProduct.title} onChange={e => setEditProduct({...editProduct, title: e.target.value})} placeholder="Product Title" />
+                        <textarea className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black" value={editProduct.description} onChange={e => setEditProduct({...editProduct, description: e.target.value})} placeholder="Description" rows={3} />
                         <div className="grid grid-cols-2 gap-4">
-                          <input type="number" className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black" value={editProduct.price} onChange={e => setEditProduct({...editProduct, price: Number(e.target.value)})} placeholder="السعر بالجنيه" />
-                          <input className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black" value={editProduct.android_version} onChange={e => setEditProduct({...editProduct, android_version: e.target.value})} placeholder="نسخة الأندرويد" />
+                          <input type="number" className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black" value={editProduct.price} onChange={e => setEditProduct({...editProduct, price: Number(e.target.value)})} placeholder="Price (EGP)" />
+                          <input className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black" value={editProduct.android_version} onChange={e => setEditProduct({...editProduct, android_version: e.target.value})} placeholder="Android Version" />
                         </div>
                         <select className="w-full p-6 rounded-3xl bg-zinc-100 dark:bg-zinc-800 font-black" value={editProduct.category} onChange={e => setEditProduct({...editProduct, category: e.target.value as any})}><option value="Themes">Themes</option><option value="Widgets">Widgets</option><option value="Walls">Wallpapers</option></select>
                         <div className="space-y-2">
-                           <label className="text-[10px] font-black uppercase text-zinc-400">صورة الغلاف</label>
+                           <label className="text-[10px] font-black uppercase text-zinc-400">Cover Image</label>
                            <div className="aspect-video bg-zinc-100 dark:bg-zinc-800 rounded-3xl overflow-hidden relative border-2 border-dashed border-zinc-300">
-                             {editProduct.image ? <img src={editProduct.image} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center flex-col text-zinc-300"><i className="fa-solid fa-image text-3xl mb-2"></i><span>ارفع صورة</span></div>}
+                             {editProduct.image ? <img src={editProduct.image} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center flex-col text-zinc-300"><i className="fa-solid fa-image text-3xl mb-2"></i><span>Upload Image</span></div>}
                              <input type="file" accept="image/*" onChange={async e => { if(e.target.files?.[0]) setEditProduct({...editProduct, image: await fileToBase64(e.target.files[0])}); }} className="absolute inset-0 opacity-0 cursor-pointer" />
                            </div>
                         </div>
                       </div>
                       <div className="space-y-4">
-                        <div className="flex justify-between items-center"><label className="text-[10px] font-black uppercase text-zinc-400">معرض الصور ({editProduct.gallery?.length || 0}/20)</label><label className="cursor-pointer text-[#007AFF] font-black text-xs uppercase underline">رفع الصور<input type="file" multiple accept="image/*" onChange={handleGalleryUpload} className="hidden" /></label></div>
+                        <div className="flex justify-between items-center"><label className="text-[10px] font-black uppercase text-zinc-400">Gallery ({editProduct.gallery?.length || 0}/20)</label><label className="cursor-pointer text-[#007AFF] font-black text-xs uppercase underline">Upload Gallery<input type="file" multiple accept="image/*" onChange={handleGalleryUpload} className="hidden" /></label></div>
                         <div className="grid grid-cols-3 gap-3 p-4 bg-zinc-50 dark:bg-zinc-900/40 rounded-3xl min-h-[250px] content-start">
                           {(editProduct.gallery || []).map((img, idx) => (
                             <div key={idx} className="aspect-[3/4] rounded-xl overflow-hidden relative group border border-white/10">
@@ -382,7 +457,7 @@ const App: React.FC = () => {
                         </div>
                       </div>
                     </div>
-                    <button onClick={saveProduct} disabled={isPublishing} className="w-full py-6 bg-[#007AFF] text-white rounded-3xl font-black uppercase text-sm shadow-xl">{isPublishing ? 'جاري النشر...' : 'حفظ ونشر على الموقع'}</button>
+                    <button onClick={saveProduct} disabled={isPublishing} className="w-full py-6 bg-[#007AFF] text-white rounded-3xl font-black uppercase text-sm shadow-xl">{isPublishing ? 'Publishing...' : 'Save & Publish'}</button>
                   </div>
                 )}
                 <div className="space-y-4">
@@ -391,13 +466,12 @@ const App: React.FC = () => {
                       <div className="flex items-center gap-4"><img src={p.image} className="w-16 h-16 rounded-xl object-cover" /><div><p className="font-black">{p.title}</p><p className="text-[10px] text-[#007AFF]">{p.category} • {p.price} EGP</p></div></div>
                       <div className="flex gap-2">
                         <button onClick={async () => {
-                           // جلب المنتج الكامل للتعديل بما في ذلك الجاليري
                            const { data } = await supabase.from('products').select('*').eq('id', p.id).single();
                            setEditProduct(data);
                            setIsEditingProduct(true);
                            window.scrollTo({ top: 0, behavior: 'smooth' });
                         }} className="w-10 h-10 flex items-center justify-center bg-blue-500/10 text-blue-600 rounded-full"><i className="fa-solid fa-pen"></i></button>
-                        <button onClick={async () => { if(confirm('حذف المنتج؟')) { await supabase.from('products').delete().eq('id', p.id); refreshData(); } }} className="w-10 h-10 flex items-center justify-center bg-red-500/10 text-red-600 rounded-full"><i className="fa-solid fa-trash"></i></button>
+                        <button onClick={async () => { if(confirm('Delete product?')) { await supabase.from('products').delete().eq('id', p.id); refreshData(); } }} className="w-10 h-10 flex items-center justify-center bg-red-500/10 text-red-600 rounded-full"><i className="fa-solid fa-trash"></i></button>
                       </div>
                     </div>
                   ))}
@@ -409,14 +483,14 @@ const App: React.FC = () => {
               <div className="glass-panel p-10 rounded-[3rem] space-y-12">
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                     <section className="space-y-4">
-                      <label className="text-[10px] font-black uppercase text-zinc-400">شعار الموقع العلوي</label>
+                      <label className="text-[10px] font-black uppercase text-zinc-400">Header Logo</label>
                       <div className="w-32 h-32 rounded-full overflow-hidden relative border-4 border-[#007AFF]/20 bg-zinc-100">
                         <img src={siteLogo} className="w-full h-full object-cover" />
                         <input type="file" accept="image/*" onChange={e => handleLogoUpload(e, 'site')} className="absolute inset-0 opacity-0 cursor-pointer" />
                       </div>
                     </section>
                     <section className="space-y-4">
-                      <label className="text-[10px] font-black uppercase text-zinc-400">شعار صفحة التحميل</label>
+                      <label className="text-[10px] font-black uppercase text-zinc-400">Loader Logo</label>
                       <div className="w-32 h-32 rounded-full overflow-hidden relative border-4 border-[#007AFF]/20 bg-zinc-100">
                         <img src={loaderLogo} className="w-full h-full object-cover" />
                         <input type="file" accept="image/*" onChange={e => handleLogoUpload(e, 'loader')} className="absolute inset-0 opacity-0 cursor-pointer" />
@@ -430,8 +504,8 @@ const App: React.FC = () => {
       </main>
 
       {notification && (
-        <div className={`fixed top-12 left-1/2 -translate-x-1/2 z-[200] px-10 py-6 rounded-full font-black text-[10px] uppercase shadow-3xl flex items-center gap-5 border-2 ${notification.type === 'success' ? 'bg-[#007AFF] text-white border-blue-400' : 'bg-red-600 text-white border-red-400'}`}>
-          <i className={`fa-solid ${notification.type === 'success' ? 'fa-circle-check' : 'fa-circle-exclamation'} text-2xl`}></i>
+        <div className={`fixed top-12 left-1/2 -translate-x-1/2 z-[200] px-10 py-4 rounded-full font-black text-[10px] uppercase shadow-3xl flex items-center gap-4 border-2 ${notification.type === 'success' ? 'bg-[#007AFF] text-white border-blue-400' : 'bg-red-600 text-white border-red-400'}`}>
+          <i className={`fa-solid ${notification.type === 'success' ? 'fa-circle-check' : 'fa-circle-exclamation'} text-lg`}></i>
           <span>{notification.message}</span>
         </div>
       )}
