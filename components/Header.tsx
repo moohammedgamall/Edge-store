@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 
 interface HeaderProps {
@@ -42,7 +43,10 @@ const Header: React.FC<HeaderProps> = ({ isAdmin, onAdminTrigger, onLogout, onTh
             )}
           </div>
           <div className="flex flex-col">
-            <h1 className="text-lg md:text-2xl font-black tracking-tighter text-zinc-900 dark:text-zinc-100 leading-none whitespace-nowrap">Mohamed Edge</h1>
+            <h1 className="text-lg md:text-2xl font-black tracking-tighter text-zinc-900 dark:text-zinc-100 leading-none whitespace-nowrap flex items-center gap-1.5">
+              <span className="text-[#007AFF] text-[1.1em] leading-none mb-0.5"></span>
+              Mohamed Edge
+            </h1>
             <span className="text-[7px] md:text-[9px] font-bold text-[#007AFF] uppercase tracking-[0.2em] mt-0.5 md:mt-1">Solo Entrepreneur</span>
           </div>
         </div>
