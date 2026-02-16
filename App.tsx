@@ -21,7 +21,6 @@ const fileToBase64 = (file: File): Promise<string> => {
   });
 };
 
-// Improved YouTube ID extractor for Standard, Mobile, Shorts and Embed links
 const getYouTubeId = (url: string) => {
   const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|shorts\/)([^#&?]*).*/;
   const match = url.match(regExp);
@@ -46,6 +45,7 @@ const App: React.FC = () => {
   const [siteLogo, setSiteLogo] = useState<string>("https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
   const [loaderLogo, setLoaderLogo] = useState<string>("https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
   const [adminPassword, setAdminPassword] = useState<string>("1234");
+  const [newPasswordInput, setNewPasswordInput] = useState<string>("");
 
   const [orderDevice, setOrderDevice] = useState<'Realme' | 'Oppo'>('Realme');
   const [orderProductId, setOrderProductId] = useState<string>('');
@@ -59,7 +59,6 @@ const App: React.FC = () => {
   const [isEditingProduct, setIsEditingProduct] = useState(false);
   const [editProduct, setEditProduct] = useState<Partial<Product>>({ title: '', price: 0, category: 'Themes', image: '', description: '', gallery: [], android_version: '' });
 
-  // Video management states
   const [videoUrlInput, setVideoUrlInput] = useState('');
   const [videoTitleInput, setVideoTitleInput] = useState('');
   const [isFetchingVideo, setIsFetchingVideo] = useState(false);
@@ -88,7 +87,10 @@ const App: React.FC = () => {
       const { data: settings } = await supabase.from('settings').select('*');
       if (settings) {
         settings.forEach(s => {
-          if (s.key === 'admin_password') setAdminPassword(s.value);
+          if (s.key === 'admin_password') {
+            setAdminPassword(s.value);
+            setNewPasswordInput(s.value);
+          }
           if (s.key === 'site_logo') setSiteLogo(s.value);
           if (s.key === 'loader_logo') setLoaderLogo(s.value);
         });
@@ -170,7 +172,6 @@ const App: React.FC = () => {
 
   const currentOrderedProduct = useMemo(() => dbProducts.find(p => p.id === orderProductId), [dbProducts, orderProductId]);
 
-  // YouTube Auto-Fetching Logic
   const handleVideoUrlChange = async (url: string) => {
     setVideoUrlInput(url);
     const id = getYouTubeId(url);
@@ -242,7 +243,8 @@ const App: React.FC = () => {
 
   const updateSetting = async (key: string, value: string) => {
     try {
-      await supabase.from('settings').upsert({ key, value }, { onConflict: 'key' });
+      const { error } = await supabase.from('settings').upsert({ key, value }, { onConflict: 'key' });
+      if (error) throw error;
       await refreshData();
       showNotify("Settings Updated");
     } catch (err: any) { showNotify(err.message, "error"); }
@@ -253,6 +255,19 @@ const App: React.FC = () => {
     if (file) {
       const base64 = await fileToBase64(file);
       await updateSetting(type === 'site' ? 'site_logo' : 'loader_logo', base64);
+    }
+  };
+
+  const handlePasswordUpdate = async () => {
+    if (!newPasswordInput.trim()) return showNotify("Password cannot be empty", "error");
+    setIsPublishing(true);
+    try {
+      await updateSetting('admin_password', newPasswordInput.trim());
+      showNotify("Admin password updated successfully");
+    } catch (err) {
+      showNotify("Failed to update password", "error");
+    } finally {
+      setIsPublishing(false);
     }
   };
 
@@ -279,7 +294,6 @@ const App: React.FC = () => {
       <main className="max-w-7xl mx-auto px-4 py-8">
         {(['Home', 'Themes', 'Widgets', 'Walls'].includes(activeSection)) && (
           <div className="space-y-16">
-            {/* Products Section */}
             <section className="space-y-8">
               <h2 className="text-2xl font-black tracking-tighter uppercase flex items-center gap-3">
                 <div className="w-1.5 h-6 bg-[#007AFF] rounded-full"></div> {activeSection === 'Home' ? 'New Release' : activeSection}
@@ -295,7 +309,6 @@ const App: React.FC = () => {
               </div>
             </section>
 
-            {/* Showcase Videos Section - Improved UX */}
             {activeSection === 'Home' && dbVideos.length > 0 && (
               <section className="space-y-8">
                 <div className="flex items-center justify-between">
@@ -305,11 +318,7 @@ const App: React.FC = () => {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                   {dbVideos.map(vid => (
-                    <div 
-                      key={vid.id} 
-                      onClick={() => window.open(vid.url, '_blank')}
-                      className="glass-panel group overflow-hidden rounded-[2.5rem] cursor-pointer transition-all hover:scale-[1.03] border border-white/20 relative"
-                    >
+                    <div key={vid.id} onClick={() => window.open(vid.url, '_blank')} className="glass-panel group overflow-hidden rounded-[2.5rem] cursor-pointer transition-all hover:scale-[1.03] border border-white/20 relative">
                       <div className="aspect-video relative overflow-hidden bg-zinc-900">
                          <img src={`https://img.youtube.com/vi/${vid.id}/maxresdefault.jpg`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 opacity-80" alt="" />
                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
@@ -334,7 +343,6 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {/* Preview Section Remains Unchanged */}
         {activeSection === 'Preview' && selectedProduct && (
           <div className="max-w-6xl mx-auto pb-20 px-4">
              <button onClick={() => window.location.hash = '#/'} className="w-10 h-10 mb-8 flex items-center justify-center bg-white dark:bg-zinc-800 rounded-full shadow-lg border border-zinc-200 hover:scale-110 transition-transform"><i className="fa-solid fa-chevron-left"></i></button>
@@ -374,7 +382,6 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {/* Order Section - Dimensions Adjusted & Free Product Logic */}
         {activeSection === 'Order' && (
           <div className="max-w-4xl mx-auto py-2 md:py-8">
             <div className="glass-panel p-6 md:p-12 rounded-[2.5rem] md:rounded-[4rem] space-y-10 shadow-2xl relative border-white/20">
@@ -383,10 +390,9 @@ const App: React.FC = () => {
                     <i className="fa-solid fa-shield-check text-[#007AFF] text-2xl md:text-3xl"></i>
                   </div>
                   <h2 className="text-2xl md:text-5xl font-black uppercase tracking-tighter">Secure Checkout</h2>
-                  <p className="text-zinc-500 dark:text-zinc-400 font-medium max-w-sm mx-auto text-[10px] md:text-sm">Complete your request via our secure terminal.</p>
+                  <p className="text-zinc-500 dark:text-zinc-400 font-medium max-sm:text-[10px] md:text-sm">Complete your request via our secure terminal.</p>
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-16 items-start">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-16">
                    <div className="space-y-8">
                       <div className="space-y-4">
                         <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest block">1. Device Ecosystem</label>
@@ -404,7 +410,6 @@ const App: React.FC = () => {
                         </select>
                       </div>
                    </div>
-
                    <div className="relative">
                       {currentOrderedProduct ? (
                         <div className="space-y-6 animate-in slide-in-from-right-8 duration-500">
@@ -455,7 +460,6 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {/* Admin Section - Improved Video Management UI */}
         {activeSection === 'Admin' && isAdminMode && (
           <div className="max-w-5xl mx-auto space-y-10">
             <div className="flex p-2 bg-zinc-200/50 dark:bg-zinc-900/50 rounded-[2.5rem] max-w-lg mx-auto shadow-xl">
@@ -527,27 +531,25 @@ const App: React.FC = () => {
                       <div className="space-y-3">
                          <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest ml-1">Step 1: Paste URL</label>
                          <div className="relative">
-                            <input className="w-full p-5 pr-14 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none border-2 border-transparent focus:border-red-500 transition-all" value={videoUrlInput} onChange={e => handleVideoUrlChange(e.target.value)} placeholder="YouTube Link (Standard, Mobile, or Shorts)" />
+                            <input className="w-full p-5 pr-14 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none border-2 border-transparent focus:border-red-500 transition-all" value={videoUrlInput} onChange={e => handleVideoUrlChange(e.target.value)} placeholder="YouTube Link" />
                             <div className="absolute right-5 top-1/2 -translate-y-1/2 text-red-600"><i className={`fa-brands fa-youtube text-2xl ${isFetchingVideo ? 'animate-pulse' : ''}`}></i></div>
                          </div>
                       </div>
                       <div className="space-y-3">
                          <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest ml-1">Step 2: Verify Title</label>
-                         <input className={`w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none border-2 border-transparent focus:border-red-500 transition-all ${isFetchingVideo ? 'opacity-40' : ''}`} value={videoTitleInput} onChange={e => setVideoTitleInput(e.target.value)} placeholder={isFetchingVideo ? "Retrieving title from YouTube..." : "Video Heading"} disabled={isFetchingVideo} />
+                         <input className={`w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none border-2 border-transparent focus:border-red-500 transition-all ${isFetchingVideo ? 'opacity-40' : ''}`} value={videoTitleInput} onChange={e => setVideoTitleInput(e.target.value)} placeholder={isFetchingVideo ? "Retrieving title..." : "Video Heading"} disabled={isFetchingVideo} />
                       </div>
                       <button onClick={addVideo} disabled={isPublishing || !videoUrlInput || !videoTitleInput} className="w-full py-6 bg-red-600 text-white rounded-[2rem] font-black uppercase text-[10px] tracking-[0.2em] shadow-xl shadow-red-500/20 disabled:opacity-40 active:scale-95 transition-all">
                         {isPublishing ? 'Processing...' : 'Add to Video Library'}
                       </button>
                    </div>
                 </div>
-
                 <div className="space-y-4">
-                  <h4 className="text-[9px] font-black uppercase text-zinc-400 tracking-[0.3em] px-6">Current Showcase ({dbVideos.length})</h4>
                   {dbVideos.map(vid => (
                     <div key={vid.id} className="p-4 glass-panel rounded-3xl flex items-center justify-between gap-6 hover:border-red-500/30 transition-colors border border-white/10">
                       <div className="flex items-center gap-5 flex-1 overflow-hidden">
                         <div className="w-24 aspect-video rounded-xl overflow-hidden bg-zinc-800 shrink-0">
-                           <img src={`https://img.youtube.com/vi/${vid.id}/mqdefault.jpg`} className="w-full h-full object-cover" alt="" />
+                           <img src={`https://img.youtube.com/vi/${vid.id}/mqdefault.jpg`} className="w-full h-full object-cover" />
                         </div>
                         <div className="flex-1 truncate">
                           <p className="font-black text-sm truncate leading-tight mb-1">{vid.title}</p>
@@ -564,22 +566,69 @@ const App: React.FC = () => {
             )}
 
             {adminTab === 'Settings' && (
-              <div className="glass-panel p-10 rounded-[3rem] space-y-12 animate-in fade-in duration-500">
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                    <section className="space-y-4 text-center">
-                      <label className="text-[10px] font-black uppercase text-zinc-400 block tracking-widest">Interface Logo</label>
-                      <div className="w-40 h-40 mx-auto rounded-full overflow-hidden relative border-4 border-[#007AFF]/20 bg-zinc-100 shadow-xl">
-                        <img src={siteLogo} className="w-full h-full object-cover" />
-                        <input type="file" accept="image/*" onChange={e => handleLogoUpload(e, 'site')} className="absolute inset-0 opacity-0 cursor-pointer" title="Update Logo" />
-                      </div>
-                    </section>
-                    <section className="space-y-4 text-center">
-                      <label className="text-[10px] font-black uppercase text-zinc-400 block tracking-widest">Terminal Loader Logo</label>
-                      <div className="w-40 h-40 mx-auto rounded-full overflow-hidden relative border-4 border-[#007AFF]/20 bg-zinc-100 shadow-xl">
-                        <img src={loaderLogo} className="w-full h-full object-cover" />
-                        <input type="file" accept="image/*" onChange={e => handleLogoUpload(e, 'loader')} className="absolute inset-0 opacity-0 cursor-pointer" title="Update Loader" />
-                      </div>
-                    </section>
+              <div className="space-y-10 animate-in fade-in duration-500">
+                 {/* Visual Customization Section */}
+                 <div className="glass-panel p-10 rounded-[3rem] space-y-12 border border-white/10">
+                    <h3 className="text-xl font-black uppercase tracking-tighter border-b border-zinc-200 dark:border-zinc-800 pb-4">Visual Appearance</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                       <section className="space-y-4 text-center">
+                         <label className="text-[10px] font-black uppercase text-zinc-400 block tracking-widest">Interface Logo</label>
+                         <div className="w-40 h-40 mx-auto rounded-full overflow-hidden relative border-4 border-[#007AFF]/20 bg-zinc-100 shadow-xl group">
+                           <img src={siteLogo} className="w-full h-full object-cover" />
+                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer">
+                              <i className="fa-solid fa-camera text-white text-2xl"></i>
+                           </div>
+                           <input type="file" accept="image/*" onChange={e => handleLogoUpload(e, 'site')} className="absolute inset-0 opacity-0 cursor-pointer" />
+                         </div>
+                       </section>
+                       <section className="space-y-4 text-center">
+                         <label className="text-[10px] font-black uppercase text-zinc-400 block tracking-widest">Terminal Loader Logo</label>
+                         <div className="w-40 h-40 mx-auto rounded-full overflow-hidden relative border-4 border-[#007AFF]/20 bg-zinc-100 shadow-xl group">
+                           <img src={loaderLogo} className="w-full h-full object-cover" />
+                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer">
+                              <i className="fa-solid fa-camera text-white text-2xl"></i>
+                           </div>
+                           <input type="file" accept="image/*" onChange={e => handleLogoUpload(e, 'loader')} className="absolute inset-0 opacity-0 cursor-pointer" />
+                         </div>
+                       </section>
+                    </div>
+                 </div>
+
+                 {/* Security Customization Section */}
+                 <div className="glass-panel p-10 rounded-[3rem] space-y-8 border-4 border-amber-500/5">
+                    <div className="flex items-center gap-4 border-b border-zinc-200 dark:border-zinc-800 pb-4">
+                       <div className="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center text-amber-600">
+                          <i className="fa-solid fa-shield-halved"></i>
+                       </div>
+                       <h3 className="text-xl font-black uppercase tracking-tighter">Admin Security</h3>
+                    </div>
+                    
+                    <div className="max-w-md space-y-6">
+                       <div className="space-y-3">
+                          <label className="text-[10px] font-black uppercase text-zinc-400 tracking-widest ml-1">Terminal Password</label>
+                          <div className="relative">
+                             <input 
+                               type="text" 
+                               className="w-full p-5 pl-14 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none border-2 border-transparent focus:border-amber-500 transition-all tracking-widest" 
+                               value={newPasswordInput} 
+                               onChange={e => setNewPasswordInput(e.target.value)} 
+                               placeholder="Enter new terminal code" 
+                             />
+                             <div className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-400">
+                                <i className="fa-solid fa-key"></i>
+                             </div>
+                          </div>
+                          <p className="text-[9px] text-zinc-500 font-medium px-1">This password is used to access the administrator terminal and modify site content.</p>
+                       </div>
+                       
+                       <button 
+                         onClick={handlePasswordUpdate} 
+                         disabled={isPublishing || newPasswordInput === adminPassword}
+                         className="w-full py-5 bg-amber-500 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg shadow-amber-500/20 disabled:opacity-40 active:scale-95 transition-all"
+                       >
+                         {isPublishing ? 'Updating Security...' : 'Update Admin Password'}
+                       </button>
+                    </div>
                  </div>
               </div>
             )}
