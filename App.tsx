@@ -412,7 +412,7 @@ const App: React.FC = () => {
             <div className="glass-panel p-6 md:p-12 rounded-[2.5rem] md:rounded-[4rem] space-y-10 shadow-2xl relative border-white/20">
                 <div className="text-center space-y-3">
                    <div className="w-16 h-16 md:w-20 md:h-20 bg-[#007AFF]/10 rounded-2xl flex items-center justify-center mx-auto mb-4 rotate-3">
-                    <i className="fa-solid fa-shield-check text-[#007AFF] text-2xl md:text-3xl"></i>
+                    <i className="fa-solid fa-shield-halved text-[#007AFF] text-2xl md:text-3xl"></i>
                   </div>
                   <h2 className="text-2xl md:text-5xl font-black uppercase tracking-tighter">Secure Checkout</h2>
                   <p className="text-zinc-500 dark:text-zinc-400 font-medium max-sm:text-[10px] md:text-sm">Complete your request via our secure terminal.</p>
@@ -572,7 +572,6 @@ const App: React.FC = () => {
                       </div>
                       <div className="space-y-3">
                          <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest ml-1">Step 2: Verify Title</label>
-                         {/* Fix: Using e.target.value instead of undefined data.title */}
                          <input className={`w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none border-2 border-transparent focus:border-red-500 transition-all ${isFetchingVideo ? 'opacity-40' : ''}`} value={videoTitleInput} onChange={e => setVideoTitleInput(e.target.value)} placeholder={isFetchingVideo ? "Retrieving title..." : "Video Heading"} disabled={isFetchingVideo} />
                       </div>
                       <button onClick={addVideo} disabled={isPublishing || !videoUrlInput || !videoTitleInput} className="w-full py-6 bg-red-600 text-white rounded-[2rem] font-black uppercase text-[10px] tracking-[0.2em] shadow-xl shadow-red-500/20 disabled:opacity-40 active:scale-95 transition-all">
