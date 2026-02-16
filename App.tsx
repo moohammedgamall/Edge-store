@@ -271,6 +271,14 @@ const App: React.FC = () => {
     }
   };
 
+  const removeGalleryImage = (index: number) => {
+    if (!editProduct.gallery) return;
+    const newGallery = [...editProduct.gallery];
+    newGallery.splice(index, 1);
+    setEditProduct({ ...editProduct, gallery: newGallery });
+    showNotify("Image removed");
+  };
+
   if (isLoading && dbProducts.length === 0) return null;
 
   return (
@@ -493,7 +501,17 @@ const App: React.FC = () => {
                              setEditProduct({...editProduct, gallery: [...(editProduct.gallery || []), ...base64s].slice(0, 20)});
                           }} className="hidden" /></label></div>
                           <div className="grid grid-cols-4 gap-2">
-                             {(editProduct.gallery || []).map((img, idx) => <div key={idx} className="aspect-square rounded-lg overflow-hidden border border-zinc-200"><img src={img} className="w-full h-full object-cover" /></div>)}
+                             {(editProduct.gallery || []).map((img, idx) => (
+                               <div key={idx} className="aspect-square rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800 relative group/img">
+                                 <img src={img} className="w-full h-full object-cover" />
+                                 <button 
+                                   onClick={() => removeGalleryImage(idx)}
+                                   className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity shadow-lg"
+                                 >
+                                   <i className="fa-solid fa-xmark text-[10px]"></i>
+                                 </button>
+                               </div>
+                             ))}
                           </div>
                        </div>
                     </div>
