@@ -7,7 +7,6 @@ import BottomNav from './components/BottomNav';
 import Header from './components/Header';
 import ProductCard from './components/ProductCard';
 
-// إعدادات Supabase
 const SUPABASE_URL = 'https://nlqnbfvsghlomuugixlk.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5scW5iZnZzZ2hsb211dWdpeGxrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA0Mjk4NzUsImV4cCI6MjA4NjAwNTg3NX0.KXLd6ISgf31DBNaU33fp0ZYLlxyrr62RfrxwYPIMk34';
 
@@ -26,6 +25,7 @@ const App: React.FC = () => {
   const [isAdminMode, setIsAdminMode] = useState<boolean>(false);
   const [activeSection, setActiveSection] = useState<Section>('Home');
   const [isLoading, setIsLoading] = useState(true);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   const [notification, setNotification] = useState<{message: string, type: 'success' | 'error'} | null>(null);
   
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
@@ -40,43 +40,44 @@ const App: React.FC = () => {
   const [loaderLogo, setLoaderLogo] = useState<string>("https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
   const [adminPassword, setAdminPassword] = useState<string>("1234");
 
-  const [newPassInput, setNewPassInput] = useState('');
   const [orderDevice, setOrderDevice] = useState<'Realme' | 'Oppo'>('Realme');
   const [orderProductId, setOrderProductId] = useState<string>('');
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [passwordInput, setPasswordInput] = useState('');
-  const [selectedProductId, setSelectedProductId] = useState<string>('');
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [previewImageIndex, setPreviewImageIndex] = useState(0);
   
   const [adminTab, setAdminTab] = useState<'Inventory' | 'Videos' | 'Settings'>('Inventory');
   const [isPublishing, setIsPublishing] = useState(false);
   const [isEditingProduct, setIsEditingProduct] = useState(false);
   const [editProduct, setEditProduct] = useState<Partial<Product>>({ title: '', price: 0, category: 'Themes', image: '', description: '', gallery: [], android_version: '' });
-  const [isEditingVideo, setIsEditingVideo] = useState(false);
-  const [editVideo, setEditVideo] = useState<Partial<YoutubeVideo>>({ title: '', url: '' });
 
   const showNotify = useCallback((message: string, type: 'success' | 'error' = 'success') => {
     setNotification({ message, type });
     setTimeout(() => setNotification(null), 6000);
   }, []);
 
+  // جلب البيانات الأساسية فقط (بدون الـ Gallery الضخم) لتجنب الـ Timeout
   const refreshData = async () => {
     try {
-      // جلب المنتجات
-      const { data: products, error: prodErr } = await supabase.from('products').select('*').order('created_at', { ascending: false });
+      const { data: products, error: prodErr } = await supabase
+        .from('products')
+        .select('id, created_at, title, description, category, price, image, is_premium, compatibility, android_version')
+        .order('created_at', { ascending: false });
+
       if (prodErr) {
-        if (prodErr.code === '42P01') showNotify("جدول المنتجات غير موجود. يرجى تشغيل كود SQL في Supabase", "error");
-        else if (prodErr.code === '42501') showNotify("أذونات RLS تمنع القراءة. يرجى تفعيل Policies في Supabase", "error");
-        else showNotify(`خطأ في المنتجات: ${prodErr.message}`, "error");
+        if (prodErr.message.includes('timeout')) {
+          showNotify("اتصال ضعيف أو بيانات ضخمة. يرجى المحاولة لاحقاً", "error");
+        } else {
+          showNotify(`خطأ: ${prodErr.message}`, "error");
+        }
       } else if (products) {
-        setDbProducts(products.map(p => ({ ...p, gallery: Array.isArray(p.gallery) ? p.gallery : [] })));
+        setDbProducts(products as Product[]);
       }
 
-      // جلب الفيديوهات
       const { data: videos } = await supabase.from('videos').select('*').order('created_at', { ascending: false });
       if (videos) setDbVideos(videos);
 
-      // جلب الإعدادات
       const { data: settings } = await supabase.from('settings').select('*');
       if (settings) {
         settings.forEach(s => {
@@ -85,16 +86,27 @@ const App: React.FC = () => {
           if (s.key === 'loader_logo') setLoaderLogo(s.value);
         });
       }
-
     } catch (err: any) {
-      console.error("Critical Sync Error:", err);
-      showNotify("فشل الاتصال بالخادم. تحقق من الإنترنت أو المفاتيح", "error");
+      showNotify("فشل الاتصال بقاعدة البيانات", "error");
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => { refreshData(); }, []);
+
+  const fetchFullProduct = async (id: string) => {
+    setIsPreviewLoading(true);
+    try {
+      const { data, error } = await supabase.from('products').select('*').eq('id', id).single();
+      if (error) throw error;
+      setSelectedProduct({ ...data, gallery: Array.isArray(data.gallery) ? data.gallery : [] });
+    } catch (err: any) {
+      showNotify("فشل تحميل تفاصيل المنتج", "error");
+    } finally {
+      setIsPreviewLoading(false);
+    }
+  };
 
   const handleThemeToggle = useCallback(() => {
     const nextMode = !isDarkMode;
@@ -121,10 +133,11 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
-    const handleRoute = () => {
+    const handleRoute = async () => {
       const hash = window.location.hash;
       if (hash.startsWith('#/preview/')) {
-        setSelectedProductId(hash.replace('#/preview/', ''));
+        const id = hash.replace('#/preview/', '');
+        await fetchFullProduct(id);
         setPreviewImageIndex(0);
         setActiveSection('Preview');
       } else if (hash === '#/order') {
@@ -148,7 +161,6 @@ const App: React.FC = () => {
     return dbProducts.filter(p => p.category === activeSection);
   }, [dbProducts, activeSection]);
 
-  const selectedProduct = useMemo(() => dbProducts.find(p => p.id === selectedProductId), [dbProducts, selectedProductId]);
   const currentOrderedProduct = useMemo(() => dbProducts.find(p => p.id === orderProductId), [dbProducts, orderProductId]);
 
   const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -184,7 +196,7 @@ const App: React.FC = () => {
       setEditProduct({ title: '', price: 0, category: 'Themes', image: '', description: '', gallery: [], android_version: '' });
       showNotify("تم الحفظ بنجاح");
     } catch (err: any) { 
-      showNotify(`خطأ في الحفظ: تأكد من تفعيل صلاحيات الكتابة (RLS Policies)`, "error"); 
+      showNotify(`خطأ: ${err.message}`, "error"); 
     } finally { setIsPublishing(false); }
   };
 
@@ -238,7 +250,7 @@ const App: React.FC = () => {
                 {filteredProducts.length === 0 && !isLoading && (
                   <div className="col-span-full py-20 text-center glass-panel rounded-[2rem] border-dashed border-2 border-zinc-200 dark:border-zinc-800 text-zinc-400 font-bold uppercase text-xs flex flex-col items-center gap-4">
                      <i className="fa-solid fa-database text-4xl opacity-20"></i>
-                     <span>لا توجد بيانات (يرجى ضبط Supabase)</span>
+                     <span>لا توجد بيانات متاحة</span>
                   </div>
                 )}
               </div>
@@ -246,46 +258,55 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {/* Preview & Order pages removed for brevity, same as previous App.tsx */}
-        {activeSection === 'Preview' && selectedProduct && (
+        {/* Preview Page with Loader */}
+        {activeSection === 'Preview' && (
           <div className="max-w-6xl mx-auto pb-20 px-4">
              <button onClick={() => window.location.hash = '#/'} className="w-10 h-10 mb-8 flex items-center justify-center bg-white dark:bg-zinc-800 rounded-full shadow-lg border border-zinc-200 hover:scale-110 transition-transform"><i className="fa-solid fa-chevron-left"></i></button>
-             <div className="flex flex-col lg:flex-row items-center lg:items-start gap-12 lg:gap-16">
-                <div className="w-full flex flex-col items-center gap-8 lg:w-auto shrink-0">
-                   <div className="relative aspect-[1290/2796] w-full max-w-[320px] rounded-[40px] bg-black p-3 shadow-3xl">
-                      <div className="relative w-full h-full rounded-[30px] overflow-hidden bg-zinc-900">
-                        <img src={selectedProduct.gallery[previewImageIndex] || selectedProduct.image} className="w-full h-full object-cover transition-opacity duration-500" alt="" />
-                      </div>
-                   </div>
-                   <div className="flex flex-wrap gap-3 justify-center">
-                      {(selectedProduct.gallery.length > 0 ? selectedProduct.gallery : [selectedProduct.image]).map((img, idx) => (
-                        <button key={idx} onClick={() => setPreviewImageIndex(idx)} className={`w-14 h-14 rounded-xl overflow-hidden border-2 ${previewImageIndex === idx ? 'border-[#007AFF] scale-110' : 'border-transparent opacity-50'}`}>
-                          <img src={img} className="w-full h-full object-cover" />
-                        </button>
-                      ))}
-                   </div>
-                </div>
-                <div className="flex-1 w-full space-y-8">
-                   <div className="space-y-4 text-center lg:text-left">
-                      <span className="px-4 py-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-full font-black text-[10px] uppercase">{selectedProduct.category}</span>
-                      <h2 className="text-4xl lg:text-6xl font-black uppercase tracking-tighter">{selectedProduct.title}</h2>
-                      <p className="text-zinc-500 text-lg">{selectedProduct.description}</p>
-                   </div>
-                   <div className="p-10 bg-white dark:bg-zinc-900/40 rounded-[3rem] border border-zinc-100 dark:border-white/5 shadow-2xl">
-                      <div className="flex items-center justify-between mb-8">
-                        <div>
-                          <p className="text-[10px] font-black text-zinc-400 uppercase mb-2">السعر</p>
-                          <span className="text-4xl font-black text-[#007AFF]">{selectedProduct.price === 0 ? 'FREE' : `${selectedProduct.price} EGP`}</span>
+             
+             {isPreviewLoading ? (
+               <div className="flex flex-col items-center justify-center py-40 gap-4">
+                 <div className="w-12 h-12 border-4 border-[#007AFF] border-t-transparent rounded-full animate-spin"></div>
+                 <p className="font-black text-xs uppercase tracking-widest text-[#007AFF]">جاري تحميل التفاصيل...</p>
+               </div>
+             ) : selectedProduct && (
+               <div className="flex flex-col lg:flex-row items-center lg:items-start gap-12 lg:gap-16 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  <div className="w-full flex flex-col items-center gap-8 lg:w-auto shrink-0">
+                     <div className="relative aspect-[1290/2796] w-full max-w-[320px] rounded-[40px] bg-black p-3 shadow-3xl">
+                        <div className="relative w-full h-full rounded-[30px] overflow-hidden bg-zinc-900">
+                          <img src={selectedProduct.gallery && selectedProduct.gallery.length > 0 ? selectedProduct.gallery[previewImageIndex] : selectedProduct.image} className="w-full h-full object-cover transition-opacity duration-500" alt="" />
                         </div>
-                        <i className="fa-solid fa-medal text-[#007AFF] text-4xl opacity-20"></i>
-                      </div>
-                      <button onClick={() => { setOrderProductId(selectedProduct.id); window.location.hash = '#/order'; }} className="w-full py-6 bg-[#007AFF] text-white rounded-[2rem] font-black text-xl hover:scale-[1.02] transition-all">اطلب الآن</button>
-                   </div>
-                </div>
-             </div>
+                     </div>
+                     <div className="flex flex-wrap gap-3 justify-center">
+                        {(selectedProduct.gallery && selectedProduct.gallery.length > 0 ? selectedProduct.gallery : [selectedProduct.image]).map((img, idx) => (
+                          <button key={idx} onClick={() => setPreviewImageIndex(idx)} className={`w-14 h-14 rounded-xl overflow-hidden border-2 ${previewImageIndex === idx ? 'border-[#007AFF] scale-110' : 'border-transparent opacity-50'}`}>
+                            <img src={img} className="w-full h-full object-cover" />
+                          </button>
+                        ))}
+                     </div>
+                  </div>
+                  <div className="flex-1 w-full space-y-8">
+                     <div className="space-y-4 text-center lg:text-left">
+                        <span className="px-4 py-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-full font-black text-[10px] uppercase">{selectedProduct.category}</span>
+                        <h2 className="text-4xl lg:text-6xl font-black uppercase tracking-tighter">{selectedProduct.title}</h2>
+                        <p className="text-zinc-500 text-lg">{selectedProduct.description}</p>
+                     </div>
+                     <div className="p-10 bg-white dark:bg-zinc-900/40 rounded-[3rem] border border-zinc-100 dark:border-white/5 shadow-2xl">
+                        <div className="flex items-center justify-between mb-8">
+                          <div>
+                            <p className="text-[10px] font-black text-zinc-400 uppercase mb-2">السعر</p>
+                            <span className="text-4xl font-black text-[#007AFF]">{selectedProduct.price === 0 ? 'FREE' : `${selectedProduct.price} EGP`}</span>
+                          </div>
+                          <i className="fa-solid fa-medal text-[#007AFF] text-4xl opacity-20"></i>
+                        </div>
+                        <button onClick={() => { setOrderProductId(selectedProduct.id); window.location.hash = '#/order'; }} className="w-full py-6 bg-[#007AFF] text-white rounded-[2rem] font-black text-xl hover:scale-[1.02] transition-all">اطلب الآن</button>
+                     </div>
+                  </div>
+               </div>
+             )}
           </div>
         )}
 
+        {/* Order & Admin Sections remain similar but use refreshData to keep DB light */}
         {activeSection === 'Order' && (
           <div className="max-w-4xl mx-auto">
             <div className="glass-panel p-10 md:p-16 rounded-[4.5rem] space-y-14 text-center">
@@ -321,7 +342,6 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {/* Admin Dashboard */}
         {activeSection === 'Admin' && isAdminMode && (
           <div className="max-w-5xl mx-auto space-y-10">
             <div className="flex p-2 bg-zinc-200/50 dark:bg-zinc-900/50 rounded-[2rem] max-w-lg mx-auto shadow-xl">
@@ -370,7 +390,13 @@ const App: React.FC = () => {
                     <div key={p.id} className="p-5 glass-panel rounded-3xl flex items-center justify-between">
                       <div className="flex items-center gap-4"><img src={p.image} className="w-16 h-16 rounded-xl object-cover" /><div><p className="font-black">{p.title}</p><p className="text-[10px] text-[#007AFF]">{p.category} • {p.price} EGP</p></div></div>
                       <div className="flex gap-2">
-                        <button onClick={() => { setEditProduct(p); setIsEditingProduct(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="w-10 h-10 flex items-center justify-center bg-blue-500/10 text-blue-600 rounded-full"><i className="fa-solid fa-pen"></i></button>
+                        <button onClick={async () => {
+                           // جلب المنتج الكامل للتعديل بما في ذلك الجاليري
+                           const { data } = await supabase.from('products').select('*').eq('id', p.id).single();
+                           setEditProduct(data);
+                           setIsEditingProduct(true);
+                           window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }} className="w-10 h-10 flex items-center justify-center bg-blue-500/10 text-blue-600 rounded-full"><i className="fa-solid fa-pen"></i></button>
                         <button onClick={async () => { if(confirm('حذف المنتج؟')) { await supabase.from('products').delete().eq('id', p.id); refreshData(); } }} className="w-10 h-10 flex items-center justify-center bg-red-500/10 text-red-600 rounded-full"><i className="fa-solid fa-trash"></i></button>
                       </div>
                     </div>
