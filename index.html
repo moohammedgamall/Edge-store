@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
 <head>
@@ -8,17 +9,40 @@
     <script>
       tailwind.config = {
         darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: [
+                '-apple-system', 
+                'BlinkMacSystemFont', 
+                '"SF Pro Display"', 
+                '"SF Pro Text"', 
+                '"Helvetica Neue"', 
+                'Helvetica', 
+                'Arial', 
+                'sans-serif'
+              ],
+            },
+          },
+        },
       }
     </script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         :root { color-scheme: light dark; }
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            letter-spacing: -0.011em;
             -webkit-tap-highlight-color: transparent;
             transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
+        
+        h1, h2, h3, h4, .font-black {
+            letter-spacing: -0.022em;
+        }
+
         .glass-panel {
             background: rgba(255, 255, 255, 0.7);
             backdrop-filter: blur(40px) saturate(180%);
@@ -59,7 +83,7 @@
             transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.6s;
         }
         .dark #static-loader {
-            background-color: #2C2C2E;
+            background-color: #1C1C1E;
         }
         #static-loader.fade-out {
             opacity: 0;
@@ -78,7 +102,7 @@
 }
 </script>
 </head>
-<body class="bg-[#F2F2F7] dark:bg-[#2C2C2E] text-zinc-900 dark:text-zinc-100 selection:bg-blue-500/30">
+<body class="bg-[#F2F2F7] dark:bg-[#1C1C1E] text-zinc-900 dark:text-zinc-100 selection:bg-blue-500/30">
     <!-- Static Pre-loader outside root -->
     <div id="static-loader">
         <div style="position: relative;">
@@ -99,7 +123,6 @@
             const defaultLogo = "https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa";
             let cachedLoaderLogo = localStorage.getItem('cached_loader_logo');
             
-            // تحقق من صحة البيانات المخزنة
             if (!cachedLoaderLogo || cachedLoaderLogo.length < 50) {
               cachedLoaderLogo = defaultLogo;
             }
@@ -116,11 +139,9 @@
 
             if (loaderImg) {
                 loaderImg.onerror = function() {
-                  console.warn("Loader logo failed, falling back to default");
                   this.src = defaultLogo;
                 };
                 loaderImg.src = cachedLoaderLogo;
-                // إظهار الصورة فوراً إذا كانت محملة مسبقاً في الذاكرة
                 if (loaderImg.complete) {
                   loaderImg.style.opacity = '1';
                 } else {
