@@ -348,51 +348,77 @@ const App: React.FC = () => {
                       </div>
                    </div>
 
-                   {/* Payment Panel */}
+                   {/* Payment & Action Panel */}
                    <div>
                       {currentOrderedProduct ? (
                         <div className="space-y-6 animate-in slide-in-from-bottom-4 md:slide-in-from-right-10 duration-500">
-                          <div className="p-6 md:p-8 bg-white dark:bg-zinc-900 rounded-[2rem] border border-zinc-100 dark:border-white/5 shadow-xl">
-                             <div className="flex items-center justify-between mb-6">
-                                <h3 className="text-xl font-black tracking-tight">Vodafone Cash</h3>
-                                <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center">
-                                  <i className="fa-solid fa-wallet text-red-500 text-xs"></i>
-                                </div>
-                             </div>
+                          {currentOrderedProduct.price > 0 ? (
+                            /* Paid Product Flow */
+                            <>
+                              <div className="p-6 md:p-8 bg-white dark:bg-zinc-900 rounded-[2rem] border border-zinc-100 dark:border-white/5 shadow-xl">
+                                 <div className="flex items-center justify-between mb-6">
+                                    <h3 className="text-xl font-black tracking-tight">Vodafone Cash</h3>
+                                    <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center">
+                                      <i className="fa-solid fa-wallet text-red-500 text-xs"></i>
+                                    </div>
+                                 </div>
 
-                             <div className="space-y-4">
-                               <p className="text-[10px] md:text-xs text-zinc-500 dark:text-zinc-400 font-bold leading-relaxed">
-                                 Please transfer the total amount to this number before contacting Telegram:
-                               </p>
-                               
-                               <div className="p-4 md:p-6 bg-zinc-50 dark:bg-black/40 rounded-2xl border-2 border-dashed border-zinc-200 dark:border-zinc-800 flex items-center justify-between group">
-                                  <span className="text-lg md:text-2xl font-black tracking-widest font-mono">01091931466</span>
-                                  <button 
-                                    onClick={() => {
-                                      navigator.clipboard.writeText('01091931466');
-                                      showNotify('Copied!');
-                                    }}
-                                    className="w-10 h-10 rounded-full bg-white dark:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-[#007AFF] transition-all shadow-sm"
-                                  >
-                                    <i className="fa-solid fa-copy text-sm"></i>
-                                  </button>
-                               </div>
+                                 <div className="space-y-4">
+                                   <p className="text-[10px] md:text-xs text-zinc-500 dark:text-zinc-400 font-bold leading-relaxed">
+                                     Please transfer the total amount to this number before contacting Telegram:
+                                   </p>
+                                   
+                                   <div className="p-4 md:p-6 bg-zinc-50 dark:bg-black/40 rounded-2xl border-2 border-dashed border-zinc-200 dark:border-zinc-800 flex items-center justify-between group">
+                                      <span className="text-lg md:text-2xl font-black tracking-widest font-mono">01091931466</span>
+                                      <button 
+                                        onClick={() => {
+                                          navigator.clipboard.writeText('01091931466');
+                                          showNotify('Copied!');
+                                        }}
+                                        className="w-10 h-10 rounded-full bg-white dark:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-[#007AFF] transition-all shadow-sm"
+                                      >
+                                        <i className="fa-solid fa-copy text-sm"></i>
+                                      </button>
+                                   </div>
 
-                               <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-500/5 rounded-xl border border-blue-100 dark:border-blue-500/10">
-                                  <span className="text-[9px] md:text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest">
-                                    Total: {currentOrderedProduct.price} EGP
-                                  </span>
-                               </div>
-                             </div>
-                          </div>
+                                   <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-500/5 rounded-xl border border-blue-100 dark:border-blue-500/10">
+                                      <span className="text-[9px] md:text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest">
+                                        Total: {currentOrderedProduct.price} EGP
+                                      </span>
+                                   </div>
+                                 </div>
+                              </div>
 
-                          <button 
-                            onClick={() => window.open(`https://t.me/Mohamed_edge?text=Order: ${currentOrderedProduct.title} (${orderDevice}). Payment sent.`, '_blank')} 
-                            className="w-full py-5 md:py-7 bg-[#0088CC] text-white rounded-[2rem] font-black text-base md:text-lg shadow-xl flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all"
-                          >
-                            <i className="fa-brands fa-telegram text-2xl"></i> 
-                            Confirm on Telegram
-                          </button>
+                              <button 
+                                onClick={() => window.open(`https://t.me/Mohamed_edge?text=Order: ${currentOrderedProduct.title} (${orderDevice}). Payment sent.`, '_blank')} 
+                                className="w-full py-5 md:py-7 bg-[#0088CC] text-white rounded-[2rem] font-black text-base md:text-lg shadow-xl flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all"
+                              >
+                                <i className="fa-brands fa-telegram text-2xl"></i> 
+                                Confirm on Telegram
+                              </button>
+                            </>
+                          ) : (
+                            /* Free Product Flow */
+                            <>
+                              <div className="p-6 md:p-8 bg-[#007AFF]/5 dark:bg-[#007AFF]/5 rounded-[2rem] border-2 border-dashed border-[#007AFF]/20 shadow-sm text-center">
+                                 <div className="w-12 h-12 bg-[#007AFF]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                                   <i className="fa-solid fa-gift text-[#007AFF]"></i>
+                                 </div>
+                                 <h3 className="text-xl font-black text-[#007AFF] uppercase tracking-tighter mb-2">Free Product</h3>
+                                 <p className="text-[10px] md:text-xs text-zinc-500 dark:text-zinc-400 font-bold leading-relaxed">
+                                   This product is currently available for free. You can get it instantly by contacting us on Telegram.
+                                 </p>
+                              </div>
+
+                              <button 
+                                onClick={() => window.open(`https://t.me/Mohamed_edge?text=I would like to get the free product: ${currentOrderedProduct.title} for my ${orderDevice} device.`, '_blank')} 
+                                className="w-full py-5 md:py-7 bg-[#0088CC] text-white rounded-[2rem] font-black text-base md:text-lg shadow-xl flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all"
+                              >
+                                <i className="fa-brands fa-telegram text-2xl"></i> 
+                                Get via Telegram
+                              </button>
+                            </>
+                          )}
                         </div>
                       ) : (
                         <div className="h-full min-h-[250px] md:min-h-[350px] flex flex-col items-center justify-center text-center p-8 bg-zinc-50 dark:bg-zinc-900/30 rounded-[2.5rem] border-2 border-dashed border-zinc-200 dark:border-zinc-800 opacity-60">
