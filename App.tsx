@@ -305,110 +305,99 @@ const App: React.FC = () => {
         )}
 
         {activeSection === 'Order' && (
-          <div className="max-w-5xl mx-auto py-8 lg:py-12">
-            <div className="glass-panel p-8 md:p-12 lg:p-16 rounded-[3rem] lg:rounded-[4rem] space-y-12 shadow-2xl overflow-hidden relative border-white/20">
-                {/* Background Accent */}
-                <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 blur-[100px] -z-10 rounded-full"></div>
+          <div className="max-w-4xl mx-auto py-2 md:py-10">
+            <div className="glass-panel p-6 md:p-10 lg:p-12 rounded-[2.5rem] md:rounded-[4rem] space-y-8 md:space-y-12 shadow-2xl relative border-white/20">
+                <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500/5 blur-[100px] -z-10 rounded-full"></div>
                 
-                <div className="text-center space-y-4">
-                   <div className="w-20 h-20 md:w-24 md:h-24 bg-[#007AFF]/10 rounded-3xl flex items-center justify-center mx-auto mb-6 rotate-3">
-                    <i className="fa-solid fa-shield-halved text-[#007AFF] text-3xl md:text-4xl"></i>
+                <div className="text-center space-y-2 md:space-y-4">
+                   <div className="w-16 h-16 md:w-20 md:h-20 bg-[#007AFF]/10 rounded-2xl flex items-center justify-center mx-auto mb-4 rotate-3">
+                    <i className="fa-solid fa-shield-halved text-[#007AFF] text-2xl md:text-3xl"></i>
                   </div>
-                  <h2 className="text-3xl md:text-5xl lg:text-6xl font-black uppercase tracking-tighter leading-none">Checkout Terminal</h2>
-                  <p className="text-zinc-500 dark:text-zinc-400 font-medium max-w-lg mx-auto text-sm md:text-base">Complete your purchase safely by following the instructions below.</p>
+                  <h2 className="text-2xl md:text-5xl font-black uppercase tracking-tighter">Checkout</h2>
+                  <p className="text-zinc-500 dark:text-zinc-400 font-medium max-w-md mx-auto text-[11px] md:text-sm">Complete your purchase by following the steps.</p>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 items-start">
                    {/* Selection Panel */}
-                   <div className="lg:col-span-5 space-y-8">
-                      <div className="space-y-6">
-                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] block">1. Select Device Brand</label>
-                        <div className="grid grid-cols-2 gap-4">
+                   <div className="space-y-6 md:space-y-8">
+                      <div className="space-y-4">
+                        <label className="text-[9px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest block">1. Device Brand</label>
+                        <div className="grid grid-cols-2 gap-3">
                           {['Realme', 'Oppo'].map(d => (
                             <button 
                               key={d} 
                               onClick={() => setOrderDevice(d as any)} 
-                              className={`py-6 rounded-2xl font-black text-lg transition-all border-2 flex items-center justify-center gap-3 ${orderDevice === d ? 'bg-[#007AFF] text-white border-[#007AFF] shadow-lg shadow-blue-500/20' : 'bg-zinc-100 dark:bg-zinc-800 border-transparent hover:border-zinc-300 dark:hover:border-zinc-700'}`}
+                              className={`py-4 md:py-6 rounded-2xl font-black text-sm md:text-lg transition-all border-2 flex items-center justify-center gap-2 ${orderDevice === d ? 'bg-[#007AFF] text-white border-[#007AFF] shadow-lg shadow-blue-500/20' : 'bg-zinc-100 dark:bg-zinc-800 border-transparent'}`}
                             >
-                              <i className={`fa-solid ${d === 'Realme' ? 'fa-mobile-screen' : 'fa-mobile'} text-sm opacity-60`}></i>
                               {d}
                             </button>
                           ))}
                         </div>
                       </div>
 
-                      <div className="space-y-6">
-                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] block">2. Choose Your Product</label>
+                      <div className="space-y-4">
+                        <label className="text-[9px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest block">2. Select Product</label>
                         <select 
-                          className="w-full p-6 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black text-zinc-900 dark:text-zinc-100 outline-none focus:ring-4 focus:ring-[#007AFF]/10 transition-all cursor-pointer appearance-none border-2 border-transparent focus:border-[#007AFF]" 
+                          className="w-full p-4 md:p-6 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black text-sm md:text-base outline-none border-2 border-transparent focus:border-[#007AFF] transition-all" 
                           value={orderProductId} 
                           onChange={e => setOrderProductId(e.target.value)}
                         >
-                          <option value="">Select Product...</option>
+                          <option value="">Choose...</option>
                           {dbProducts.map(p => <option key={p.id} value={p.id}>{p.title} — {p.price} EGP</option>)}
                         </select>
                       </div>
                    </div>
 
                    {/* Payment Panel */}
-                   <div className="lg:col-span-7">
+                   <div>
                       {currentOrderedProduct ? (
-                        <div className="space-y-8 animate-in slide-in-from-right-10 duration-500">
-                          <div className="p-8 lg:p-10 bg-white dark:bg-zinc-900 rounded-[2.5rem] border border-zinc-100 dark:border-white/5 shadow-xl relative overflow-hidden group">
-                             <div className="flex items-start justify-between mb-8">
-                                <div>
-                                   <p className="text-[10px] font-black text-[#007AFF] uppercase tracking-widest mb-1">Payment Method</p>
-                                   <h3 className="text-2xl font-black tracking-tight">Vodafone Cash</h3>
+                        <div className="space-y-6 animate-in slide-in-from-bottom-4 md:slide-in-from-right-10 duration-500">
+                          <div className="p-6 md:p-8 bg-white dark:bg-zinc-900 rounded-[2rem] border border-zinc-100 dark:border-white/5 shadow-xl">
+                             <div className="flex items-center justify-between mb-6">
+                                <h3 className="text-xl font-black tracking-tight">Vodafone Cash</h3>
+                                <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center">
+                                  <i className="fa-solid fa-wallet text-red-500 text-xs"></i>
                                 </div>
-                                <img src="https://upload.wikimedia.org/wikipedia/commons/a/af/Vodafone_Logo.svg" className="w-10 h-10 object-contain grayscale opacity-20 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700" />
                              </div>
 
                              <div className="space-y-4">
-                               <p className="text-xs md:text-sm text-zinc-500 dark:text-zinc-400 font-bold leading-relaxed">
-                                 Before contacting us on Telegram to request the product, please make sure to transfer the product price to this number:
+                               <p className="text-[10px] md:text-xs text-zinc-500 dark:text-zinc-400 font-bold leading-relaxed">
+                                 Please transfer the total amount to this number before contacting Telegram:
                                </p>
                                
-                               <div className="relative group/number">
-                                  <div className="p-6 md:p-8 bg-zinc-50 dark:bg-black/40 rounded-3xl border-2 border-dashed border-zinc-200 dark:border-zinc-800 flex items-center justify-between group-hover/number:border-blue-500 transition-colors">
-                                    <span className="text-2xl md:text-4xl font-black tracking-[0.2em] text-zinc-900 dark:text-zinc-100 select-all font-mono">01091931466</span>
-                                    <button 
-                                      onClick={() => {
-                                        navigator.clipboard.writeText('01091931466');
-                                        showNotify('Number copied to clipboard!');
-                                      }}
-                                      className="w-12 h-12 rounded-full bg-white dark:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-[#007AFF] hover:scale-110 transition-all shadow-sm border border-zinc-100 dark:border-white/5"
-                                    >
-                                      <i className="fa-solid fa-copy"></i>
-                                    </button>
-                                  </div>
+                               <div className="p-4 md:p-6 bg-zinc-50 dark:bg-black/40 rounded-2xl border-2 border-dashed border-zinc-200 dark:border-zinc-800 flex items-center justify-between group">
+                                  <span className="text-lg md:text-2xl font-black tracking-widest font-mono">01091931466</span>
+                                  <button 
+                                    onClick={() => {
+                                      navigator.clipboard.writeText('01091931466');
+                                      showNotify('Copied!');
+                                    }}
+                                    className="w-10 h-10 rounded-full bg-white dark:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-[#007AFF] transition-all shadow-sm"
+                                  >
+                                    <i className="fa-solid fa-copy text-sm"></i>
+                                  </button>
                                </div>
 
-                               <div className="flex items-center gap-3 p-4 bg-blue-50 dark:bg-blue-500/5 rounded-2xl border border-blue-100 dark:border-blue-500/10">
-                                  <i className="fa-solid fa-circle-info text-blue-500 text-sm"></i>
-                                  <span className="text-[10px] md:text-xs font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest">
-                                    Product Price: {currentOrderedProduct.price} EGP
+                               <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-500/5 rounded-xl border border-blue-100 dark:border-blue-500/10">
+                                  <span className="text-[9px] md:text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest">
+                                    Total: {currentOrderedProduct.price} EGP
                                   </span>
                                </div>
                              </div>
                           </div>
 
                           <button 
-                            onClick={() => window.open(`https://t.me/Mohamed_edge?text=I would like to order: ${currentOrderedProduct.title} for ${orderDevice}. Payment has been sent.`, '_blank')} 
-                            className="w-full py-8 bg-[#0088CC] text-white rounded-[2.5rem] font-black text-xl shadow-2xl flex items-center justify-center gap-4 hover:scale-[1.02] hover:bg-[#0077B5] transition-all group"
+                            onClick={() => window.open(`https://t.me/Mohamed_edge?text=Order: ${currentOrderedProduct.title} (${orderDevice}). Payment sent.`, '_blank')} 
+                            className="w-full py-5 md:py-7 bg-[#0088CC] text-white rounded-[2rem] font-black text-base md:text-lg shadow-xl flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all"
                           >
-                            <i className="fa-brands fa-telegram text-3xl group-hover:rotate-12 transition-transform"></i> 
+                            <i className="fa-brands fa-telegram text-2xl"></i> 
                             Confirm on Telegram
                           </button>
-                          
-                          <p className="text-center text-[9px] font-bold text-zinc-400 uppercase tracking-widest">
-                            Available 24/7 for support and activation
-                          </p>
                         </div>
                       ) : (
-                        <div className="h-full min-h-[400px] flex flex-col items-center justify-center text-center p-12 bg-zinc-50 dark:bg-zinc-900/30 rounded-[3rem] border-2 border-dashed border-zinc-200 dark:border-zinc-800 opacity-60">
-                           <i className="fa-solid fa-cart-plus text-6xl mb-6 text-zinc-300"></i>
-                           <h3 className="text-xl font-black uppercase text-zinc-400">Step 3: Checkout</h3>
-                           <p className="text-xs font-medium text-zinc-400 mt-2">Please select a product and brand to view payment details.</p>
+                        <div className="h-full min-h-[250px] md:min-h-[350px] flex flex-col items-center justify-center text-center p-8 bg-zinc-50 dark:bg-zinc-900/30 rounded-[2.5rem] border-2 border-dashed border-zinc-200 dark:border-zinc-800 opacity-60">
+                           <i className="fa-solid fa-cart-shopping text-4xl mb-4 text-zinc-300"></i>
+                           <h3 className="text-sm font-black uppercase text-zinc-400 tracking-widest">Select to Continue</h3>
                         </div>
                       )}
                    </div>
