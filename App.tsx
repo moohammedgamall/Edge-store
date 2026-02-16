@@ -63,6 +63,23 @@ const App: React.FC = () => {
   const [videoTitleInput, setVideoTitleInput] = useState('');
   const [isFetchingVideo, setIsFetchingVideo] = useState(false);
 
+  const formatTitle = (title: string) => {
+    const appleChar = '\uF8FF';
+    if (!title.includes(appleChar) && !title.includes('')) return title;
+    const regex = /[\uF8FF|]/g;
+    const parts = title.split(regex);
+    return (
+      <span className="inline-flex items-center gap-1.5">
+        {parts.map((part, i) => (
+          <React.Fragment key={i}>
+            {part}
+            {i < parts.length - 1 && <i className="fa-brands fa-apple text-current"></i>}
+          </React.Fragment>
+        ))}
+      </span>
+    );
+  };
+
   const showNotify = useCallback((message: string, type: 'success' | 'error' = 'success') => {
     setNotification({ message, type });
     setTimeout(() => setNotification(null), 6000);
@@ -372,7 +389,7 @@ const App: React.FC = () => {
                 <div className="flex-1 w-full space-y-8">
                    <div className="space-y-4">
                       <span className="px-3 py-1 bg-zinc-100 dark:bg-zinc-800 rounded-full font-black text-[9px] uppercase">{selectedProduct.category}</span>
-                      <h2 className="text-4xl lg:text-6xl font-black uppercase tracking-tighter leading-tight">{selectedProduct.title}</h2>
+                      <h2 className="text-4xl lg:text-6xl font-black uppercase tracking-tighter leading-tight">{formatTitle(selectedProduct.title)}</h2>
                       <p className="text-zinc-500 text-lg leading-relaxed">{selectedProduct.description}</p>
                    </div>
                    <div className="p-8 bg-white dark:bg-zinc-900/50 rounded-[2.5rem] border border-zinc-100 dark:border-white/5 shadow-xl">
@@ -555,6 +572,7 @@ const App: React.FC = () => {
                       </div>
                       <div className="space-y-3">
                          <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest ml-1">Step 2: Verify Title</label>
+                         {/* Fix: Using e.target.value instead of undefined data.title */}
                          <input className={`w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none border-2 border-transparent focus:border-red-500 transition-all ${isFetchingVideo ? 'opacity-40' : ''}`} value={videoTitleInput} onChange={e => setVideoTitleInput(e.target.value)} placeholder={isFetchingVideo ? "Retrieving title..." : "Video Heading"} disabled={isFetchingVideo} />
                       </div>
                       <button onClick={addVideo} disabled={isPublishing || !videoUrlInput || !videoTitleInput} className="w-full py-6 bg-red-600 text-white rounded-[2rem] font-black uppercase text-[10px] tracking-[0.2em] shadow-xl shadow-red-500/20 disabled:opacity-40 active:scale-95 transition-all">
@@ -585,7 +603,6 @@ const App: React.FC = () => {
 
             {adminTab === 'Settings' && (
               <div className="space-y-10 animate-in fade-in duration-500">
-                 {/* Visual Customization Section */}
                  <div className="glass-panel p-10 rounded-[3rem] space-y-12 border border-white/10">
                     <h3 className="text-xl font-black uppercase tracking-tighter border-b border-zinc-200 dark:border-zinc-800 pb-4">Visual Appearance</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
@@ -612,7 +629,6 @@ const App: React.FC = () => {
                     </div>
                  </div>
 
-                 {/* Security Customization Section */}
                  <div className="glass-panel p-10 rounded-[3rem] space-y-8 border-4 border-amber-500/5">
                     <div className="flex items-center gap-4 border-b border-zinc-200 dark:border-zinc-800 pb-4">
                        <div className="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center text-amber-600">

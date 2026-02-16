@@ -5,6 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mohamed Edge - Realme & Oppo Store</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -12,16 +15,7 @@
         theme: {
           extend: {
             fontFamily: {
-              sans: [
-                '-apple-system', 
-                'BlinkMacSystemFont', 
-                '"SF Pro Display"', 
-                '"SF Pro Text"', 
-                '"Helvetica Neue"', 
-                'Helvetica', 
-                'Arial', 
-                'sans-serif'
-              ],
+              sans: ['Outfit', 'sans-serif'],
             },
           },
         },
@@ -31,7 +25,7 @@
     <style>
         :root { color-scheme: light dark; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-family: 'Outfit', sans-serif;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
             letter-spacing: -0.011em;
@@ -62,7 +56,6 @@
 
         .no-scrollbar::-webkit-scrollbar { display: none; }
 
-        /* Pre-loader Animation */
         @keyframes spin-custom {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
@@ -103,7 +96,6 @@
 </script>
 </head>
 <body class="bg-[#F2F2F7] dark:bg-[#1C1C1E] text-zinc-900 dark:text-zinc-100 selection:bg-blue-500/30">
-    <!-- Static Pre-loader outside root -->
     <div id="static-loader">
         <div style="position: relative;">
             <div style="width: 100px; height: 100px; border-radius: 50%; overflow: hidden; border: 4px solid white; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); background: white;">
