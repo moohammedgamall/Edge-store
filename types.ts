@@ -1,14 +1,6 @@
 
 import React from 'react';
 
-declare global {
-  interface Window {
-    Android?: {
-      setStatusBarTheme: (theme: 'dark' | 'light') => void;
-    };
-  }
-}
-
 export type Section = 'Home' | 'Themes' | 'Widgets' | 'Walls' | 'Order' | 'Admin' | 'Preview';
 
 export interface YoutubeVideo {
