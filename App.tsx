@@ -58,7 +58,6 @@ const App: React.FC = () => {
     return cached ? JSON.parse(cached) : [];
   }); 
 
-  // القواعد الثابتة المطلوبة من المستخدم
   const siteName = "Mohamed Edge";
   const siteSlogan = "Solo Entrepreneur";
   const paymentNumber = "01091931466";
@@ -79,6 +78,11 @@ const App: React.FC = () => {
   const [isPublishing, setIsPublishing] = useState(false);
   const [isEditingProduct, setIsEditingProduct] = useState(false);
   const [editProduct, setEditProduct] = useState<Partial<Product>>({ title: '', price: 0, category: 'Themes', image: '', description: '', gallery: [], android_version: '' });
+
+  // حالات إضافة الفيديو
+  const [videoUrlInput, setVideoUrlInput] = useState('');
+  const [videoTitleInput, setVideoTitleInput] = useState('');
+  const [isFetchingVideo, setIsFetchingVideo] = useState(false);
 
   const showNotify = useCallback((message: string, type: 'success' | 'error' = 'success') => {
     setNotification({ message, type });
@@ -144,6 +148,30 @@ const App: React.FC = () => {
     }
     refreshData(); 
   }, []);
+
+  // جلب عنوان الفيديو تلقائياً عند تغيير الرابط
+  useEffect(() => {
+    const fetchTitle = async () => {
+      const videoId = getYouTubeId(videoUrlInput);
+      if (!videoId) return;
+
+      setIsFetchingVideo(true);
+      try {
+        const response = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`);
+        if (response.ok) {
+          const data = await response.json();
+          setVideoTitleInput(data.title);
+        }
+      } catch (err) {
+        console.error("Failed to fetch video title", err);
+      } finally {
+        setIsFetchingVideo(false);
+      }
+    };
+
+    const timer = setTimeout(fetchTitle, 500); // Delay to avoid too many requests
+    return () => clearTimeout(timer);
+  }, [videoUrlInput]);
 
   const handleAuth = () => {
     if (passwordInput === adminPassword || passwordInput === '1234') {
@@ -214,6 +242,29 @@ const App: React.FC = () => {
       showNotify("Product Saved");
     } catch (err: any) { showNotify(err.message, "error"); }
     finally { setIsPublishing(false); }
+  };
+
+  const addVideo = async () => {
+    const videoId = getYouTubeId(videoUrlInput);
+    if (!videoId || !videoTitleInput) return showNotify("URL or Title missing", "error");
+    
+    setIsPublishing(true);
+    try {
+      const { error } = await supabase.from('videos').upsert({
+        id: videoId,
+        title: videoTitleInput,
+        url: videoUrlInput
+      });
+      if (error) throw error;
+      setVideoUrlInput('');
+      setVideoTitleInput('');
+      refreshData();
+      showNotify("Video Published");
+    } catch (err: any) {
+      showNotify(err.message, "error");
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   const saveConfig = async () => {
@@ -420,6 +471,55 @@ const App: React.FC = () => {
                         </div>
                      </div>
                    ))}
+                </div>
+              </div>
+            )}
+
+            {adminTab === 'Videos' && (
+              <div className="space-y-8">
+                <div className="glass-panel p-8 rounded-[3rem] space-y-6">
+                  <h3 className="text-xl font-black uppercase tracking-tight text-zinc-900">Add Video Review</h3>
+                  <div className="space-y-4">
+                    <div className="relative">
+                      <input 
+                        className="w-full p-5 rounded-2xl bg-zinc-100 font-black outline-none border-2 border-transparent focus:border-[#007AFF] text-zinc-900 pr-12" 
+                        value={videoUrlInput} 
+                        onChange={e => setVideoUrlInput(e.target.value)} 
+                        placeholder="YouTube Video Link (Paste here)" 
+                      />
+                      {isFetchingVideo && <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[#007AFF]"><i className="fa-solid fa-circle-notch fa-spin"></i></div>}
+                    </div>
+                    <input 
+                      className="w-full p-5 rounded-2xl bg-zinc-100 font-black outline-none border-2 border-transparent focus:border-[#007AFF] text-zinc-900" 
+                      value={videoTitleInput} 
+                      onChange={e => setVideoTitleInput(e.target.value)} 
+                      placeholder="Video Title (Auto-fetched or Type here)" 
+                    />
+                    <button 
+                      onClick={addVideo} 
+                      disabled={isPublishing || !getYouTubeId(videoUrlInput)} 
+                      className="w-full py-5 bg-red-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                    >
+                      {isPublishing ? 'Publishing...' : 'Sync Video to Store'}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {dbVideos.map(vid => (
+                    <div key={vid.id} className="p-4 glass-panel rounded-3xl flex items-center justify-between group">
+                       <div className="flex items-center gap-4 overflow-hidden">
+                          <img src={`https://img.youtube.com/vi/${vid.id}/mqdefault.jpg`} className="w-20 h-12 rounded-xl object-cover" />
+                          <p className="font-black text-xs text-zinc-900 truncate pr-4">{vid.title}</p>
+                       </div>
+                       <button 
+                        onClick={async () => { if(confirm('Delete video?')) { await supabase.from('videos').delete().eq('id', vid.id); refreshData(); } }} 
+                        className="w-10 h-10 flex items-center justify-center bg-red-500/10 text-red-600 rounded-full hover:bg-red-600 hover:text-white transition-all shrink-0"
+                       >
+                        <i className="fa-solid fa-trash text-xs"></i>
+                       </button>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
