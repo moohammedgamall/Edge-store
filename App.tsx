@@ -58,11 +58,11 @@ const App: React.FC = () => {
     return cached ? JSON.parse(cached) : [];
   }); 
 
-  // الثوابت المطلوبة
-  const siteName = "Mohamed Edge";
-  const siteSlogan = "Solo Entrepreneur";
-  const paymentNumber = "01091931466";
-  const telegramUser = "Mohamed_edge";
+  // بيانات الموقع (تدار الآن عبر الحالة State بدلاً من الثوابت)
+  const [siteName, setSiteName] = useState<string>(localStorage.getItem('cached_site_name') || "Mohamed Edge");
+  const [siteSlogan, setSiteSlogan] = useState<string>(localStorage.getItem('cached_site_slogan') || "Solo Entrepreneur");
+  const [paymentNumber, setPaymentNumber] = useState<string>(localStorage.getItem('cached_payment_number') || "01091931466");
+  const [telegramUser, setTelegramUser] = useState<string>(localStorage.getItem('cached_telegram_user') || "Mohamed_edge");
 
   const [siteLogo, setSiteLogo] = useState<string>(localStorage.getItem('cached_site_logo') || "https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
   const [loaderLogo, setLoaderLogo] = useState<string>(localStorage.getItem('cached_loader_logo') || "https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
@@ -108,17 +108,35 @@ const App: React.FC = () => {
 
       if (settRes.data) {
         settRes.data.forEach(s => {
-          if (s.key === 'admin_password') {
-            setAdminPassword(s.value);
-            localStorage.setItem('cached_admin_password', s.value);
-          }
-          if (s.key === 'site_logo') { 
-            setSiteLogo(s.value); 
-            localStorage.setItem('cached_site_logo', s.value); 
-          }
-          if (s.key === 'loader_logo') { 
-            setLoaderLogo(s.value); 
-            localStorage.setItem('cached_loader_logo', s.value); 
+          switch (s.key) {
+            case 'admin_password': 
+              setAdminPassword(s.value); 
+              localStorage.setItem('cached_admin_password', s.value); 
+              break;
+            case 'site_name': 
+              setSiteName(s.value); 
+              localStorage.setItem('cached_site_name', s.value); 
+              break;
+            case 'site_slogan': 
+              setSiteSlogan(s.value); 
+              localStorage.setItem('cached_site_slogan', s.value); 
+              break;
+            case 'payment_number': 
+              setPaymentNumber(s.value); 
+              localStorage.setItem('cached_payment_number', s.value); 
+              break;
+            case 'telegram_user': 
+              setTelegramUser(s.value); 
+              localStorage.setItem('cached_telegram_user', s.value); 
+              break;
+            case 'site_logo': 
+              setSiteLogo(s.value); 
+              localStorage.setItem('cached_site_logo', s.value); 
+              break;
+            case 'loader_logo': 
+              setLoaderLogo(s.value); 
+              localStorage.setItem('cached_loader_logo', s.value); 
+              break;
           }
         });
       }
@@ -266,12 +284,19 @@ const App: React.FC = () => {
     finally { setIsPublishing(false); }
   };
 
-  const saveAdminConfig = async () => {
+  const saveAdminSettings = async () => {
     setIsPublishing(true);
     try {
-      const { error } = await supabase.from('settings').upsert({ key: 'admin_password', value: adminPassword });
+      const settingsToSave = [
+        { key: 'admin_password', value: adminPassword },
+        { key: 'site_name', value: siteName },
+        { key: 'site_slogan', value: siteSlogan },
+        { key: 'payment_number', value: paymentNumber },
+        { key: 'telegram_user', value: telegramUser }
+      ];
+      const { error } = await supabase.from('settings').upsert(settingsToSave);
       if (error) throw error;
-      showNotify("Admin Password Updated");
+      showNotify("Settings Sync with Database Successful");
       refreshData();
     } catch (err: any) { showNotify(err.message, "error"); }
     finally { setIsPublishing(false); }
@@ -573,86 +598,90 @@ const App: React.FC = () => {
               <div className="space-y-10 animate-in fade-in">
                  <div className="glass-panel p-10 rounded-[3rem] space-y-10 border-white/40">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-2xl font-black uppercase tracking-tighter text-zinc-900">General Settings</h3>
-                      <div className="flex items-center gap-2 px-3 py-1 bg-zinc-100 rounded-full border border-zinc-200">
-                        <i className="fa-solid fa-lock text-[8px] text-zinc-400"></i>
-                        <span className="text-[8px] font-black uppercase text-zinc-400 tracking-widest">Locked Fields</span>
+                      <h3 className="text-2xl font-black uppercase tracking-tighter text-zinc-900">Database Master Settings</h3>
+                      <div className="flex items-center gap-2 px-3 py-1 bg-[#007AFF]/10 rounded-full border border-[#007AFF]/20">
+                        <i className="fa-solid fa-cloud text-[8px] text-[#007AFF]"></i>
+                        <span className="text-[8px] font-black uppercase text-[#007AFF] tracking-widest">Supabase Sync Active</span>
                       </div>
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                        <section className="space-y-6">
-                         <div className="space-y-2 group">
-                            <label className="text-[10px] font-black uppercase text-zinc-400 block tracking-widest px-2">Site Name</label>
-                            <div className="w-full p-4 rounded-xl bg-zinc-100/50 border border-zinc-200 font-black text-zinc-400 cursor-not-allowed flex items-center justify-between">
-                              {siteName}
-                              <i className="fa-solid fa-lock text-[10px] opacity-20"></i>
-                            </div>
+                         <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase text-zinc-400 block tracking-widest px-2">Site Brand Name</label>
+                            <input 
+                              className="w-full p-4 rounded-xl bg-zinc-100 font-black text-zinc-900 outline-none border-2 border-transparent focus:border-[#007AFF] transition-all" 
+                              value={siteName} 
+                              onChange={e => setSiteName(e.target.value)} 
+                            />
                          </div>
-                         <div className="space-y-2 group">
-                            <label className="text-[10px] font-black uppercase text-zinc-400 block tracking-widest px-2">Site Slogan</label>
-                            <div className="w-full p-4 rounded-xl bg-zinc-100/50 border border-zinc-200 font-black text-zinc-400 cursor-not-allowed flex items-center justify-between">
-                              {siteSlogan}
-                              <i className="fa-solid fa-lock text-[10px] opacity-20"></i>
-                            </div>
+                         <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase text-zinc-400 block tracking-widest px-2">Marketing Slogan</label>
+                            <input 
+                              className="w-full p-4 rounded-xl bg-zinc-100 font-black text-zinc-900 outline-none border-2 border-transparent focus:border-[#007AFF] transition-all" 
+                              value={siteSlogan} 
+                              onChange={e => setSiteSlogan(e.target.value)} 
+                            />
                          </div>
-                         <div className="space-y-2 group">
-                            <label className="text-[10px] font-black uppercase text-zinc-400 block tracking-widest px-2">Vodafone Cash</label>
-                            <div className="w-full p-4 rounded-xl bg-zinc-100/50 border border-zinc-200 font-black text-zinc-400 cursor-not-allowed flex items-center justify-between tracking-widest">
-                              {paymentNumber}
-                              <i className="fa-solid fa-lock text-[10px] opacity-20"></i>
-                            </div>
+                         <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase text-zinc-400 block tracking-widest px-2">Vodafone Cash Number</label>
+                            <input 
+                              className="w-full p-4 rounded-xl bg-zinc-100 font-black text-zinc-900 outline-none border-2 border-transparent focus:border-[#007AFF] transition-all tracking-widest" 
+                              value={paymentNumber} 
+                              onChange={e => setPaymentNumber(e.target.value)} 
+                            />
                          </div>
-                         <div className="space-y-2 group">
-                            <label className="text-[10px] font-black uppercase text-zinc-400 block tracking-widest px-2">Telegram</label>
-                            <div className="w-full p-4 rounded-xl bg-zinc-100/50 border border-zinc-200 font-black text-zinc-400 cursor-not-allowed flex items-center justify-between">
-                              @{telegramUser}
-                              <i className="fa-solid fa-lock text-[10px] opacity-20"></i>
-                            </div>
+                         <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase text-zinc-400 block tracking-widest px-2">Telegram Handle (No @)</label>
+                            <input 
+                              className="w-full p-4 rounded-xl bg-zinc-100 font-black text-zinc-900 outline-none border-2 border-transparent focus:border-[#007AFF] transition-all" 
+                              value={telegramUser} 
+                              onChange={e => setTelegramUser(e.target.value)} 
+                            />
                          </div>
                        </section>
 
                        <section className="space-y-8">
-                         <div className="space-y-4 p-8 bg-white rounded-[2.5rem] border border-zinc-100 shadow-sm">
-                            <h4 className="text-[10px] font-black uppercase text-[#007AFF] tracking-widest">Admin Security</h4>
+                         <div className="space-y-4 p-8 bg-zinc-50 rounded-[2.5rem] border border-zinc-200 shadow-sm">
+                            <h4 className="text-[10px] font-black uppercase text-[#007AFF] tracking-widest">Security & Cloud Sync</h4>
                             <div className="space-y-2">
-                               <label className="text-[8px] font-black uppercase text-zinc-400 block tracking-widest px-2">Access Password</label>
+                               <label className="text-[8px] font-black uppercase text-zinc-400 block tracking-widest px-2">Admin Dashboard Password</label>
                                <input 
                                  type="text"
-                                 className="w-full p-4 rounded-xl bg-zinc-100 font-black text-center text-lg outline-none border-2 border-transparent focus:border-[#007AFF] transition-all" 
+                                 className="w-full p-4 rounded-xl bg-white font-black text-center text-lg outline-none border-2 border-transparent focus:border-[#007AFF] transition-all" 
                                  value={adminPassword} 
                                  onChange={e => setAdminPassword(e.target.value)} 
                                />
                             </div>
                             <button 
-                              onClick={saveAdminConfig} 
+                              onClick={saveAdminSettings} 
                               disabled={isPublishing}
-                              className="w-full py-4 bg-[#007AFF] text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg shadow-blue-500/20 hover:scale-[1.02] active:scale-95 transition-all"
+                              className="w-full py-5 bg-[#007AFF] text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl shadow-blue-500/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"
                             >
-                              {isPublishing ? 'Updating...' : 'Save New Password'}
+                              {isPublishing ? 'Synchronizing...' : 'Save All Settings to Cloud'}
                             </button>
                          </div>
 
                          <div className="space-y-6">
                             <div className="flex gap-8 justify-center">
                                <div className="space-y-3 text-center flex-1">
-                                 <label className="text-[8px] font-black uppercase text-zinc-400">Site Logo</label>
-                                 <div className="w-20 h-20 mx-auto rounded-full overflow-hidden relative border-4 border-[#007AFF]/10 bg-zinc-50 shadow-inner group cursor-pointer">
+                                 <label className="text-[8px] font-black uppercase text-zinc-400 tracking-widest">Site Brand Logo</label>
+                                 <div className="w-20 h-20 mx-auto rounded-full overflow-hidden relative border-4 border-[#007AFF]/10 bg-zinc-50 shadow-inner group cursor-pointer transition-transform active:scale-95">
                                    <img src={siteLogo} className="w-full h-full object-cover" />
                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
                                       <i className="fa-solid fa-camera text-white text-xs"></i>
                                    </div>
-                                   <input type="file" accept="image/*" onChange={async e => { if(e.target.files?.[0]) { const b64 = await fileToBase64(e.target.files[0]); await supabase.from('settings').upsert({key: 'site_logo', value: b64}); refreshData(); showNotify("Logo Updated"); } }} className="absolute inset-0 opacity-0 cursor-pointer" />
+                                   <input type="file" accept="image/*" onChange={async e => { if(e.target.files?.[0]) { const b64 = await fileToBase64(e.target.files[0]); await supabase.from('settings').upsert({key: 'site_logo', value: b64}); setSiteLogo(b64); showNotify("Brand Logo Updated"); } }} className="absolute inset-0 opacity-0 cursor-pointer" />
                                  </div>
                                </div>
                                <div className="space-y-3 text-center flex-1">
-                                 <label className="text-[8px] font-black uppercase text-zinc-400">Splash Logo</label>
-                                 <div className="w-20 h-20 mx-auto rounded-full overflow-hidden relative border-4 border-zinc-200 bg-zinc-50 shadow-inner group cursor-pointer">
+                                 <label className="text-[8px] font-black uppercase text-zinc-400 tracking-widest">Splash Loader Image</label>
+                                 <div className="w-20 h-20 mx-auto rounded-full overflow-hidden relative border-4 border-zinc-200 bg-zinc-50 shadow-inner group cursor-pointer transition-transform active:scale-95">
                                    <img src={loaderLogo} className="w-full h-full object-cover" />
                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
                                       <i className="fa-solid fa-camera text-white text-xs"></i>
                                    </div>
-                                   <input type="file" accept="image/*" onChange={async e => { if(e.target.files?.[0]) { const b64 = await fileToBase64(e.target.files[0]); await supabase.from('settings').upsert({key: 'loader_logo', value: b64}); refreshData(); showNotify("Splash Updated"); } }} className="absolute inset-0 opacity-0 cursor-pointer" />
+                                   <input type="file" accept="image/*" onChange={async e => { if(e.target.files?.[0]) { const b64 = await fileToBase64(e.target.files[0]); await supabase.from('settings').upsert({key: 'loader_logo', value: b64}); setLoaderLogo(b64); showNotify("Loader Logo Updated"); } }} className="absolute inset-0 opacity-0 cursor-pointer" />
                                  </div>
                                </div>
                             </div>
