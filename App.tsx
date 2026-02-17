@@ -12,6 +12,17 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// دالة مساعدة لضمان تحميل الصورة في ذاكرة المتصفح قبل عرضها
+const preloadImage = (src: string): Promise<void> => {
+  return new Promise((resolve) => {
+    if (!src) return resolve();
+    const img = new Image();
+    img.src = src;
+    img.onload = () => resolve();
+    img.onerror = () => resolve(); // نكمل حتى لو فشل تحميل صورة معينة لتجنب تعليق الموقع
+  });
+};
+
 const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -33,9 +44,6 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [notification, setNotification] = useState<{message: string, type: 'success' | 'error'} | null>(null);
   
-  const isDarkMode = false;
-
-  // البيانات المخزنة مؤقتاً لسرعة الظهور
   const [dbProducts, setDbProducts] = useState<Product[]>(() => {
     const cached = localStorage.getItem('cached_products');
     return cached ? JSON.parse(cached) : [];
@@ -45,7 +53,6 @@ const App: React.FC = () => {
     return cached ? JSON.parse(cached) : [];
   }); 
 
-  // إعدادات الموقع من قاعدة البيانات
   const [siteName, setSiteName] = useState<string>(localStorage.getItem('cached_site_name') || "Mohamed Edge");
   const [siteSlogan, setSiteSlogan] = useState<string>(localStorage.getItem('cached_site_slogan') || "Solo Entrepreneur");
   const [paymentNumber, setPaymentNumber] = useState<string>(localStorage.getItem('cached_payment_number') || "01091931466");
@@ -82,6 +89,7 @@ const App: React.FC = () => {
         supabase.from('videos').select('*').order('created_at', { ascending: false })
       ]);
 
+      let newLogo = siteLogo;
       if (settRes.data) {
         settRes.data.forEach(s => {
           if (s.key === 'admin_password') setAdminPassword(s.value);
@@ -89,21 +97,31 @@ const App: React.FC = () => {
           if (s.key === 'site_slogan') { setSiteSlogan(s.value); localStorage.setItem('cached_site_slogan', s.value); }
           if (s.key === 'payment_number') { setPaymentNumber(s.value); localStorage.setItem('cached_payment_number', s.value); }
           if (s.key === 'telegram_user') { setTelegramUser(s.value); localStorage.setItem('cached_telegram_user', s.value); }
-          if (s.key === 'site_logo') { setSiteLogo(s.value); localStorage.setItem('cached_site_logo', s.value); }
+          if (s.key === 'site_logo') { 
+            newLogo = s.value;
+            setSiteLogo(s.value); 
+            localStorage.setItem('cached_site_logo', s.value); 
+          }
           if (s.key === 'loader_logo') { setLoaderLogo(s.value); localStorage.setItem('cached_loader_logo', s.value); }
         });
       }
 
-      if (prodRes.data) {
-        setDbProducts(prodRes.data as Product[]);
-        localStorage.setItem('cached_products', JSON.stringify(prodRes.data));
-      }
-      
-      if (vidRes.data) {
-        setDbVideos(vidRes.data as YoutubeVideo[]);
-        localStorage.setItem('cached_videos', JSON.stringify(vidRes.data));
-      }
+      const products = (prodRes.data as Product[]) || [];
+      const videos = (vidRes.data as YoutubeVideo[]) || [];
 
+      // خطوة التحميل المسبق للصور الأساسية قبل إخفاء شاشة التحميل
+      const criticalImages = [newLogo];
+      if (products.length > 0) criticalImages.push(products[0].image);
+      if (products.length > 1) criticalImages.push(products[1].image);
+      
+      await Promise.all(criticalImages.map(img => preloadImage(img)));
+
+      setDbProducts(products);
+      localStorage.setItem('cached_products', JSON.stringify(products));
+      setDbVideos(videos);
+      localStorage.setItem('cached_videos', JSON.stringify(videos));
+
+      // إخفاء شاشة التحميل فقط بعد تحميل الصور الأساسية
       if (typeof (window as any).hideSplash === 'function') {
         (window as any).hideSplash();
       }
@@ -116,9 +134,16 @@ const App: React.FC = () => {
   };
 
   useEffect(() => { 
+    // إذا لم تكن هناك بيانات مخزنة، لا تخفي الـ Splash حتى ينتهي الـ refreshData
     if (dbProducts.length > 0) {
-      if (typeof (window as any).hideSplash === 'function') (window as any).hideSplash();
-      setIsLoading(false);
+      // تحميل مسبق للصور المخزنة مؤقتاً لظهور فوري
+      const cachedImages = [siteLogo];
+      if (dbProducts.length > 0) cachedImages.push(dbProducts[0].image);
+      
+      Promise.all(cachedImages.map(img => preloadImage(img))).then(() => {
+        if (typeof (window as any).hideSplash === 'function') (window as any).hideSplash();
+        setIsLoading(false);
+      });
     }
     refreshData(); 
   }, []);
