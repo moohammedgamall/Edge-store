@@ -369,10 +369,9 @@ const App: React.FC = () => {
                                 </div>
                               )}
 
-                              {/* رسالة التنبيه الجديدة مدمجة داخل الصندوق */}
                               <div className="p-5 bg-red-500/10 border-2 border-red-500/20 rounded-3xl">
-                                 <p className="text-right font-black text-red-600 dark:text-red-400 text-xs leading-relaxed" dir="rtl">
-                                   ⚠️ يرجى تأكيد دفع المبلغ بالكامل على الرقم الموجود في هذه الصفحة قبل المتابعة للتواصل عبر التليجرام.
+                                 <p className="text-left font-black text-red-600 dark:text-red-400 text-xs leading-relaxed">
+                                   ⚠️ Please confirm full payment to the number shown on this page before proceeding to contact us via Telegram.
                                  </p>
                               </div>
 
