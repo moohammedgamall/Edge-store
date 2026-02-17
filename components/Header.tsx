@@ -8,9 +8,11 @@ interface HeaderProps {
   onThemeToggle: () => void;
   isDarkMode: boolean;
   logoUrl?: string;
+  siteName: string;
+  siteSlogan: string;
 }
 
-const Header: React.FC<HeaderProps> = ({ isAdmin, onAdminTrigger, onLogout, onThemeToggle, isDarkMode, logoUrl }) => {
+const Header: React.FC<HeaderProps> = ({ isAdmin, onAdminTrigger, onLogout, onThemeToggle, isDarkMode, logoUrl, siteName, siteSlogan }) => {
   const [imgError, setImgError] = useState(false);
 
   useEffect(() => {
@@ -23,9 +25,7 @@ const Header: React.FC<HeaderProps> = ({ isAdmin, onAdminTrigger, onLogout, onTh
   return (
     <header className="sticky top-0 z-40 w-full flex justify-center bg-white/80 backdrop-blur-3xl border-b border-zinc-200/50">
       <div className="w-full max-w-7xl px-4 md:px-8 py-3 md:py-4 flex items-center justify-between">
-        <div 
-          className="flex items-center gap-3 md:gap-4 select-none transition-transform"
-        >
+        <div className="flex items-center gap-3 md:gap-4 select-none transition-transform">
           <div className="w-10 h-10 md:w-14 md:h-14 flex items-center justify-center rounded-full overflow-hidden relative shadow-md bg-zinc-100 shrink-0">
             {!imgError ? (
               <img 
@@ -43,9 +43,11 @@ const Header: React.FC<HeaderProps> = ({ isAdmin, onAdminTrigger, onLogout, onTh
           </div>
           <div className="flex flex-col">
             <h1 className="text-lg md:text-2xl font-black tracking-tighter text-zinc-900 leading-none whitespace-nowrap">
-              Mohamed Edge
+              {siteName}
             </h1>
-            <span className="text-[7px] md:text-[9px] font-bold text-[#007AFF] uppercase tracking-[0.2em] mt-0.5 md:mt-1">Solo Entrepreneur</span>
+            <span className="text-[7px] md:text-[9px] font-bold text-[#007AFF] uppercase tracking-[0.2em] mt-0.5 md:mt-1">
+              {siteSlogan}
+            </span>
           </div>
         </div>
 

@@ -35,10 +35,23 @@ const App: React.FC = () => {
   
   const isDarkMode = false;
 
-  const [dbProducts, setDbProducts] = useState<Product[]>([]);
-  const [dbVideos, setDbVideos] = useState<YoutubeVideo[]>([]); 
-  const [siteLogo, setSiteLogo] = useState<string>("https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
-  const [loaderLogo, setLoaderLogo] = useState<string>("https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
+  // البيانات المخزنة مؤقتاً لسرعة الظهور
+  const [dbProducts, setDbProducts] = useState<Product[]>(() => {
+    const cached = localStorage.getItem('cached_products');
+    return cached ? JSON.parse(cached) : [];
+  });
+  const [dbVideos, setDbVideos] = useState<YoutubeVideo[]>(() => {
+    const cached = localStorage.getItem('cached_videos');
+    return cached ? JSON.parse(cached) : [];
+  }); 
+
+  // إعدادات الموقع من قاعدة البيانات
+  const [siteName, setSiteName] = useState<string>(localStorage.getItem('cached_site_name') || "Mohamed Edge");
+  const [siteSlogan, setSiteSlogan] = useState<string>(localStorage.getItem('cached_site_slogan') || "Solo Entrepreneur");
+  const [paymentNumber, setPaymentNumber] = useState<string>(localStorage.getItem('cached_payment_number') || "01091931466");
+  const [telegramUser, setTelegramUser] = useState<string>(localStorage.getItem('cached_telegram_user') || "Mohamed_edge");
+  const [siteLogo, setSiteLogo] = useState<string>(localStorage.getItem('cached_site_logo') || "https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
+  const [loaderLogo, setLoaderLogo] = useState<string>(localStorage.getItem('cached_loader_logo') || "https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
   const [adminPassword, setAdminPassword] = useState<string>("1234");
 
   const [orderDevice, setOrderDevice] = useState<'Realme' | 'Oppo'>('Realme');
@@ -62,48 +75,54 @@ const App: React.FC = () => {
   }, []);
 
   const refreshData = async () => {
-    // 1. أولاً نقوم بتحميل الإعدادات لإخفاء شاشة التحميل بسرعة
     try {
-      const { data: settingsData } = await supabase.from('settings').select('*');
-      if (settingsData) {
-        settingsData.forEach(s => {
-          if (s.key === 'admin_password') setAdminPassword(s.value);
-          if (s.key === 'site_logo') setSiteLogo(s.value);
-          if (s.key === 'loader_logo') {
-            setLoaderLogo(s.value);
-            localStorage.setItem('cached_loader_logo', s.value);
-          }
-        });
-      }
-      
-      // إخفاء الـ Splash بمجرد تحميل الإعدادات أو فوراً لتحسين "سرعة الظهور"
-      if (typeof (window as any).hideSplash === 'function') {
-        (window as any).hideSplash();
-      }
-
-      // 2. تحميل المنتجات والفيديوهات في الخلفية
-      const [prodRes, vidRes] = await Promise.all([
+      const [settRes, prodRes, vidRes] = await Promise.all([
+        supabase.from('settings').select('*'),
         supabase.from('products').select('*').order('created_at', { ascending: false }),
         supabase.from('videos').select('*').order('created_at', { ascending: false })
       ]);
 
-      if (prodRes.data) setDbProducts(prodRes.data as Product[]);
-      if (vidRes.data) setDbVideos(vidRes.data as YoutubeVideo[]);
-    } catch (err) {
-      console.error("Data fetch error", err);
+      if (settRes.data) {
+        settRes.data.forEach(s => {
+          if (s.key === 'admin_password') setAdminPassword(s.value);
+          if (s.key === 'site_name') { setSiteName(s.value); localStorage.setItem('cached_site_name', s.value); }
+          if (s.key === 'site_slogan') { setSiteSlogan(s.value); localStorage.setItem('cached_site_slogan', s.value); }
+          if (s.key === 'payment_number') { setPaymentNumber(s.value); localStorage.setItem('cached_payment_number', s.value); }
+          if (s.key === 'telegram_user') { setTelegramUser(s.value); localStorage.setItem('cached_telegram_user', s.value); }
+          if (s.key === 'site_logo') { setSiteLogo(s.value); localStorage.setItem('cached_site_logo', s.value); }
+          if (s.key === 'loader_logo') { setLoaderLogo(s.value); localStorage.setItem('cached_loader_logo', s.value); }
+        });
+      }
+
+      if (prodRes.data) {
+        setDbProducts(prodRes.data as Product[]);
+        localStorage.setItem('cached_products', JSON.stringify(prodRes.data));
+      }
+      
+      if (vidRes.data) {
+        setDbVideos(vidRes.data as YoutubeVideo[]);
+        localStorage.setItem('cached_videos', JSON.stringify(vidRes.data));
+      }
+
       if (typeof (window as any).hideSplash === 'function') {
         (window as any).hideSplash();
       }
+    } catch (err) {
+      console.error("Data fetch error", err);
+      if (typeof (window as any).hideSplash === 'function') (window as any).hideSplash();
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => { 
+    if (dbProducts.length > 0) {
+      if (typeof (window as any).hideSplash === 'function') (window as any).hideSplash();
+      setIsLoading(false);
+    }
     refreshData(); 
   }, []);
 
-  // ... (نفس باقي الدوال السابقة)
   const handleUrlBlur = async () => {
     if (!videoUrlInput) return;
     const vidId = getYouTubeId(videoUrlInput);
@@ -140,9 +159,6 @@ const App: React.FC = () => {
           setSelectedProduct(found);
           setPreviewImageIndex(0);
           setActiveSection('Preview');
-        } else {
-           const { data } = await supabase.from('products').select('*').eq('id', id).single();
-           if (data) { setSelectedProduct(data); setActiveSection('Preview'); }
         }
       } else if (hash === '#/order') {
         setActiveSection('Order');
@@ -203,9 +219,36 @@ const App: React.FC = () => {
     } catch (err: any) { showNotify(err.message, "error"); }
   };
 
+  const saveAllSettings = async () => {
+    setIsPublishing(true);
+    try {
+      const updates = [
+        { key: 'site_name', value: siteName },
+        { key: 'site_slogan', value: siteSlogan },
+        { key: 'payment_number', value: paymentNumber },
+        { key: 'telegram_user', value: telegramUser },
+        { key: 'admin_password', value: adminPassword },
+      ];
+      const { error } = await supabase.from('settings').upsert(updates);
+      if (error) throw error;
+      showNotify("All Settings Saved");
+      refreshData();
+    } catch (err: any) { showNotify(err.message, "error"); }
+    finally { setIsPublishing(false); }
+  };
+
   return (
     <div className="min-h-screen pb-32 bg-[#F2F2F7] transition-colors duration-500">
-      <Header isAdmin={isAdminMode} onAdminTrigger={() => setIsAuthModalOpen(true)} onLogout={() => { setIsAdminMode(false); window.location.hash = '#/'; }} onThemeToggle={() => {}} isDarkMode={false} logoUrl={siteLogo} />
+      <Header 
+        isAdmin={isAdminMode} 
+        onAdminTrigger={() => setIsAuthModalOpen(true)} 
+        onLogout={() => { setIsAdminMode(false); window.location.hash = '#/'; }} 
+        onThemeToggle={() => {}} 
+        isDarkMode={false} 
+        logoUrl={siteLogo}
+        siteName={siteName}
+        siteSlogan={siteSlogan}
+      />
 
       {isAuthModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-xl">
@@ -242,12 +285,6 @@ const App: React.FC = () => {
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                   {filteredProducts.map(p => <ProductCard key={p.id} product={p} onPreview={id => window.location.hash = `#/preview/${id}`} onBuy={id => { setOrderProductId(id); window.location.hash = '#/order'; }} />)}
-                  {filteredProducts.length === 0 && !isLoading && (
-                    <div className="col-span-full py-20 text-center glass-panel rounded-[2rem] border-dashed border-2 border-zinc-200 text-zinc-400 font-bold uppercase text-[10px] flex flex-col items-center gap-4">
-                       <i className="fa-solid fa-box-open text-4xl opacity-20"></i>
-                       <span>No assets found in database.</span>
-                    </div>
-                  )}
                 </div>
               </section>
 
@@ -280,50 +317,6 @@ const App: React.FC = () => {
           )
         )}
         
-        {/* ... (نفس باقي الأقسام Order و Preview و Admin دون تغيير) ... */}
-        {activeSection === 'Preview' && selectedProduct && (
-          <div className="max-w-6xl mx-auto pb-20 px-4 animate-in fade-in duration-500">
-             <button onClick={() => window.history.back()} className="w-10 h-10 mb-8 flex items-center justify-center bg-white rounded-full shadow-lg border border-zinc-200 hover:scale-110 transition-transform"><i className="fa-solid fa-chevron-left"></i></button>
-             <div className="flex flex-col lg:flex-row items-center lg:items-start gap-12">
-                <div className="w-full lg:w-auto shrink-0 flex flex-col items-center gap-8">
-                   <div className="relative aspect-[1290/2796] w-full max-w-[320px] rounded-[40px] bg-black p-3 shadow-3xl">
-                      <div className="relative w-full h-full rounded-[30px] overflow-hidden bg-zinc-900">
-                        <img loading="eager" src={selectedProduct.gallery && selectedProduct.gallery.length > 0 ? selectedProduct.gallery[previewImageIndex] : selectedProduct.image} className="w-full h-full object-cover animate-in fade-in duration-300" alt="" />
-                      </div>
-                   </div>
-                   <div className="flex flex-wrap gap-2 justify-center">
-                      {(selectedProduct.gallery?.length ? selectedProduct.gallery : [selectedProduct.image]).map((img, idx) => (
-                        <button key={idx} onClick={() => setPreviewImageIndex(idx)} className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${previewImageIndex === idx ? 'border-[#007AFF] scale-110' : 'border-transparent opacity-40 hover:opacity-100'}`}>
-                          <img loading="lazy" src={img} className="w-full h-full object-cover" alt="" />
-                        </button>
-                      ))}
-                   </div>
-                </div>
-                <div className="flex-1 w-full space-y-8">
-                   <div className="space-y-4">
-                      <span className="px-3 py-1 bg-[#007AFF]/10 text-[#007AFF] rounded-full font-black text-[9px] uppercase">{selectedProduct.category}</span>
-                      <h2 className="text-4xl lg:text-6xl font-black uppercase tracking-tighter leading-tight">{selectedProduct.title}</h2>
-                      <div className="flex items-center gap-4 text-zinc-500 font-bold text-sm">
-                         <span className="flex items-center gap-1.5"><i className="fa-brands fa-android text-green-500"></i> {selectedProduct.android_version || 'Universal'}</span>
-                         <span className="w-1 h-1 bg-zinc-300 rounded-full"></span>
-                         <span>{selectedProduct.compatibility}</span>
-                      </div>
-                      <p className="text-zinc-500 text-lg leading-relaxed pt-4">{selectedProduct.description}</p>
-                   </div>
-                   <div className="p-8 bg-white rounded-[2.5rem] border border-zinc-100 shadow-xl">
-                      <div className="flex items-center justify-between mb-8">
-                        <div>
-                          <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1">Price</p>
-                          <span className="text-3xl font-black text-[#007AFF]">{selectedProduct.price === 0 ? 'FREE' : `${selectedProduct.price} EGP`}</span>
-                        </div>
-                      </div>
-                      <button onClick={() => { setOrderProductId(selectedProduct.id); window.location.hash = '#/order'; }} className="w-full py-6 bg-[#007AFF] text-white rounded-2xl font-black text-lg hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-blue-500/20">Secure This Asset</button>
-                   </div>
-                </div>
-             </div>
-          </div>
-        )}
-
         {activeSection === 'Order' && (
           <div className="max-w-4xl mx-auto py-8 px-4 animate-in slide-in-from-bottom-8 duration-700">
             <div className="glass-panel p-6 md:p-12 rounded-[2.5rem] md:rounded-[4rem] space-y-10 shadow-2xl relative border-white/20">
@@ -361,25 +354,13 @@ const App: React.FC = () => {
                                    <div className="flex items-center gap-2 text-amber-600 bg-amber-500/10 p-2 rounded-lg text-[10px] font-black uppercase"><i className="fa-solid fa-circle-info"></i> Use Vodafone Cash</div>
                                    <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Send to number:</p>
                                    <div className="p-4 bg-zinc-50 rounded-2xl border-2 border-dashed border-zinc-200 flex items-center justify-between group">
-                                      <span className="text-lg font-black tracking-widest font-mono text-zinc-900">01091931466</span>
-                                      <button onClick={() => { navigator.clipboard.writeText('01091931466'); showNotify('Number Copied!'); }} className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-zinc-400 hover:text-[#007AFF] transition-all"><i className="fa-solid fa-copy text-xs"></i></button>
-                                   </div>
-                                   
-                                   <div className="mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl">
-                                     <p className="text-zinc-900 font-bold text-[11px] leading-relaxed">
-                                       <i className="fa-solid fa-triangle-exclamation text-red-500 mr-2"></i>
-                                       Please confirm full payment to the number shown on this page before proceeding to contact us via Telegram.
-                                     </p>
+                                      <span className="text-lg font-black tracking-widest font-mono text-zinc-900">{paymentNumber}</span>
+                                      <button onClick={() => { navigator.clipboard.writeText(paymentNumber); showNotify('Number Copied!'); }} className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-zinc-400 hover:text-[#007AFF] transition-all"><i className="fa-solid fa-copy text-xs"></i></button>
                                    </div>
                                 </div>
                               )}
-
-                              {!currentOrderedProduct.price && (
-                                <p className="text-sm text-zinc-500 font-medium">This asset is free. Request the link from Mohamed Edge via Telegram.</p>
-                              )}
                            </div>
-                           
-                           <button onClick={() => window.open(`https://t.me/Mohamed_edge?text=I want to order: ${currentOrderedProduct.title} for ${orderDevice}`, '_blank')} className="w-full py-5 bg-[#0088CC] text-white rounded-[2rem] font-black shadow-xl flex items-center justify-center gap-3 hover:scale-[1.02] transition-all">
+                           <button onClick={() => window.open(`https://t.me/${telegramUser}?text=I want to order: ${currentOrderedProduct.title} for ${orderDevice}`, '_blank')} className="w-full py-5 bg-[#0088CC] text-white rounded-[2rem] font-black shadow-xl flex items-center justify-center gap-3 hover:scale-[1.02] transition-all">
                              <i className="fa-brands fa-telegram text-2xl"></i> Chat on Telegram
                            </button>
                         </div>
@@ -422,21 +403,6 @@ const App: React.FC = () => {
                              {editProduct.image ? <img src={editProduct.image} className="w-full h-full object-cover" /> : <div className="w-full h-full flex flex-col items-center justify-center opacity-30"><i className="fa-solid fa-cloud-arrow-up text-3xl mb-2"></i><span className="text-[10px] font-black uppercase">Click to upload</span></div>}
                              <input type="file" accept="image/*" onChange={async e => { if(e.target.files?.[0]) setEditProduct({...editProduct, image: await fileToBase64(e.target.files[0])}); }} className="absolute inset-0 opacity-0 cursor-pointer" />
                           </div>
-                          <div className="space-y-2">
-                             <label className="text-[10px] font-black uppercase text-zinc-400 px-2 tracking-widest">Gallery Preview (Base64/Links Array)</label>
-                             <div className="grid grid-cols-4 gap-2">
-                               {editProduct.gallery?.map((g, i) => (
-                                 <div key={i} className="aspect-square rounded-lg bg-zinc-200 relative group overflow-hidden">
-                                   <img src={g} className="w-full h-full object-cover" />
-                                   <button onClick={() => setEditProduct({...editProduct, gallery: editProduct.gallery?.filter((_, idx) => idx !== i)})} className="absolute inset-0 bg-red-600/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white"><i className="fa-solid fa-trash"></i></button>
-                                 </div>
-                               ))}
-                               <div className="aspect-square rounded-lg border-2 border-dashed border-zinc-300 flex items-center justify-center text-zinc-400 relative">
-                                  <i className="fa-solid fa-plus"></i>
-                                  <input type="file" multiple accept="image/*" onChange={async e => { if(e.target.files) { const files = Array.from(e.target.files); const b64s = await Promise.all(files.map(f => fileToBase64(f))); setEditProduct({...editProduct, gallery: [...(editProduct.gallery || []), ...b64s]}); } }} className="absolute inset-0 opacity-0 cursor-pointer" />
-                               </div>
-                             </div>
-                          </div>
                        </div>
                     </div>
                     <div className="flex gap-4">
@@ -465,73 +431,53 @@ const App: React.FC = () => {
               </div>
             )}
 
-            {adminTab === 'Videos' && (
-              <div className="space-y-8">
-                 <div className="glass-panel p-8 rounded-[2.5rem] space-y-6">
-                    <h3 className="font-black uppercase text-xs tracking-widest text-zinc-400">Add YouTube Review</h3>
-                    <div className="space-y-4">
-                       <div className="relative">
-                          <input 
-                            className="w-full p-4 pr-12 rounded-xl bg-zinc-100 font-bold text-zinc-900 outline-none border-2 border-transparent focus:border-[#007AFF]" 
-                            placeholder="YouTube URL" 
-                            value={videoUrlInput} 
-                            onChange={e => setVideoUrlInput(e.target.value)}
-                            onBlur={handleUrlBlur}
-                          />
-                          <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                            {isFetchingVideo ? (
-                              <i className="fa-solid fa-spinner animate-spin text-[#007AFF]"></i>
-                            ) : (
-                              <i className="fa-brands fa-youtube text-red-600"></i>
-                            )}
-                          </div>
-                       </div>
-                       <input className="w-full p-4 rounded-xl bg-zinc-100 font-bold text-zinc-900 outline-none border-2 border-transparent focus:border-[#007AFF]" placeholder="Video Title (Auto-fetched)" value={videoTitleInput} onChange={e => setVideoTitleInput(e.target.value)} />
-                    </div>
-                    <button onClick={addVideo} className="w-full py-4 bg-red-600 text-white rounded-xl font-black uppercase text-[10px] tracking-widest shadow-lg">Publish Video</button>
-                 </div>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {dbVideos.map(v => (
-                       <div key={v.id} className="p-4 glass-panel rounded-2xl flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                             <div className="w-16 h-10 bg-black rounded overflow-hidden"><img src={`https://img.youtube.com/vi/${v.id}/default.jpg`} className="w-full h-full object-cover" /></div>
-                             <p className="font-bold text-xs truncate max-w-[150px] text-zinc-900">{v.title}</p>
-                          </div>
-                          <button onClick={async () => { if(confirm('Delete video?')) { await supabase.from('videos').delete().eq('id', v.id); refreshData(); } }} className="text-red-500 hover:scale-110 transition-transform"><i className="fa-solid fa-trash-can"></i></button>
-                       </div>
-                    ))}
-                 </div>
-              </div>
-            )}
-
             {adminTab === 'Settings' && (
-              <div className="space-y-10">
+              <div className="space-y-10 pb-20">
                  <div className="glass-panel p-10 rounded-[3rem] space-y-10">
-                    <h3 className="text-2xl font-black uppercase tracking-tighter text-zinc-900">Store Branding</h3>
+                    <h3 className="text-2xl font-black uppercase tracking-tighter text-zinc-900">Master Configuration</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                       <section className="space-y-10">
-                         <div className="space-y-4 text-center">
-                           <label className="text-[10px] font-black uppercase text-zinc-400 block tracking-widest">Main Header Logo</label>
-                           <div className="w-24 h-24 mx-auto rounded-full overflow-hidden relative border-4 border-[#007AFF]/20 bg-zinc-100 shadow-xl group">
-                             <img src={siteLogo} className="w-full h-full object-cover" />
-                             <input type="file" accept="image/*" onChange={async e => { if(e.target.files?.[0]) { const b64 = await fileToBase64(e.target.files[0]); await supabase.from('settings').upsert({key: 'site_logo', value: b64}); refreshData(); showNotify("Header logo updated"); } }} className="absolute inset-0 opacity-0 cursor-pointer" />
-                           </div>
+                       <section className="space-y-6">
+                         <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase text-zinc-400 block tracking-widest px-2">Site Name</label>
+                            <input className="w-full p-4 rounded-xl bg-zinc-100 font-black text-zinc-900 outline-none" value={siteName} onChange={e => setSiteName(e.target.value)} />
                          </div>
-                         <div className="space-y-4 text-center">
-                           <label className="text-[10px] font-black uppercase text-zinc-400 block tracking-widest">Loading Screen Logo</label>
-                           <div className="w-24 h-24 mx-auto rounded-full overflow-hidden relative border-4 border-amber-500/20 bg-zinc-100 shadow-xl group">
-                             <img src={loaderLogo} className="w-full h-full object-cover" />
-                             <input type="file" accept="image/*" onChange={async e => { if(e.target.files?.[0]) { const b64 = await fileToBase64(e.target.files[0]); await supabase.from('settings').upsert({key: 'loader_logo', value: b64}); refreshData(); showNotify("Loading logo updated"); } }} className="absolute inset-0 opacity-0 cursor-pointer" />
-                           </div>
-                           <p className="text-[9px] text-zinc-400 font-bold italic">Changes splash logo on next reload.</p>
+                         <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase text-zinc-400 block tracking-widest px-2">Site Slogan</label>
+                            <input className="w-full p-4 rounded-xl bg-zinc-100 font-black text-zinc-900 outline-none" value={siteSlogan} onChange={e => setSiteSlogan(e.target.value)} />
+                         </div>
+                         <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase text-zinc-400 block tracking-widest px-2">Vodafone Cash Number</label>
+                            <input className="w-full p-4 rounded-xl bg-zinc-100 font-black text-zinc-900 outline-none" value={paymentNumber} onChange={e => setPaymentNumber(e.target.value)} />
+                         </div>
+                         <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase text-zinc-400 block tracking-widest px-2">Telegram Username (No @)</label>
+                            <input className="w-full p-4 rounded-xl bg-zinc-100 font-black text-zinc-900 outline-none" value={telegramUser} onChange={e => setTelegramUser(e.target.value)} />
                          </div>
                        </section>
                        <section className="space-y-6">
                          <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase text-zinc-400 block tracking-widest px-2">Master Password</label>
-                            <input type="text" className="w-full p-5 rounded-2xl bg-zinc-100 font-black text-center text-lg text-zinc-900 outline-none" value={adminPassword} onChange={e => setAdminPassword(e.target.value)} />
+                            <label className="text-[10px] font-black uppercase text-zinc-400 block tracking-widest px-2">Admin Password</label>
+                            <input className="w-full p-4 rounded-xl bg-zinc-100 font-black text-center text-lg text-zinc-900 outline-none" value={adminPassword} onChange={e => setAdminPassword(e.target.value)} />
                          </div>
-                         <button onClick={async () => { await supabase.from('settings').upsert({key: 'admin_password', value: adminPassword}); showNotify("Password updated"); }} className="w-full py-5 bg-amber-500 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg hover:bg-amber-600 transition-colors">Lock Changes</button>
+                         <div className="flex gap-4">
+                           <div className="flex-1 space-y-2 text-center">
+                             <label className="text-[8px] font-black uppercase text-zinc-400 block tracking-widest">Site Logo</label>
+                             <div className="w-20 h-20 mx-auto rounded-full overflow-hidden relative border-4 border-blue-500/20 bg-zinc-100 shadow-xl group cursor-pointer">
+                               <img src={siteLogo} className="w-full h-full object-cover" />
+                               <input type="file" accept="image/*" onChange={async e => { if(e.target.files?.[0]) { const b64 = await fileToBase64(e.target.files[0]); await supabase.from('settings').upsert({key: 'site_logo', value: b64}); refreshData(); } }} className="absolute inset-0 opacity-0 cursor-pointer" />
+                             </div>
+                           </div>
+                           <div className="flex-1 space-y-2 text-center">
+                             <label className="text-[8px] font-black uppercase text-zinc-400 block tracking-widest">Splash Logo</label>
+                             <div className="w-20 h-20 mx-auto rounded-full overflow-hidden relative border-4 border-amber-500/20 bg-zinc-100 shadow-xl group cursor-pointer">
+                               <img src={loaderLogo} className="w-full h-full object-cover" />
+                               <input type="file" accept="image/*" onChange={async e => { if(e.target.files?.[0]) { const b64 = await fileToBase64(e.target.files[0]); await supabase.from('settings').upsert({key: 'loader_logo', value: b64}); refreshData(); } }} className="absolute inset-0 opacity-0 cursor-pointer" />
+                             </div>
+                           </div>
+                         </div>
+                         <button onClick={saveAllSettings} disabled={isPublishing} className="w-full py-5 bg-[#007AFF] text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg hover:bg-blue-600 transition-colors disabled:opacity-50">
+                           {isPublishing ? 'Saving...' : 'Sync All Data to Cloud'}
+                         </button>
                        </section>
                     </div>
                  </div>
