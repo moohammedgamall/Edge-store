@@ -42,8 +42,8 @@ const App: React.FC = () => {
   const [dbProducts, setDbProducts] = useState<Product[]>([]);
   const [dbVideos, setDbVideos] = useState<YoutubeVideo[]>([]); 
   
-  const [siteLogo, setSiteLogo] = useState<string>("https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
-  const [loaderLogo, setLoaderLogo] = useState<string>("https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
+  const [siteLogo, setSiteLogo] = useState<string>(() => localStorage.getItem('cached_site_logo') || "https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
+  const [loaderLogo, setLoaderLogo] = useState<string>(() => localStorage.getItem('cached_loader_logo') || "https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
   const [adminPassword, setAdminPassword] = useState<string>("1234");
   const [newPasswordInput, setNewPasswordInput] = useState<string>("");
 
@@ -108,8 +108,14 @@ const App: React.FC = () => {
             setAdminPassword(s.value);
             setNewPasswordInput(s.value);
           }
-          if (s.key === 'site_logo') setSiteLogo(s.value);
-          if (s.key === 'loader_logo') setLoaderLogo(s.value);
+          if (s.key === 'site_logo') {
+            setSiteLogo(s.value);
+            localStorage.setItem('cached_site_logo', s.value);
+          }
+          if (s.key === 'loader_logo') {
+            setLoaderLogo(s.value);
+            localStorage.setItem('cached_loader_logo', s.value);
+          }
         });
       }
     } catch (err: any) {

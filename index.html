@@ -115,7 +115,7 @@
             const defaultLogo = "https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa";
             let cachedLoaderLogo = localStorage.getItem('cached_loader_logo');
             
-            if (!cachedLoaderLogo || cachedLoaderLogo.length < 50) {
+            if (!cachedLoaderLogo || cachedLoaderLogo.length < 30) {
               cachedLoaderLogo = defaultLogo;
             }
 
@@ -132,8 +132,13 @@
             if (loaderImg) {
                 loaderImg.onerror = function() {
                   this.src = defaultLogo;
+                  this.style.opacity = '1';
                 };
+                
+                // Set the src
                 loaderImg.src = cachedLoaderLogo;
+                
+                // Immediate check if already loaded (cached)
                 if (loaderImg.complete) {
                   loaderImg.style.opacity = '1';
                 } else {
