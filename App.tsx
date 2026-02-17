@@ -52,14 +52,14 @@ const getYouTubeId = (url: string) => {
 };
 
 // Helper to render text with Apple Icon properly across all devices
-const renderTitleWithIcons = (title: string) => {
+const renderTitleWithIcons = (title: string, isLarge = false) => {
   const parts = title.split(/(\uF8FF|)/g);
   return (
     <span className="inline-flex items-center gap-2 flex-wrap">
       {parts.map((part, i) => (
         <React.Fragment key={i}>
           { (part === '\uF8FF' || part === '') ? (
-            <i className="fa-brands fa-apple -translate-y-[4px]"></i>
+            <i className={`fa-brands fa-apple ${isLarge ? '-translate-y-[6px]' : '-translate-y-[4px]'}`}></i>
           ) : part }
         </React.Fragment>
       ))}
@@ -272,10 +272,7 @@ const App: React.FC = () => {
 🏷 Product: ${selectedProd.title}
 💰 Price: ${selectedProd.price.toLocaleString()} EGP
 
-⚠️ Please transfer the amount to the number in the 👛 Vodafone Cash field.
-📸 Please attach a screenshot of the transfer to confirm the transaction.
-
-✅ Payment has been sent via 👛 Vodafone Cash.`;
+✅ Payment has been sent via Vodafone Cash.`;
 
     window.open(`https://t.me/${telegramUser}?text=${encodeURIComponent(message)}`, '_blank');
   };
@@ -353,7 +350,7 @@ const App: React.FC = () => {
 
         {activeSection === 'Preview' && selectedProduct && (
           <div className="animate-in slide-in-from-bottom-8 duration-700 space-y-12 pb-24 relative">
-            {/* Round Back Button */}
+            {/* Professional Back Button */}
             <button 
               onClick={() => window.location.hash = '#/'}
               className="absolute top-0 left-0 z-50 w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg border border-zinc-200/50 hover:scale-110 active:scale-95 transition-all"
@@ -399,7 +396,7 @@ const App: React.FC = () => {
                       )}
                     </div>
                     <h2 className="text-4xl md:text-6xl font-black tracking-tighter text-zinc-900 leading-[1.1] max-w-2xl">
-                      {renderTitleWithIcons(selectedProduct.title)}
+                      {renderTitleWithIcons(selectedProduct.title, true)}
                     </h2>
                     <p className="text-zinc-500 font-semibold text-xl leading-relaxed max-w-2xl whitespace-pre-wrap">
                       {selectedProduct.description}
@@ -470,7 +467,11 @@ const App: React.FC = () => {
                                     <span className="text-lg font-black tracking-widest font-mono text-zinc-900">{paymentNumber}</span>
                                     <button onClick={() => { navigator.clipboard.writeText(paymentNumber); showNotify('Number Copied'); }} className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-400 hover:text-[#007AFF]"><i className="fa-solid fa-copy text-xs"></i></button>
                                  </div>
-                                 <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">⚠️ Please copy the number and send the exact amount.</p>
+                                 <div className="space-y-2">
+                                   <p className="text-[11px] text-zinc-500 font-bold leading-relaxed">⚠️ Please transfer the amount to this number <span className="text-zinc-900 font-black">{paymentNumber}</span>.</p>
+                                   <p className="text-[11px] text-zinc-500 font-bold leading-relaxed">📸 Please attach a screenshot of the transfer to confirm the transaction.</p>
+                                   <p className="text-[11px] text-[#D0021B] font-black uppercase tracking-tight mt-2 flex items-center gap-1">✅ Payment via 👛 Vodafone Cash.</p>
+                                 </div>
                               </div>
                            </div>
                            <button onClick={handleTelegramOrder} className="w-full py-5 bg-[#0088CC] text-white rounded-[2.5rem] font-black shadow-xl flex items-center justify-center gap-3 hover:scale-105 transition-transform">
