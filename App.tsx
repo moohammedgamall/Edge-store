@@ -350,7 +350,6 @@ const App: React.FC = () => {
 
         {activeSection === 'Preview' && selectedProduct && (
           <div className="animate-in slide-in-from-bottom-8 duration-700 space-y-12 pb-24 relative">
-            {/* Professional Back Button */}
             <button 
               onClick={() => window.location.hash = '#/'}
               className="absolute top-0 left-0 z-50 w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg border border-zinc-200/50 hover:scale-110 active:scale-95 transition-all"
@@ -359,7 +358,6 @@ const App: React.FC = () => {
             </button>
 
             <div className="max-w-6xl mx-auto glass-panel overflow-hidden rounded-[3rem] shadow-3xl border border-white/40 flex flex-col lg:flex-row min-h-[600px]">
-              {/* iPhone Showcase */}
               <div className="w-full lg:w-[42%] bg-zinc-100/50 p-6 md:p-12 flex flex-col gap-8 items-center justify-center border-r border-zinc-200/50">
                 <div className="relative mx-auto w-full max-w-[320px] border-[10px] border-zinc-900 rounded-[45px] overflow-hidden shadow-3xl aspect-[9/19.5] bg-black">
                    <img 
@@ -385,7 +383,6 @@ const App: React.FC = () => {
                 )}
               </div>
 
-              {/* Product Info */}
               <div className="flex-1 p-8 md:p-20 flex flex-col justify-between space-y-12">
                 <div className="space-y-10">
                   <div className="space-y-6">
@@ -457,27 +454,51 @@ const App: React.FC = () => {
                    </div>
                    <div className="relative">
                       {dbProducts.find(p => p.id === orderProductId) ? (
-                        <div className="space-y-6">
-                           <div className="p-8 bg-zinc-50 rounded-[2.5rem] border border-zinc-200 space-y-6">
-                              <h3 className="text-xl font-black tracking-tight text-zinc-900 flex items-center gap-2">
-                                <i className="fa-solid fa-wallet text-[#D0021B]"></i> Vodafone Cash
-                              </h3>
-                              <div className="space-y-4">
-                                 <div className="p-4 bg-white rounded-2xl border-2 border-dashed border-zinc-200 flex items-center justify-between">
-                                    <span className="text-lg font-black tracking-widest font-mono text-zinc-900">{paymentNumber}</span>
-                                    <button onClick={() => { navigator.clipboard.writeText(paymentNumber); showNotify('Number Copied'); }} className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-400 hover:text-[#007AFF]"><i className="fa-solid fa-copy text-xs"></i></button>
-                                 </div>
+                        <div className="space-y-8">
+                           <div className="p-8 bg-zinc-50/80 rounded-[2.5rem] border border-zinc-200/60 shadow-inner space-y-8">
+                              <div className="flex items-center justify-between">
+                                <h3 className="text-xl font-black tracking-tight text-zinc-900 flex items-center gap-2.5">
+                                  <i className="fa-solid fa-wallet text-[#D0021B] text-2xl"></i> 
+                                  <span>Vodafone Cash</span>
+                                </h3>
+                                <div className="px-3 py-1 bg-red-50 text-[#D0021B] rounded-full text-[10px] font-black uppercase tracking-widest border border-red-100">Official</div>
+                              </div>
+
+                              <div className="space-y-6">
                                  <div className="space-y-2">
-                                   <p className="text-[11px] text-zinc-500 font-bold leading-relaxed">⚠️ Please transfer the amount to this number <span className="text-zinc-900 font-black">{paymentNumber}</span>.</p>
-                                   <p className="text-[11px] text-zinc-500 font-bold leading-relaxed">📸 Please attach a screenshot of the transfer to confirm the transaction.</p>
-                                   <p className="text-[11px] text-[#D0021B] font-black uppercase tracking-tight mt-2 flex items-center gap-1">
-                                     ✅ Payment via <i className="fa-solid fa-wallet text-[#D0021B] text-[10px] mx-0.5 translate-y-[-1px]"></i> Vodafone Cash.
-                                   </p>
+                                    <label className="text-[8px] font-black text-zinc-400 uppercase tracking-widest px-1">Wallet Number</label>
+                                    <div className="p-5 bg-white rounded-2xl border-2 border-zinc-100 shadow-sm flex items-center justify-between group transition-all hover:border-[#007AFF]/20">
+                                       <span className="text-xl font-black tracking-[0.2em] font-mono text-zinc-900">{paymentNumber}</span>
+                                       <button onClick={() => { navigator.clipboard.writeText(paymentNumber); showNotify('Number Copied'); }} className="w-10 h-10 rounded-xl bg-[#007AFF]/10 text-[#007AFF] flex items-center justify-center hover:bg-[#007AFF] hover:text-white transition-all shadow-sm">
+                                         <i className="fa-solid fa-copy text-sm"></i>
+                                       </button>
+                                    </div>
+                                 </div>
+
+                                 <div className="space-y-4 pt-4 border-t border-zinc-200/50">
+                                   <div className="flex items-start gap-3">
+                                     <div className="mt-1 w-5 h-5 bg-zinc-900 text-white rounded-full flex items-center justify-center text-[10px] font-black shrink-0">1</div>
+                                     <p className="text-[12px] text-zinc-600 font-bold leading-relaxed">
+                                       Please transfer the exact amount to <span className="text-zinc-900 font-black decoration-[#007AFF]/30 underline decoration-2 underline-offset-4">{paymentNumber}</span>
+                                     </p>
+                                   </div>
+                                   <div className="flex items-start gap-3">
+                                     <div className="mt-1 w-5 h-5 bg-zinc-900 text-white rounded-full flex items-center justify-center text-[10px] font-black shrink-0">2</div>
+                                     <p className="text-[12px] text-zinc-600 font-bold leading-relaxed">
+                                       Take a screenshot of the transfer confirmation receipt
+                                     </p>
+                                   </div>
+                                   <div className="mt-6 p-4 bg-green-50 rounded-2xl border border-green-100 flex items-center gap-3">
+                                      <div className="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center shadow-lg shadow-green-200 shrink-0"><i className="fa-solid fa-check text-[10px]"></i></div>
+                                      <p className="text-[11px] text-green-700 font-black uppercase tracking-tight">
+                                        Payment via <i className="fa-solid fa-wallet text-[#D0021B] text-[10px] mx-0.5"></i> Vodafone Cash confirmed.
+                                      </p>
+                                   </div>
                                  </div>
                               </div>
                            </div>
-                           <button onClick={handleTelegramOrder} className="w-full py-5 bg-[#0088CC] text-white rounded-[2.5rem] font-black shadow-xl flex items-center justify-center gap-3 hover:scale-105 transition-transform">
-                             <i className="fa-brands fa-telegram text-2xl"></i> Open Telegram Chat
+                           <button onClick={handleTelegramOrder} className="w-full py-6 bg-[#0088CC] text-white rounded-[2.5rem] font-black shadow-2xl shadow-sky-500/20 flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all text-xs uppercase tracking-widest">
+                             <i className="fa-brands fa-telegram text-2xl"></i> Complete on Telegram
                            </button>
                         </div>
                       ) : (
