@@ -222,6 +222,22 @@ const App: React.FC = () => {
     finally { setIsPublishing(false); }
   };
 
+  const handleTelegramOrder = () => {
+    const selectedProd = dbProducts.find(p => p.id === orderProductId);
+    if (!selectedProd) return;
+
+    const message = `Hello, I would like to order a digital product:
+
+📱 Phone Type: ${orderDevice}
+📦 Category: ${selectedProd.category}
+🏷 Product: ${selectedProd.title}
+💰 Price: ${selectedProd.price.toLocaleString()} EGP
+
+✅ Payment has been sent via Vodafone Cash.`;
+
+    window.open(`https://t.me/${telegramUser}?text=${encodeURIComponent(message)}`, '_blank');
+  };
+
   return (
     <div className="min-h-screen pb-32 bg-[#F2F2F7]">
       <Header 
@@ -344,7 +360,6 @@ const App: React.FC = () => {
                     className="h-full w-full object-contain animate-in fade-in zoom-in-95 duration-500" 
                     alt={selectedProduct.title}
                   />
-                  {/* Zoom Overlay on Hover (Visual only) */}
                   <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
                 </div>
                 
@@ -484,7 +499,7 @@ const App: React.FC = () => {
                                  </div>
                               </div>
                            </div>
-                           <button onClick={() => window.open(`https://t.me/${telegramUser}?text=Order Request: ${dbProducts.find(p => p.id === orderProductId)?.title} for ${orderDevice}`, '_blank')} className="w-full py-5 bg-[#0088CC] text-white rounded-[2rem] font-black shadow-xl flex items-center justify-center gap-3 hover:scale-105 transition-transform">
+                           <button onClick={handleTelegramOrder} className="w-full py-5 bg-[#0088CC] text-white rounded-[2rem] font-black shadow-xl flex items-center justify-center gap-3 hover:scale-105 transition-transform">
                              <i className="fa-brands fa-telegram text-2xl"></i> Message Telegram
                            </button>
                         </div>
