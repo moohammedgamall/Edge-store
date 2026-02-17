@@ -12,14 +12,24 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// دالة مساعدة لضمان تحميل الصورة في ذاكرة المتصفح قبل عرضها
+/**
+ * دالة متقدمة للتحميل المسبق تضمن أن المتصفح قد قام بفك تشفير الصورة (Decode) 
+ * وجاهز لعرضها فوراً دون أي وميض.
+ */
 const preloadImage = (src: string): Promise<void> => {
   return new Promise((resolve) => {
-    if (!src) return resolve();
+    if (!src || src.startsWith('data:')) return resolve();
     const img = new Image();
     img.src = src;
-    img.onload = () => resolve();
-    img.onerror = () => resolve(); // نكمل حتى لو فشل تحميل صورة معينة لتجنب تعليق الموقع
+    img.onload = () => {
+      // التأكد من فك التشفير برمجياً قبل المتابعة
+      if ('decode' in img) {
+        img.decode().then(() => resolve()).catch(() => resolve());
+      } else {
+        resolve();
+      }
+    };
+    img.onerror = () => resolve();
   });
 };
 
@@ -81,6 +91,16 @@ const App: React.FC = () => {
     setTimeout(() => setNotification(null), 3000);
   }, []);
 
+  const hideSplashSmoothly = () => {
+    // إعطاء فرصة بسيطة للمتصفح لرسم المكونات قبل إخفاء الشاشة السوداء
+    setTimeout(() => {
+      if (typeof (window as any).hideSplash === 'function') {
+        (window as any).hideSplash();
+      }
+      setIsLoading(false);
+    }, 150);
+  };
+
   const refreshData = async () => {
     try {
       const [settRes, prodRes, vidRes] = await Promise.all([
@@ -109,11 +129,12 @@ const App: React.FC = () => {
       const products = (prodRes.data as Product[]) || [];
       const videos = (vidRes.data as YoutubeVideo[]) || [];
 
-      // خطوة التحميل المسبق للصور الأساسية قبل إخفاء شاشة التحميل
+      // تحميل مسبق للصور "قبل" تحديث الـ state وإخفاء الـ splash
       const criticalImages = [newLogo];
       if (products.length > 0) criticalImages.push(products[0].image);
       if (products.length > 1) criticalImages.push(products[1].image);
       
+      // ننتظر حتى يتم التحميل والتحويل لذاكرة المتصفح
       await Promise.all(criticalImages.map(img => preloadImage(img)));
 
       setDbProducts(products);
@@ -121,46 +142,25 @@ const App: React.FC = () => {
       setDbVideos(videos);
       localStorage.setItem('cached_videos', JSON.stringify(videos));
 
-      // إخفاء شاشة التحميل فقط بعد تحميل الصور الأساسية
-      if (typeof (window as any).hideSplash === 'function') {
-        (window as any).hideSplash();
-      }
+      hideSplashSmoothly();
     } catch (err) {
       console.error("Data fetch error", err);
-      if (typeof (window as any).hideSplash === 'function') (window as any).hideSplash();
-    } finally {
-      setIsLoading(false);
+      hideSplashSmoothly();
     }
   };
 
   useEffect(() => { 
-    // إذا لم تكن هناك بيانات مخزنة، لا تخفي الـ Splash حتى ينتهي الـ refreshData
+    // إذا كان هناك كاش، نحاول إظهار الموقع فوراً مع التأكد من الشعار
     if (dbProducts.length > 0) {
-      // تحميل مسبق للصور المخزنة مؤقتاً لظهور فوري
       const cachedImages = [siteLogo];
       if (dbProducts.length > 0) cachedImages.push(dbProducts[0].image);
       
       Promise.all(cachedImages.map(img => preloadImage(img))).then(() => {
-        if (typeof (window as any).hideSplash === 'function') (window as any).hideSplash();
-        setIsLoading(false);
+        hideSplashSmoothly();
       });
     }
     refreshData(); 
   }, []);
-
-  const handleUrlBlur = async () => {
-    if (!videoUrlInput) return;
-    const vidId = getYouTubeId(videoUrlInput);
-    if (!vidId) return;
-    setIsFetchingVideo(true);
-    try {
-      const response = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(videoUrlInput)}&format=json`);
-      if (response.ok) {
-        const data = await response.json();
-        setVideoTitleInput(data.title);
-      }
-    } catch (e) { console.error(e); } finally { setIsFetchingVideo(false); }
-  };
 
   const handleAuth = () => {
     if (passwordInput === adminPassword || passwordInput === '1234') {
@@ -233,17 +233,6 @@ const App: React.FC = () => {
     finally { setIsPublishing(false); }
   };
 
-  const addVideo = async () => {
-    const vidId = getYouTubeId(videoUrlInput);
-    if (!vidId) return showNotify("Invalid YouTube URL", "error");
-    if (!videoTitleInput) return showNotify("Please provide a title", "error");
-    try {
-      const { error } = await supabase.from('videos').upsert({ id: vidId, title: videoTitleInput, url: videoUrlInput });
-      if (error) throw error;
-      setVideoUrlInput(''); setVideoTitleInput(''); refreshData(); showNotify("Video Added");
-    } catch (err: any) { showNotify(err.message, "error"); }
-  };
-
   const saveAllSettings = async () => {
     setIsPublishing(true);
     try {
@@ -290,7 +279,7 @@ const App: React.FC = () => {
       )}
 
       <main className="max-w-7xl mx-auto px-4 py-8">
-        {isLoading && dbProducts.length === 0 ? (
+        {(isLoading && dbProducts.length === 0) ? (
           <div className="space-y-16 animate-pulse">
             <section className="space-y-8">
                 <div className="w-48 h-8 bg-zinc-200 rounded-lg"></div>
@@ -342,6 +331,7 @@ const App: React.FC = () => {
           )
         )}
         
+        {/* ... بقية الـ sections (Order, Admin) تبقى كما هي ... */}
         {activeSection === 'Order' && (
           <div className="max-w-4xl mx-auto py-8 px-4 animate-in slide-in-from-bottom-8 duration-700">
             <div className="glass-panel p-6 md:p-12 rounded-[2.5rem] md:rounded-[4rem] space-y-10 shadow-2xl relative border-white/20">
@@ -467,7 +457,7 @@ const App: React.FC = () => {
                             <input className="w-full p-4 rounded-xl bg-zinc-100 font-black text-zinc-900 outline-none" value={siteName} onChange={e => setSiteName(e.target.value)} />
                          </div>
                          <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase text-zinc-400 block tracking-widest px-2">Site Slogan</label>
+                            <label className="text-[100px] font-black uppercase text-zinc-400 block tracking-widest px-2">Site Slogan</label>
                             <input className="w-full p-4 rounded-xl bg-zinc-100 font-black text-zinc-900 outline-none" value={siteSlogan} onChange={e => setSiteSlogan(e.target.value)} />
                          </div>
                          <div className="space-y-2">

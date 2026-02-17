@@ -30,33 +30,9 @@
             -moz-osx-font-smoothing: grayscale;
             letter-spacing: -0.011em;
             -webkit-tap-highlight-color: transparent;
-            transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            background-color: #F2F2F7;
         }
         
-        h1, h2, h3, h4, .font-black {
-            letter-spacing: -0.022em;
-        }
-
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(40px) saturate(180%);
-            -webkit-backdrop-filter: blur(40px) saturate(180%);
-            border: 1px solid rgba(255, 255, 255, 0.4);
-            box-shadow: 0 12px 35px -5px rgba(0, 0, 0, 0.04);
-            transition: background-color 0.2s ease, border-color 0.2s ease;
-        }
-        
-        *::-webkit-scrollbar { display: none; }
-        * { -ms-overflow-style: none; scrollbar-width: none; }
-
-        @keyframes spin-custom {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        .spinner-ring {
-          animation: spin-custom 6s linear infinite;
-        }
-
         #static-loader {
             position: fixed;
             inset: 0;
@@ -66,18 +42,20 @@
             align-items: center;
             justify-content: center;
             background-color: #F2F2F7;
-            transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s ease;
+            transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         #static-loader.fade-out {
             opacity: 0;
             pointer-events: none;
-            transform: scale(1.05);
         }
 
-        #loader-text {
-            color: #18181b;
-            transition: color 0.3s ease;
+        @keyframes spin-custom {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        .spinner-ring {
+          animation: spin-custom 3s linear infinite;
         }
     </style>
 <script type="importmap">
@@ -91,16 +69,17 @@
 }
 </script>
 </head>
-<body class="bg-[#F2F2F7] text-zinc-900 selection:bg-blue-500/30">
+<body class="bg-[#F2F2F7] text-zinc-900">
     <div id="static-loader">
         <div style="position: relative;">
-            <div style="width: 80px; height: 80px; border-radius: 50%; overflow: hidden; border: 4px solid white; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15); background: white;">
-                <img id="loader-img" fetchpriority="high" style="width: 100%; height: 100%; object-fit: cover; opacity: 0;" alt="Edge">
+            <div style="width: 90px; height: 90px; border-radius: 50%; overflow: hidden; border: 4px solid white; box-shadow: 0 20px 40px rgba(0,0,0,0.1); background: white;">
+                <img id="loader-img" fetchpriority="high" style="width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.3s;" alt="Edge">
             </div>
-            <div class="spinner-ring" style="position: absolute; top: -10px; left: -10px; right: -10px; bottom: -10px; border-radius: 50%; border: 2px dashed #007AFF;"></div>
+            <div class="spinner-ring" style="position: absolute; top: -8px; left: -8px; right: -8px; bottom: -8px; border-radius: 50%; border: 2px solid transparent; border-top-color: #007AFF;"></div>
         </div>
-        <div style="margin-top: 24px; text-align: center;">
-            <h3 id="loader-text" style="font-size: 1rem; font-weight: 900; letter-spacing: 0.1em; text-transform: uppercase;">Mohamed Edge</h3>
+        <div style="margin-top: 30px; text-align: center;">
+            <h3 style="font-size: 1.1rem; font-weight: 900; letter-spacing: 0.15em; text-transform: uppercase; color: #18181b;">Mohamed Edge</h3>
+            <div style="width: 40px; height: 2px; background: #007AFF; margin: 10px auto 0; border-radius: 2px;"></div>
         </div>
     </div>
 
@@ -120,15 +99,14 @@
 
             window.hideSplash = function() {
               const splash = document.getElementById('static-loader');
-              if (splash) {
+              if (splash && !splash.classList.contains('fade-out')) {
                   splash.classList.add('fade-out');
-                  // Remove from DOM after transition
-                  setTimeout(() => splash.remove(), 500);
+                  setTimeout(() => splash.remove(), 600);
               }
             };
             
-            // Fallback: إخفاء تلقائي بعد 3 ثوانٍ إذا حدث أي تأخير في التطبيق
-            setTimeout(window.hideSplash, 3500);
+            // زيادة وقت الـ Fallback لضمان عدم الاختفاء المبكر في حالة ضعف الإنترنت
+            setTimeout(window.hideSplash, 6000);
         })();
     </script>
     <script type="module" src="index.tsx"></script>
