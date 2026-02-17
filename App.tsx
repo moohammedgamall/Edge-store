@@ -427,116 +427,136 @@ const App: React.FC = () => {
         )}
         
         {activeSection === 'Order' && (
-          <div className="max-w-5xl mx-auto py-4 md:py-8 lg:py-12 animate-in slide-in-from-bottom-8">
-            <div className="glass-panel p-6 sm:p-8 md:p-12 lg:p-16 rounded-[2.5rem] md:rounded-[4rem] space-y-8 md:space-y-12 shadow-3xl border-white/20">
+          <div className="max-w-6xl mx-auto py-4 md:py-8 lg:py-12 animate-in slide-in-from-bottom-12 duration-700">
+            <div className="glass-panel p-5 sm:p-8 md:p-12 lg:p-16 rounded-[2rem] sm:rounded-[3rem] md:rounded-[4rem] space-y-8 md:space-y-12 shadow-3xl border-white/20">
                 <div className="text-center space-y-4">
-                  <div className="w-14 h-14 md:w-20 md:h-20 bg-[#007AFF]/10 text-[#007AFF] rounded-2xl md:rounded-3xl flex items-center justify-center mx-auto mb-2 border border-[#007AFF]/20 shadow-xl">
-                    <i className="fa-solid fa-cart-shopping text-2xl md:text-3xl"></i>
+                  <div className="w-14 h-14 md:w-24 md:h-24 bg-[#007AFF]/10 text-[#007AFF] rounded-2xl md:rounded-[2rem] flex items-center justify-center mx-auto mb-2 border border-[#007AFF]/20 shadow-xl transition-transform hover:scale-110">
+                    <i className="fa-solid fa-cart-shopping text-2xl md:text-4xl"></i>
                   </div>
-                  <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter text-zinc-900">Checkout</h2>
-                  <p className="text-zinc-500 font-semibold text-sm md:text-lg">Finalize your purchase via Telegram.</p>
+                  <h2 className="text-3xl sm:text-4xl md:text-6xl font-black uppercase tracking-tighter text-zinc-900 leading-tight">Checkout</h2>
+                  <p className="text-zinc-500 font-semibold text-sm sm:text-base md:text-xl max-w-2xl mx-auto">Complete your order details and payment to receive your digital assets.</p>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16">
                    {/* Left Column: Form Controls */}
-                   <div className="lg:col-span-5 space-y-10">
-                      <div className="space-y-5">
-                        <label className="text-[10px] md:text-[11px] font-black text-zinc-400 uppercase tracking-widest px-2 block">Your Device</label>
+                   <div className="lg:col-span-5 space-y-10 lg:sticky lg:top-32 h-fit">
+                      <div className="space-y-6">
+                        <label className="text-[11px] md:text-[13px] font-black text-zinc-400 uppercase tracking-[0.2em] px-3 block">1. Device selection</label>
                         <div className="grid grid-cols-2 gap-4">
                           {['Realme', 'Oppo'].map(d => (
                             <button 
                               key={d} 
                               onClick={() => setOrderDevice(d as any)} 
-                              className={`py-5 rounded-2xl font-black text-sm md:text-base transition-all border-2 flex items-center justify-center gap-3 ${orderDevice === d ? 'bg-[#007AFF] text-white border-[#007AFF] shadow-2xl shadow-blue-500/30' : 'bg-zinc-100 border-transparent text-zinc-500 hover:bg-zinc-200'}`}
+                              className={`py-6 rounded-3xl font-black text-base sm:text-lg transition-all border-2 flex flex-col items-center justify-center gap-3 ${orderDevice === d ? 'bg-[#007AFF] text-white border-[#007AFF] shadow-2xl shadow-blue-500/40 scale-[1.03]' : 'bg-zinc-100/50 border-transparent text-zinc-400 hover:bg-zinc-200/50'}`}
                             >
-                              <i className={`fa-solid ${d === 'Realme' ? 'fa-mobile' : 'fa-mobile-screen'} text-sm`}></i>
+                              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${orderDevice === d ? 'bg-white/20' : 'bg-zinc-200/50'}`}>
+                                <i className={`fa-solid ${d === 'Realme' ? 'fa-mobile-screen' : 'fa-mobile'} text-xl`}></i>
+                              </div>
                               {d}
                             </button>
                           ))}
                         </div>
                       </div>
                       
-                      <div className="space-y-5">
-                        <label className="text-[10px] md:text-[11px] font-black text-zinc-400 uppercase tracking-widest px-2 block">Selected Asset</label>
-                        <div className="relative">
+                      <div className="space-y-6">
+                        <label className="text-[11px] md:text-[13px] font-black text-zinc-400 uppercase tracking-[0.2em] px-3 block">2. Select Digital Asset</label>
+                        <div className="relative group">
                           <select 
-                            className="w-full p-5 md:p-6 rounded-2xl bg-zinc-100 font-black outline-none text-zinc-900 border-2 border-transparent focus:border-[#007AFF] appearance-none cursor-pointer transition-all text-sm md:text-base" 
+                            className="w-full p-6 md:p-8 rounded-[2rem] bg-zinc-100/50 font-black outline-none text-zinc-900 border-2 border-transparent focus:border-[#007AFF] focus:bg-white appearance-none cursor-pointer transition-all text-base md:text-xl shadow-inner group-hover:bg-zinc-100" 
                             value={orderProductId} 
                             onChange={e => setOrderProductId(e.target.value)}
                           >
-                            <option value="">Select an asset...</option>
-                            {dbProducts.map(p => <option key={p.id} value={p.id}>{p.title} ({p.price} EGP)</option>)}
+                            <option value="">Pick an item...</option>
+                            {dbProducts.map(p => <option key={p.id} value={p.id}>{p.title} — {p.price} EGP</option>)}
                           </select>
-                          <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-400">
-                            <i className="fa-solid fa-chevron-down text-xs"></i>
+                          <div className="absolute right-8 top-1/2 -translate-y-1/2 pointer-events-none text-[#007AFF] group-hover:scale-125 transition-transform">
+                            <i className="fa-solid fa-chevron-down text-sm"></i>
                           </div>
                         </div>
                       </div>
 
-                      {/* Summary Section for Desktop/Tablet */}
+                      {/* Order Summary Summary */}
                       {orderProductId && (
-                        <div className="hidden lg:block p-8 bg-[#007AFF]/5 rounded-[2.5rem] border border-[#007AFF]/10 space-y-4">
-                          <span className="text-[10px] font-black text-[#007AFF] uppercase tracking-[0.2em]">Order Summary</span>
-                          <div className="flex justify-between items-end">
-                             <div className="flex flex-col">
-                               <span className="text-lg font-black text-zinc-900">{dbProducts.find(p => p.id === orderProductId)?.title}</span>
-                               <span className="text-zinc-500 font-bold text-sm">Digital Asset • for {orderDevice}</span>
-                             </div>
-                             <span className="text-2xl font-black text-[#007AFF]">{dbProducts.find(p => p.id === orderProductId)?.price} EGP</span>
+                        <div className="p-8 bg-zinc-900 rounded-[2.5rem] text-white space-y-5 shadow-2xl animate-in slide-in-from-left-4 duration-500">
+                          <div className="flex items-center gap-3">
+                            <div className="w-1.5 h-4 bg-[#007AFF] rounded-full"></div>
+                            <span className="text-[10px] font-black uppercase tracking-[0.25em] text-[#007AFF]">Order Summary</span>
+                          </div>
+                          <div className="space-y-1">
+                            <h4 className="text-xl font-black tracking-tight">{dbProducts.find(p => p.id === orderProductId)?.title}</h4>
+                            <p className="text-zinc-500 font-bold text-sm uppercase tracking-widest">{dbProducts.find(p => p.id === orderProductId)?.category} • {orderDevice}</p>
+                          </div>
+                          <div className="pt-4 border-t border-white/10 flex justify-between items-center">
+                            <span className="text-zinc-400 font-bold text-sm">Total Value</span>
+                            <span className="text-3xl font-black text-white tracking-tighter">{dbProducts.find(p => p.id === orderProductId)?.price} <span className="text-xs text-[#007AFF]">EGP</span></span>
                           </div>
                         </div>
                       )}
                    </div>
 
                    {/* Right Column: Payment Details */}
-                   <div className="lg:col-span-7 relative">
+                   <div className="lg:col-span-7">
                       {orderProductId ? (
-                        <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500">
-                           <div className="p-6 md:p-10 bg-zinc-50/80 rounded-[2.5rem] md:rounded-[3rem] border border-zinc-200/60 shadow-inner space-y-8 md:space-y-12">
-                              <div className="flex items-center justify-between">
-                                <h3 className="text-xl md:text-2xl font-black tracking-tight text-zinc-900 flex items-center gap-3">
-                                  <i className="fa-solid fa-wallet text-[#D0021B] text-2xl md:text-3xl"></i> 
-                                  <span>Vodafone Cash</span>
-                                </h3>
-                                <div className="px-4 py-1.5 bg-red-50 text-[#D0021B] rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-widest border border-red-100 shadow-sm">Verified Number</div>
+                        <div className="space-y-8 animate-in fade-in zoom-in-95 duration-700">
+                           <div className="p-6 sm:p-10 md:p-14 bg-zinc-50/80 rounded-[2.5rem] md:rounded-[3.5rem] border border-zinc-200/60 shadow-inner space-y-10 md:space-y-14">
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+                                <div className="flex items-center gap-4">
+                                  <div className="w-16 h-16 bg-[#D0021B]/10 rounded-[1.5rem] flex items-center justify-center text-[#D0021B] shadow-lg shadow-red-500/5">
+                                    <i className="fa-solid fa-wallet text-3xl"></i>
+                                  </div>
+                                  <div className="flex flex-col">
+                                    <h3 className="text-2xl md:text-3xl font-black tracking-tighter text-zinc-900">Vodafone Cash</h3>
+                                    <span className="text-[10px] font-black text-red-600 uppercase tracking-widest">Global Wallet Support</span>
+                                  </div>
+                                </div>
+                                <div className="px-5 py-2 bg-white text-[#D0021B] rounded-full text-[11px] font-black uppercase tracking-[0.15em] border border-zinc-100 shadow-sm flex items-center gap-2 w-fit">
+                                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                                  Official Account
+                                </div>
                               </div>
 
-                              <div className="space-y-8 md:space-y-10">
-                                 <div className="space-y-3">
-                                    <label className="text-[9px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest px-2">Wallet Account Number</label>
-                                    <div className="p-5 md:p-7 bg-white rounded-3xl border-2 border-zinc-100 shadow-sm flex items-center justify-between group transition-all hover:border-[#007AFF]/30 hover:shadow-xl hover:shadow-zinc-200/50">
-                                       <span className="text-2xl md:text-3xl font-black tracking-[0.25em] font-mono text-zinc-900 truncate pr-4">{paymentNumber}</span>
+                              <div className="space-y-10">
+                                 <div className="space-y-4">
+                                    <label className="text-[11px] md:text-[12px] font-black text-zinc-400 uppercase tracking-[0.2em] px-4">Account Number</label>
+                                    <div className="p-6 sm:p-8 bg-white rounded-[2.5rem] border-2 border-zinc-100 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-6 group transition-all hover:border-[#007AFF]/40 hover:shadow-2xl hover:shadow-zinc-200/50">
+                                       <span className="text-3xl sm:text-4xl md:text-5xl font-black tracking-[0.3em] font-mono text-zinc-900">{paymentNumber}</span>
                                        <button 
                                          onClick={() => { navigator.clipboard.writeText(paymentNumber); showNotify('Number Copied'); }} 
-                                         className="shrink-0 w-12 h-12 md:w-16 md:h-16 rounded-2xl bg-[#007AFF] text-white flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-xl shadow-blue-500/30"
+                                         className="w-full sm:w-20 sm:h-20 py-4 sm:py-0 rounded-3xl bg-[#007AFF] text-white flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-2xl shadow-blue-500/40 group-hover:rotate-2"
                                        >
-                                         <i className="fa-solid fa-copy text-lg md:text-xl"></i>
+                                         <i className="fa-solid fa-copy text-2xl"></i>
                                        </button>
                                     </div>
                                  </div>
 
-                                 <div className="space-y-6 pt-6 md:pt-10 border-t border-zinc-200/60">
-                                   <div className="flex items-start gap-4 md:gap-6 group">
-                                     <div className="mt-0.5 w-6 h-6 md:w-8 md:h-8 bg-zinc-900 text-white rounded-xl flex items-center justify-center text-[12px] md:text-sm font-black shrink-0 shadow-lg group-hover:bg-[#007AFF] transition-colors">1</div>
-                                     <p className="text-[14px] md:text-[16px] text-zinc-600 font-bold leading-relaxed">
-                                       Please transfer the exact amount of <span className="text-zinc-900 font-black bg-zinc-100 px-2 py-0.5 rounded-lg">{dbProducts.find(p => p.id === orderProductId)?.price} EGP</span> to the number above.
-                                     </p>
+                                 <div className="space-y-8 pt-10 border-t border-zinc-200/60">
+                                   <div className="flex items-start gap-5 md:gap-8 group">
+                                     <div className="w-10 h-10 md:w-12 md:h-12 bg-zinc-900 text-white rounded-2xl flex items-center justify-center text-base md:text-xl font-black shrink-0 shadow-xl group-hover:bg-[#007AFF] transition-all group-hover:scale-110">1</div>
+                                     <div className="space-y-1">
+                                        <p className="text-base md:text-xl text-zinc-800 font-black leading-tight">Transfer Funds</p>
+                                        <p className="text-sm md:text-lg text-zinc-500 font-bold leading-relaxed">
+                                          Send <span className="text-[#007AFF] font-black underline decoration-2 underline-offset-4">{dbProducts.find(p => p.id === orderProductId)?.price} EGP</span> to our wallet.
+                                        </p>
+                                     </div>
                                    </div>
-                                   <div className="flex items-start gap-4 md:gap-6 group">
-                                     <div className="mt-0.5 w-6 h-6 md:w-8 md:h-8 bg-zinc-900 text-white rounded-xl flex items-center justify-center text-[12px] md:text-sm font-black shrink-0 shadow-lg group-hover:bg-[#007AFF] transition-colors">2</div>
-                                     <p className="text-[14px] md:text-[16px] text-zinc-600 font-bold leading-relaxed">
-                                       Take a clear screenshot of the successful transfer confirmation.
-                                     </p>
+                                   <div className="flex items-start gap-5 md:gap-8 group">
+                                     <div className="w-10 h-10 md:w-12 md:h-12 bg-zinc-900 text-white rounded-2xl flex items-center justify-center text-base md:text-xl font-black shrink-0 shadow-xl group-hover:bg-[#007AFF] transition-all group-hover:scale-110">2</div>
+                                     <div className="space-y-1">
+                                        <p className="text-base md:text-xl text-zinc-800 font-black leading-tight">Save Confirmation</p>
+                                        <p className="text-sm md:text-lg text-zinc-500 font-bold leading-relaxed">
+                                          Keep a clear screenshot of the successful transfer receipt.
+                                        </p>
+                                     </div>
                                    </div>
                                    
-                                   <div className="mt-10 p-5 md:p-6 bg-green-50 rounded-3xl border border-green-100 flex items-center gap-4 md:gap-5 shadow-sm">
-                                      <div className="w-10 h-10 md:w-12 md:h-12 bg-green-500 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-green-200 shrink-0">
-                                        <i className="fa-solid fa-check text-sm md:text-lg"></i>
+                                   <div className="mt-12 p-6 md:p-10 bg-green-50/80 rounded-[2.5rem] border border-green-100 flex items-center gap-6 shadow-sm animate-in fade-in duration-1000">
+                                      <div className="w-14 h-14 md:w-20 md:h-20 bg-green-500 text-white rounded-[1.5rem] md:rounded-[2rem] flex items-center justify-center shadow-xl shadow-green-500/30 shrink-0">
+                                        <i className="fa-solid fa-check text-2xl md:text-4xl"></i>
                                       </div>
-                                      <div className="flex flex-col">
-                                        <p className="text-[12px] md:text-[14px] text-green-800 font-black uppercase tracking-tight leading-none mb-1">Payment Method</p>
-                                        <p className="text-[11px] md:text-[12px] text-green-700 font-bold opacity-80">
-                                          Supported via <i className="fa-solid fa-wallet text-[#D0021B] text-[10px] mx-0.5"></i> Vodafone Cash Global.
+                                      <div className="flex flex-col gap-1">
+                                        <p className="text-[13px] md:text-[16px] text-green-900 font-black uppercase tracking-widest leading-none">Security Guaranteed</p>
+                                        <p className="text-xs md:text-base text-green-700 font-bold opacity-70">
+                                          Secure transactions via <i className="fa-solid fa-wallet text-[#D0021B] mx-0.5"></i> Vodafone Cash infrastructure.
                                         </p>
                                       </div>
                                    </div>
@@ -544,24 +564,28 @@ const App: React.FC = () => {
                               </div>
                            </div>
                            
-                           <div className="pt-4">
+                           <div className="pt-8 md:pt-12">
                              <button 
                                onClick={handleTelegramOrder} 
-                               className="w-full py-6 md:py-8 bg-[#0088CC] text-white rounded-[2rem] md:rounded-[3rem] font-black shadow-2xl shadow-sky-500/30 flex items-center justify-center gap-4 hover:scale-[1.02] active:scale-95 transition-all text-sm md:text-lg uppercase tracking-[0.15em]"
+                               className="group w-full py-8 md:py-10 bg-[#0088CC] text-white rounded-[2.5rem] md:rounded-[4rem] font-black shadow-3xl shadow-sky-500/40 flex items-center justify-center gap-6 hover:scale-[1.03] active:scale-[0.98] transition-all text-base md:text-2xl uppercase tracking-[0.2em]"
                              >
-                               <i className="fa-brands fa-telegram text-3xl md:text-4xl"></i> 
-                               <span>Send Message on Telegram</span>
+                               <i className="fa-brands fa-telegram text-4xl md:text-6xl group-hover:rotate-12 transition-transform"></i> 
+                               <span>Confirm on Telegram</span>
                              </button>
-                             <p className="text-center mt-6 text-zinc-400 font-black text-[9px] md:text-[10px] uppercase tracking-widest">A chat window will open automatically</p>
+                             <div className="flex items-center justify-center gap-4 mt-8 opacity-40">
+                                <div className="h-px w-8 bg-zinc-400"></div>
+                                <p className="text-[10px] md:text-[12px] font-black uppercase tracking-[0.3em] text-zinc-500">Fast delivery within minutes</p>
+                                <div className="h-px w-8 bg-zinc-400"></div>
+                             </div>
                            </div>
                         </div>
                       ) : (
-                        <div className="h-full min-h-[400px] flex flex-col items-center justify-center text-center p-12 bg-zinc-50 rounded-[3rem] md:rounded-[4rem] border-2 border-dashed border-zinc-200 opacity-60">
-                           <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-inner mb-8">
-                             <i className="fa-solid fa-shopping-bag text-5xl text-zinc-200"></i>
+                        <div className="h-full min-h-[500px] flex flex-col items-center justify-center text-center p-12 bg-zinc-100/50 rounded-[3rem] md:rounded-[4.5rem] border-4 border-dashed border-zinc-200/50 opacity-80 animate-pulse">
+                           <div className="w-32 h-32 bg-white rounded-full flex items-center justify-center shadow-inner mb-10 border border-zinc-200/50">
+                             <i className="fa-solid fa-bag-shopping text-6xl text-zinc-100"></i>
                            </div>
-                           <p className="text-lg md:text-xl font-black text-zinc-400 uppercase tracking-widest">Select an asset to continue</p>
-                           <p className="text-zinc-400 font-medium mt-3 text-sm max-w-xs">Please pick a digital product from the list to see payment details.</p>
+                           <p className="text-2xl md:text-3xl font-black text-zinc-400 uppercase tracking-widest">Awaiting Selection</p>
+                           <p className="text-zinc-400 font-bold mt-5 text-base md:text-xl max-w-sm leading-relaxed">Please pick a digital product from the left menu to unlock the payment vault.</p>
                         </div>
                       )}
                    </div>
