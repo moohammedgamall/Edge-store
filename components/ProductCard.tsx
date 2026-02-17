@@ -9,12 +9,10 @@ interface ProductCardProps {
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({ product, onBuy, onPreview }) => {
-  // Function to replace Apple logo character with FontAwesome icon
   const formatTitle = (title: string) => {
-    const appleChar = '\uF8FF'; // Standard Private Use Area Apple Logo
+    const appleChar = '\uF8FF';
     if (!title.includes(appleChar) && !title.includes('')) return title;
     
-    // Support both the character and the emoji-like representation
     const regex = /[\uF8FF|]/g;
     const parts = title.split(regex);
     
@@ -32,7 +30,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onBuy, onPreview }) 
 
   return (
     <div className="glass-panel group flex flex-col h-full relative overflow-hidden rounded-[2.5rem] transition-all duration-500 hover:scale-[1.02] hover:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] dark:hover:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] border border-white/40 dark:border-white/5 hover:border-[#007AFF]/40">
-      {/* Image Container */}
       <div 
         onClick={() => onPreview(product.id)}
         className="aspect-[4/5] w-full p-4 bg-zinc-100/30 dark:bg-zinc-900/40 cursor-pointer relative shrink-0 overflow-hidden"
@@ -40,6 +37,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onBuy, onPreview }) 
         <img 
           src={product.image} 
           aria-hidden="true"
+          loading="lazy"
           className="absolute inset-0 h-full w-full object-cover blur-3xl opacity-30 scale-125"
         />
         
@@ -47,6 +45,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onBuy, onPreview }) 
           <img 
             src={product.image} 
             alt={product.title}
+            loading="lazy"
             className="h-full w-full object-contain"
           />
         </div>
@@ -71,7 +70,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onBuy, onPreview }) 
         )}
       </div>
 
-      {/* Content Section */}
       <div className="p-7 flex flex-col flex-grow gap-3">
         <div 
           onClick={() => onPreview(product.id)}

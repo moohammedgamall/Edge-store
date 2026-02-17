@@ -64,7 +64,6 @@ const App: React.FC = () => {
   }, []);
 
   const refreshData = async () => {
-    setIsLoading(true);
     try {
       const [prodRes, vidRes, settRes] = await Promise.all([
         supabase.from('products').select('*').order('created_at', { ascending: false }),
@@ -85,15 +84,20 @@ const App: React.FC = () => {
         });
       }
     } catch (err) {
-      showNotify("Failed to fetch data", "error");
+      console.error("Data fetch error", err);
     } finally {
       setIsLoading(false);
+      // إخفاء شاشة التحميل الساكنة فور توفر البيانات أو انتهاء المحاولة
+      if (typeof (window as any).hideSplash === 'function') {
+        (window as any).hideSplash();
+      }
     }
   };
 
-  useEffect(() => { refreshData(); }, []);
+  useEffect(() => { 
+    refreshData(); 
+  }, []);
 
-  // جلب عنوان فيديو اليوتيوب تلقائياً
   const handleUrlBlur = async () => {
     if (!videoUrlInput) return;
     const vidId = getYouTubeId(videoUrlInput);
@@ -101,7 +105,6 @@ const App: React.FC = () => {
     
     setIsFetchingVideo(true);
     try {
-      // استخدام OEmbed API المجاني من يوتيوب
       const response = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(videoUrlInput)}&format=json`);
       if (response.ok) {
         const data = await response.json();
@@ -227,9 +230,12 @@ const App: React.FC = () => {
 
       <main className="max-w-7xl mx-auto px-4 py-8">
         {isLoading && dbProducts.length === 0 ? (
-          <div className="py-20 text-center animate-pulse">
-            <div className="w-12 h-12 border-4 border-[#007AFF] border-t-transparent rounded-full mx-auto animate-spin mb-4"></div>
-            <p className="text-[10px] font-black uppercase text-zinc-400">Loading Marketplace...</p>
+          <div className="py-20 text-center">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="glass-panel rounded-[2.5rem] aspect-[4/6] animate-pulse bg-zinc-200 dark:bg-zinc-800/50"></div>
+              ))}
+            </div>
           </div>
         ) : (
           (['Home', 'Themes', 'Widgets', 'Walls'].includes(activeSection)) && (
@@ -258,7 +264,7 @@ const App: React.FC = () => {
                     {dbVideos.map(vid => (
                       <div key={vid.id} onClick={() => window.open(vid.url, '_blank')} className="glass-panel group overflow-hidden rounded-[2.5rem] cursor-pointer transition-all border border-white/20 relative">
                         <div className="aspect-video relative overflow-hidden bg-zinc-900">
-                           <img src={`https://img.youtube.com/vi/${vid.id}/maxresdefault.jpg`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 opacity-80" alt="" />
+                           <img loading="lazy" src={`https://img.youtube.com/vi/${vid.id}/maxresdefault.jpg`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 opacity-80" alt="" />
                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
                            <div className="absolute inset-0 flex items-center justify-center">
                               <div className="w-14 h-14 bg-red-600 text-white rounded-full flex items-center justify-center shadow-2xl scale-90 group-hover:scale-110 transition-all">
@@ -285,13 +291,13 @@ const App: React.FC = () => {
                 <div className="w-full lg:w-auto shrink-0 flex flex-col items-center gap-8">
                    <div className="relative aspect-[1290/2796] w-full max-w-[320px] rounded-[40px] bg-black p-3 shadow-3xl">
                       <div className="relative w-full h-full rounded-[30px] overflow-hidden bg-zinc-900">
-                        <img src={selectedProduct.gallery && selectedProduct.gallery.length > 0 ? selectedProduct.gallery[previewImageIndex] : selectedProduct.image} className="w-full h-full object-cover" alt="" />
+                        <img loading="eager" src={selectedProduct.gallery && selectedProduct.gallery.length > 0 ? selectedProduct.gallery[previewImageIndex] : selectedProduct.image} className="w-full h-full object-cover" alt="" />
                       </div>
                    </div>
                    <div className="flex flex-wrap gap-2 justify-center">
                       {(selectedProduct.gallery?.length ? selectedProduct.gallery : [selectedProduct.image]).map((img, idx) => (
                         <button key={idx} onClick={() => setPreviewImageIndex(idx)} className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${previewImageIndex === idx ? 'border-[#007AFF] scale-110' : 'border-transparent opacity-40 hover:opacity-100'}`}>
-                          <img src={img} className="w-full h-full object-cover" alt="" />
+                          <img loading="lazy" src={img} className="w-full h-full object-cover" alt="" />
                         </button>
                       ))}
                    </div>
@@ -405,7 +411,7 @@ const App: React.FC = () => {
                        <div className="space-y-4">
                           <label className="text-[10px] font-black uppercase text-zinc-400 px-2 tracking-widest">Cover Image</label>
                           <div className="aspect-video bg-zinc-100 dark:bg-zinc-800 rounded-[2rem] overflow-hidden relative border-2 border-dashed border-zinc-300 dark:border-zinc-700 hover:border-[#007AFF] transition-colors group">
-                             {editProduct.image ? <img src={editProduct.image} className="w-full h-full object-cover" /> : <div className="w-full h-full flex flex-col items-center justify-center opacity-30"><i className="fa-solid fa-cloud-arrow-up text-3xl mb-2"></i><span className="text-[10px] font-black uppercase">Click to upload</span></div>}
+                             {editProduct.image ? <img loading="lazy" src={editProduct.image} className="w-full h-full object-cover" /> : <div className="w-full h-full flex flex-col items-center justify-center opacity-30"><i className="fa-solid fa-cloud-arrow-up text-3xl mb-2"></i><span className="text-[10px] font-black uppercase">Click to upload</span></div>}
                              <input type="file" accept="image/*" onChange={async e => { if(e.target.files?.[0]) setEditProduct({...editProduct, image: await fileToBase64(e.target.files[0])}); }} className="absolute inset-0 opacity-0 cursor-pointer" />
                           </div>
                           <div className="space-y-2">
@@ -413,7 +419,7 @@ const App: React.FC = () => {
                              <div className="grid grid-cols-4 gap-2">
                                {editProduct.gallery?.map((g, i) => (
                                  <div key={i} className="aspect-square rounded-lg bg-zinc-200 dark:bg-zinc-900 relative group overflow-hidden">
-                                   <img src={g} className="w-full h-full object-cover" />
+                                   <img loading="lazy" src={g} className="w-full h-full object-cover" />
                                    <button onClick={() => setEditProduct({...editProduct, gallery: editProduct.gallery?.filter((_, idx) => idx !== i)})} className="absolute inset-0 bg-red-600/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white"><i className="fa-solid fa-trash"></i></button>
                                  </div>
                                ))}
@@ -435,7 +441,7 @@ const App: React.FC = () => {
                    {dbProducts.map(p => (
                      <div key={p.id} className="p-4 glass-panel rounded-3xl flex items-center justify-between group hover:border-[#007AFF]/30 transition-all">
                         <div className="flex items-center gap-4">
-                           <img src={p.image} className="w-14 h-14 rounded-2xl object-cover shadow-sm" />
+                           <img loading="lazy" src={p.image} className="w-14 h-14 rounded-2xl object-cover shadow-sm" />
                            <div>
                              <p className="font-black text-sm text-zinc-900 dark:text-zinc-100">{p.title}</p>
                              <p className="text-[9px] text-[#007AFF] font-black uppercase tracking-widest">{p.category} • {p.price} EGP</p>
@@ -480,7 +486,7 @@ const App: React.FC = () => {
                     {dbVideos.map(v => (
                        <div key={v.id} className="p-4 glass-panel rounded-2xl flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                             <div className="w-16 h-10 bg-black rounded overflow-hidden"><img src={`https://img.youtube.com/vi/${v.id}/default.jpg`} className="w-full h-full object-cover" /></div>
+                             <div className="w-16 h-10 bg-black rounded overflow-hidden"><img loading="lazy" src={`https://img.youtube.com/vi/${v.id}/default.jpg`} className="w-full h-full object-cover" /></div>
                              <p className="font-bold text-xs truncate max-w-[150px] text-zinc-900 dark:text-zinc-100">{v.title}</p>
                           </div>
                           <button onClick={async () => { if(confirm('Delete video?')) { await supabase.from('videos').delete().eq('id', v.id); refreshData(); } }} className="text-red-500 hover:scale-110 transition-transform"><i className="fa-solid fa-trash-can"></i></button>
@@ -499,14 +505,14 @@ const App: React.FC = () => {
                          <div className="space-y-4 text-center">
                            <label className="text-[10px] font-black uppercase text-zinc-400 block tracking-widest">Main Header Logo</label>
                            <div className="w-24 h-24 mx-auto rounded-full overflow-hidden relative border-4 border-[#007AFF]/20 bg-zinc-100 shadow-xl group">
-                             <img src={siteLogo} className="w-full h-full object-cover" />
+                             <img loading="lazy" src={siteLogo} className="w-full h-full object-cover" />
                              <input type="file" accept="image/*" onChange={async e => { if(e.target.files?.[0]) { const b64 = await fileToBase64(e.target.files[0]); await supabase.from('settings').upsert({key: 'site_logo', value: b64}); refreshData(); showNotify("Header logo updated"); } }} className="absolute inset-0 opacity-0 cursor-pointer" />
                            </div>
                          </div>
                          <div className="space-y-4 text-center">
                            <label className="text-[10px] font-black uppercase text-zinc-400 block tracking-widest">Loading Screen Logo</label>
                            <div className="w-24 h-24 mx-auto rounded-full overflow-hidden relative border-4 border-amber-500/20 bg-zinc-100 shadow-xl group">
-                             <img src={loaderLogo} className="w-full h-full object-cover" />
+                             <img loading="lazy" src={loaderLogo} className="w-full h-full object-cover" />
                              <input type="file" accept="image/*" onChange={async e => { if(e.target.files?.[0]) { const b64 = await fileToBase64(e.target.files[0]); await supabase.from('settings').upsert({key: 'loader_logo', value: b64}); refreshData(); showNotify("Loading logo updated"); } }} className="absolute inset-0 opacity-0 cursor-pointer" />
                            </div>
                            <p className="text-[9px] text-zinc-400 font-bold italic">Changes splash logo on next reload.</p>
