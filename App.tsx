@@ -251,29 +251,36 @@ const App: React.FC = () => {
         { key: 'site_name', value: siteName },
         { key: 'site_slogan', value: siteSlogan },
         { key: 'payment_number', value: paymentNumber },
-        { key: 'telegram_user', value: telegramUser }
+        { key: 'telegram_user', value: telegramUser },
+        { key: 'site_logo', value: siteLogo },
+        { key: 'loader_logo', value: loaderLogo }
       ];
       const { error } = await supabase.from('settings').upsert(settings);
       if (error) throw error;
+      
+      // Update local storage for immediate loader change next time
+      localStorage.setItem('cached_loader_logo', loaderLogo);
+      
       showNotify("Settings Saved to Cloud");
       await refreshData();
     } catch (err: any) { showNotify(err.message, "error"); }
     finally { setIsPublishing(false); }
   };
 
+  // Fixed handleTelegramOrder function to resolve the "Cannot find name" error.
   const handleTelegramOrder = () => {
-    const selectedProd = dbProducts.find(p => p.id === orderProductId);
-    if (!selectedProd) return;
-
-    const message = `Hello, I would like to order a digital product:
-
-📱 Phone Type: ${orderDevice}
-📦 Category: ${selectedProd.category}
-🏷 Product: ${selectedProd.title}
-💰 Price: ${selectedProd.price.toLocaleString()} EGP
-
-✅ Payment has been sent via Vodafone Cash.`;
-
+    const product = dbProducts.find(p => p.id === orderProductId);
+    if (!product) {
+      showNotify("Please select a product first", "error");
+      return;
+    }
+    const message = `🛒 *New Order Confirmation Request*\n\n` +
+                 `📦 *Product:* ${product.title}\n` +
+                 `📱 *Device:* ${orderDevice}\n` +
+                 `💰 *Price:* ${product.price} EGP\n` +
+                 `🗂️ *Category:* ${product.category}\n\n` +
+                 `I have completed the payment via Vodafone Cash. Please verify and send the asset.`;
+    
     window.open(`https://t.me/${telegramUser}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
@@ -682,19 +689,57 @@ const App: React.FC = () => {
             )}
             {adminTab === 'Settings' && (
               <div className="space-y-10">
-                 <div className="glass-panel p-10 rounded-[3rem] space-y-10">
-                    <h3 className="text-2xl font-black text-zinc-900 uppercase">Cloud Configuration</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                 <div className="glass-panel p-6 sm:p-10 rounded-[2.5rem] sm:rounded-[3rem] space-y-10">
+                    <h3 className="text-2xl font-black text-zinc-900 uppercase tracking-tighter">Cloud Configuration</h3>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
                        <section className="space-y-6">
-                         <div className="space-y-2"><label className="text-[10px] font-black uppercase text-zinc-400 block px-2">Store Name</label><input className="w-full p-4 rounded-xl bg-zinc-100 font-black text-zinc-900 border-2 border-transparent focus:border-[#007AFF]" value={siteName} onChange={e => setSiteName(e.target.value)} /></div>
-                         <div className="space-y-2"><label className="text-[10px] font-black uppercase text-zinc-400 block px-2">Tagline</label><input className="w-full p-4 rounded-xl bg-zinc-100 font-black text-zinc-900 border-2 border-transparent focus:border-[#007AFF]" value={siteSlogan} onChange={e => setSiteSlogan(e.target.value)} /></div>
-                         <div className="space-y-2"><label className="text-[10px] font-black uppercase text-zinc-400 block px-2 flex items-center gap-1"><i className="fa-solid fa-wallet text-[#D0021B]"></i> Vodafone Cash</label><input className="w-full p-4 rounded-xl bg-zinc-100 font-black text-zinc-900 border-2 border-transparent focus:border-[#007AFF]" value={paymentNumber} onChange={e => setPaymentNumber(e.target.value)} /></div>
+                         <div className="space-y-2">
+                           <label className="text-[10px] font-black uppercase text-zinc-400 block px-2 tracking-widest">Store Identity</label>
+                           <div className="space-y-4 p-6 bg-zinc-50 rounded-[2rem] border border-zinc-200/50">
+                              <input className="w-full p-4 rounded-xl bg-white font-black text-zinc-900 border-2 border-transparent focus:border-[#007AFF] shadow-sm" placeholder="Store Name" value={siteName} onChange={e => setSiteName(e.target.value)} />
+                              <input className="w-full p-4 rounded-xl bg-white font-black text-zinc-900 border-2 border-transparent focus:border-[#007AFF] shadow-sm" placeholder="Tagline" value={siteSlogan} onChange={e => setSiteSlogan(e.target.value)} />
+                           </div>
+                         </div>
+                         
+                         <div className="space-y-2">
+                           <label className="text-[10px] font-black uppercase text-zinc-400 block px-2 tracking-widest">Payment & Social</label>
+                           <div className="space-y-4 p-6 bg-zinc-50 rounded-[2rem] border border-zinc-200/50">
+                              <div className="flex items-center gap-3 bg-white p-4 rounded-xl border-2 border-transparent focus-within:border-[#007AFF] shadow-sm">
+                                <i className="fa-solid fa-wallet text-[#D0021B]"></i>
+                                <input className="flex-1 font-black text-zinc-900 outline-none" placeholder="Vodafone Number" value={paymentNumber} onChange={e => setPaymentNumber(e.target.value)} />
+                              </div>
+                              <div className="flex items-center gap-3 bg-white p-4 rounded-xl border-2 border-transparent focus-within:border-[#007AFF] shadow-sm">
+                                <i className="fa-brands fa-telegram text-[#0088CC]"></i>
+                                <input className="flex-1 font-black text-zinc-900 outline-none" placeholder="Telegram Username" value={telegramUser} onChange={e => setTelegramUser(e.target.value)} />
+                              </div>
+                           </div>
+                         </div>
                        </section>
-                       <section className="space-y-8">
-                         <div className="space-y-4 p-8 bg-zinc-50 rounded-[2.5rem] border border-zinc-200 shadow-sm">
-                            <label className="text-[8px] font-black uppercase text-zinc-400 block px-2">Access PIN</label>
-                            <input className="w-full p-4 rounded-xl bg-white font-black text-center text-lg border-2 border-transparent focus:border-[#007AFF]" value={adminPassword} onChange={e => setAdminPassword(e.target.value)} />
-                            <button onClick={saveGlobalSettings} disabled={isPublishing} className="w-full py-5 bg-[#007AFF] text-white rounded-2xl font-black uppercase text-[10px] shadow-xl">Update Cloud Storage</button>
+
+                       <section className="space-y-6">
+                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="space-y-3">
+                               <label className="text-[10px] font-black uppercase text-zinc-400 block px-2 tracking-widest">Site Logo</label>
+                               <div className="aspect-square bg-white rounded-3xl border-2 border-dashed border-zinc-300 overflow-hidden relative group hover:border-[#007AFF] transition-all shadow-sm">
+                                  {siteLogo ? <img src={siteLogo} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center opacity-20"><i className="fa-solid fa-image text-3xl"></i></div>}
+                                  <input type="file" accept="image/*" onChange={async e => { if(e.target.files?.[0]) setSiteLogo(await fileToBase64(e.target.files[0])); }} className="absolute inset-0 opacity-0 cursor-pointer" />
+                               </div>
+                            </div>
+                            <div className="space-y-3">
+                               <label className="text-[10px] font-black uppercase text-zinc-400 block px-2 tracking-widest">Loader Logo</label>
+                               <div className="aspect-square bg-white rounded-3xl border-2 border-dashed border-zinc-300 overflow-hidden relative group hover:border-[#007AFF] transition-all shadow-sm">
+                                  {loaderLogo ? <img src={loaderLogo} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center opacity-20"><i className="fa-solid fa-bolt text-3xl"></i></div>}
+                                  <input type="file" accept="image/*" onChange={async e => { if(e.target.files?.[0]) setLoaderLogo(await fileToBase64(e.target.files[0])); }} className="absolute inset-0 opacity-0 cursor-pointer" />
+                               </div>
+                            </div>
+                         </div>
+
+                         <div className="p-6 bg-[#007AFF]/5 rounded-[2rem] border border-[#007AFF]/20 space-y-4">
+                            <label className="text-[10px] font-black uppercase text-[#007AFF] block px-2 tracking-[0.2em]">Security Access</label>
+                            <input className="w-full p-4 rounded-xl bg-white font-black text-center text-xl border-2 border-transparent focus:border-[#007AFF] shadow-md" placeholder="Admin PIN" type="password" value={adminPassword} onChange={e => setAdminPassword(e.target.value)} />
+                            <button onClick={saveGlobalSettings} disabled={isPublishing} className="w-full py-5 bg-[#007AFF] text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-2xl shadow-blue-500/30 transition-all active:scale-95 disabled:opacity-50">
+                              {isPublishing ? 'Synchronizing...' : 'Save All Changes'}
+                            </button>
                          </div>
                        </section>
                     </div>
