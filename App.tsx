@@ -366,14 +366,15 @@ const App: React.FC = () => {
                                       <span className="text-lg font-black tracking-widest font-mono text-zinc-900 dark:text-zinc-100">01091931466</span>
                                       <button onClick={() => { navigator.clipboard.writeText('01091931466'); showNotify('Number Copied!'); }} className="w-8 h-8 rounded-full bg-white dark:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-[#007AFF] transition-all"><i className="fa-solid fa-copy text-xs"></i></button>
                                    </div>
+                                   
+                                   <div className="mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl">
+                                     <p className="text-zinc-900 dark:text-zinc-100 font-bold text-[11px] leading-relaxed">
+                                       <i className="fa-solid fa-triangle-exclamation text-red-500 mr-2"></i>
+                                       Please confirm full payment to the number shown on this page before proceeding to contact us via Telegram.
+                                     </p>
+                                   </div>
                                 </div>
                               )}
-
-                              <div className="p-5 bg-red-500/10 border-2 border-red-500/20 rounded-3xl">
-                                 <p className="text-left font-black text-red-600 dark:text-red-400 text-xs leading-relaxed">
-                                   ⚠️ Please confirm full payment to the number shown on this page before proceeding to contact us via Telegram.
-                                 </p>
-                              </div>
 
                               {!currentOrderedProduct.price && (
                                 <p className="text-sm text-zinc-500 font-medium">This asset is free. Request the link from Mohamed Edge via Telegram.</p>
