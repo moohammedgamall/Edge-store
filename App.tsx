@@ -504,8 +504,8 @@ const App: React.FC = () => {
                           <label className="text-[11px] font-black text-zinc-400 uppercase tracking-[0.2em]">Vodafone Cash Wallet</label>
                           <span className="text-[9px] font-black text-red-600 uppercase bg-red-50 px-2 py-0.5 rounded-full border border-red-100">Verified</span>
                        </div>
-                       <div className="p-6 bg-zinc-900 rounded-[2rem] flex items-center justify-between group transition-all hover:bg-black">
-                          <span className="text-2xl md:text-3xl font-black tracking-[0.2em] font-mono text-white">{paymentNumber}</span>
+                       <div className="p-5 md:p-6 bg-zinc-900 rounded-[2rem] flex items-center justify-between group transition-all hover:bg-black">
+                          <span className="text-2xl md:text-3xl font-black tracking-tighter font-mono text-white select-all">{paymentNumber}</span>
                           <button 
                             onClick={() => { navigator.clipboard.writeText(paymentNumber); showNotify('Number Copied'); }} 
                             className="w-12 h-12 rounded-xl bg-white/10 text-white flex items-center justify-center hover:bg-[#007AFF] transition-all active:scale-90"
@@ -542,7 +542,7 @@ const App: React.FC = () => {
                   <button 
                     onClick={handleTelegramOrder} 
                     disabled={!orderProductId}
-                    className="w-full py-8 bg-[#0088CC] text-white rounded-[2.5rem] font-black text-lg md:text-xl uppercase tracking-[0.2em] shadow-2xl shadow-sky-500/40 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-4 disabled:opacity-50 disabled:grayscale disabled:hover:scale-100"
+                    className="w-full py-5 md:py-7 bg-[#0088CC] text-white rounded-[2rem] md:rounded-[2.5rem] font-black text-base md:text-xl uppercase tracking-widest shadow-2xl shadow-sky-500/40 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-4 disabled:opacity-50 disabled:grayscale disabled:hover:scale-100"
                   >
                     Send Confirmation <i className="fa-solid fa-paper-plane text-sm"></i>
                   </button>
