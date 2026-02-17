@@ -301,62 +301,63 @@ const App: React.FC = () => {
       )}
 
       <main className="max-w-7xl mx-auto px-4 py-8">
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center min-h-[50vh] text-zinc-400">
-            <i className="fa-solid fa-circle-notch fa-spin text-4xl mb-4"></i>
-            <p className="font-black uppercase text-[10px] tracking-widest">Connecting to database...</p>
-          </div>
-        ) : (
-          (['Home', 'Themes', 'Widgets', 'Walls'].includes(activeSection)) && (
-            <div className="space-y-16 animate-in fade-in duration-700">
-              <section className="space-y-8">
+        {(['Home', 'Themes', 'Widgets', 'Walls'].includes(activeSection)) && (
+          <div className="space-y-16 animate-in fade-in duration-700">
+            <section className="space-y-8">
+              <h2 className="text-2xl font-black tracking-tighter uppercase flex items-center gap-3">
+                <div className="w-1.5 h-6 bg-[#007AFF] rounded-full"></div> {activeSection === 'Home' ? 'New Assets' : activeSection}
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                {dbProducts.length > 0 ? filteredProducts.map(p => <ProductCard key={p.id} product={p} onPreview={id => window.location.hash = `#/preview/${id}`} onBuy={id => { setOrderProductId(id); window.location.hash = '#/order'; }} />) : (
+                  <div className="col-span-full py-20 text-center opacity-40">
+                    <i className="fa-solid fa-ghost text-4xl mb-4"></i>
+                    <p className="font-black uppercase text-[10px] tracking-widest">Searching cloud assets...</p>
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {activeSection === 'Home' && dbVideos.length > 0 && (
+              <section className="space-y-8 pb-10">
                 <h2 className="text-2xl font-black tracking-tighter uppercase flex items-center gap-3">
-                  <div className="w-1.5 h-6 bg-[#007AFF] rounded-full"></div> {activeSection === 'Home' ? 'New Assets' : activeSection}
+                  <div className="w-1.5 h-6 bg-red-500 rounded-full"></div> Featured Reviews
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {filteredProducts.length > 0 ? filteredProducts.map(p => <ProductCard key={p.id} product={p} onPreview={id => window.location.hash = `#/preview/${id}`} onBuy={id => { setOrderProductId(id); window.location.hash = '#/order'; }} />) : (
-                    <div className="col-span-full py-20 text-center opacity-40">
-                      <i className="fa-solid fa-ghost text-4xl mb-4"></i>
-                      <p className="font-black uppercase text-[10px] tracking-widest">No assets found in cloud</p>
+                  {dbVideos.map(vid => (
+                    <div key={vid.id} onClick={() => window.open(vid.url, '_blank')} className="glass-panel group overflow-hidden rounded-[2.5rem] cursor-pointer transition-all border border-white/20 relative shadow-lg">
+                      <div className="aspect-video relative overflow-hidden bg-zinc-900">
+                         <img loading="lazy" src={`https://img.youtube.com/vi/${vid.id}/mqdefault.jpg`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 opacity-80" alt="" />
+                         <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="w-14 h-14 bg-red-600 text-white rounded-full flex items-center justify-center shadow-2xl scale-90 group-hover:scale-110 transition-all">
+                               <i className="fa-solid fa-play text-xl translate-x-0.5"></i>
+                            </div>
+                         </div>
+                      </div>
+                      <div className="p-7"><h3 className="font-black text-lg tracking-tight line-clamp-2 group-hover:text-[#007AFF] transition-colors">{vid.title}</h3></div>
                     </div>
-                  )}
+                  ))}
                 </div>
               </section>
-
-              {activeSection === 'Home' && dbVideos.length > 0 && (
-                <section className="space-y-8 pb-10">
-                  <h2 className="text-2xl font-black tracking-tighter uppercase flex items-center gap-3">
-                    <div className="w-1.5 h-6 bg-red-500 rounded-full"></div> Featured Reviews
-                  </h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {dbVideos.map(vid => (
-                      <div key={vid.id} onClick={() => window.open(vid.url, '_blank')} className="glass-panel group overflow-hidden rounded-[2.5rem] cursor-pointer transition-all border border-white/20 relative shadow-lg">
-                        <div className="aspect-video relative overflow-hidden bg-zinc-900">
-                           <img loading="lazy" src={`https://img.youtube.com/vi/${vid.id}/mqdefault.jpg`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 opacity-80" alt="" />
-                           <div className="absolute inset-0 flex items-center justify-center">
-                              <div className="w-14 h-14 bg-red-600 text-white rounded-full flex items-center justify-center shadow-2xl scale-90 group-hover:scale-110 transition-all">
-                                 <i className="fa-solid fa-play text-xl translate-x-0.5"></i>
-                              </div>
-                           </div>
-                        </div>
-                        <div className="p-7"><h3 className="font-black text-lg tracking-tight line-clamp-2 group-hover:text-[#007AFF] transition-colors">{vid.title}</h3></div>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              )}
-            </div>
-          )
+            )}
+          </div>
         )}
 
         {activeSection === 'Preview' && selectedProduct && (
-          <div className="animate-in slide-in-from-bottom-8 duration-700 space-y-12 pb-24">
+          <div className="animate-in slide-in-from-bottom-8 duration-700 space-y-12 pb-24 relative">
+            {/* Professional Back Button matching user image */}
+            <button 
+              onClick={() => window.location.hash = '#/'}
+              className="absolute top-0 left-0 z-50 w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-[0_4px_12px_rgba(0,0,0,0.1)] border border-zinc-200/50 hover:scale-110 active:scale-95 transition-all group"
+            >
+              <i className="fa-solid fa-chevron-left text-zinc-900 text-lg transition-transform group-hover:-translate-x-0.5"></i>
+            </button>
+
             <div className="max-w-6xl mx-auto glass-panel overflow-hidden rounded-[3rem] shadow-3xl border border-white/40 flex flex-col md:flex-row min-h-[600px]">
               {/* Left Side: Image Showcase inside iPhone Mockup */}
               <div className="w-full md:w-[45%] bg-zinc-100/50 dark:bg-zinc-900/20 p-6 md:p-12 flex flex-col gap-6 items-center justify-center border-r border-zinc-200/50">
                 
-                {/* iPhone Mockup - 50px Corner Radius, No Dynamic Island */}
-                <div className="relative mx-auto w-full max-w-[300px] border-[10px] border-zinc-900 rounded-[50px] overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)] aspect-[9/19.5] bg-black">
+                {/* iPhone Mockup - 45px Corner Radius, No Dynamic Island */}
+                <div className="relative mx-auto w-full max-w-[300px] border-[10px] border-zinc-900 rounded-[45px] overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)] aspect-[9/19.5] bg-black">
                    <img 
                     src={(selectedProduct.gallery && selectedProduct.gallery.length > 0) 
                       ? (previewImageIndex === -1 ? selectedProduct.gallery[0] : selectedProduct.gallery[previewImageIndex])
@@ -438,12 +439,6 @@ const App: React.FC = () => {
                    </div>
                    
                    <div className="flex items-center gap-4 w-full sm:w-auto">
-                     <button 
-                       onClick={() => window.location.hash = '#/'} 
-                       className="flex-1 sm:flex-none px-8 py-5 rounded-[2rem] font-black text-[11px] uppercase tracking-widest text-zinc-400 hover:text-zinc-900 transition-colors"
-                     >
-                       Close
-                     </button>
                      <button 
                        onClick={() => { setOrderProductId(selectedProduct.id); window.location.hash = '#/order'; }} 
                        className="flex-1 sm:flex-none px-12 py-5 bg-[#007AFF] text-white rounded-[2rem] font-black text-[11px] uppercase tracking-[0.2em] shadow-2xl shadow-blue-500/30 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3"
