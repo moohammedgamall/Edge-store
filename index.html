@@ -119,14 +119,15 @@
     <script>
         (function() {
             const defaultLogo = "https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa";
-            const cachedLogo = localStorage.getItem('cached_loader_logo') || defaultLogo;
+            // جلب شعار التحميل الجديد من localStorage الذي يتم تحديثه من App.tsx
+            const cachedLoaderLogo = localStorage.getItem('cached_loader_logo') || defaultLogo;
             const isDark = localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
             
             if (isDark) document.documentElement.classList.add('dark');
 
             const loaderImg = document.getElementById('loader-img');
             if (loaderImg) {
-                loaderImg.src = cachedLogo;
+                loaderImg.src = cachedLoaderLogo;
                 loaderImg.onload = () => { loaderImg.style.opacity = '1'; };
                 loaderImg.onerror = () => { loaderImg.src = defaultLogo; loaderImg.style.opacity = '1'; };
             }
