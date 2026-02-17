@@ -8,13 +8,14 @@ export const NAV_ITEMS: NavItem[] = [
   { id: 'Walls', label: 'Walls', icon: 'fa-solid fa-image' },
 ];
 
+// المصفوفات الآن فارغة لضمان التحميل من قاعدة البيانات فقط
 export const MOCK_VIDEOS: YoutubeVideo[] = [];
 export const MOCK_PRODUCTS: Product[] = [];
 
 export const DEFAULT_BANNER: BannerSettings = {
-  title: "Official Store",
-  highlight: "Mohamed Edge",
-  description: "Exclusively designed assets for ColorOS and Realme UI.",
+  title: "Mohamed Edge",
+  highlight: "Premium Store",
+  description: "Exclusively designed assets for ColorOS and Realme UI devices.",
   imageUrl: "https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa",
-  buttonText: "Explore"
+  buttonText: "Browse All"
 };
