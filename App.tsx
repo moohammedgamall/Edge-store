@@ -58,6 +58,7 @@ const App: React.FC = () => {
     return cached ? JSON.parse(cached) : [];
   }); 
 
+  // الثوابت المطلوبة
   const siteName = "Mohamed Edge";
   const siteSlogan = "Solo Entrepreneur";
   const paymentNumber = "01091931466";
@@ -65,7 +66,7 @@ const App: React.FC = () => {
 
   const [siteLogo, setSiteLogo] = useState<string>(localStorage.getItem('cached_site_logo') || "https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
   const [loaderLogo, setLoaderLogo] = useState<string>(localStorage.getItem('cached_loader_logo') || "https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa");
-  const [adminPassword, setAdminPassword] = useState<string>("1234");
+  const [adminPassword, setAdminPassword] = useState<string>(localStorage.getItem('cached_admin_password') || "1234");
 
   const [orderDevice, setOrderDevice] = useState<'Realme' | 'Oppo'>('Realme');
   const [orderProductId, setOrderProductId] = useState<string>('');
@@ -105,26 +106,25 @@ const App: React.FC = () => {
         supabase.from('videos').select('*').order('created_at', { ascending: false })
       ]);
 
-      let currentLogo = siteLogo;
       if (settRes.data) {
         settRes.data.forEach(s => {
-          if (s.key === 'admin_password') setAdminPassword(s.value);
+          if (s.key === 'admin_password') {
+            setAdminPassword(s.value);
+            localStorage.setItem('cached_admin_password', s.value);
+          }
           if (s.key === 'site_logo') { 
-            currentLogo = s.value;
             setSiteLogo(s.value); 
             localStorage.setItem('cached_site_logo', s.value); 
           }
-          if (s.key === 'loader_logo') { setLoaderLogo(s.value); localStorage.setItem('cached_loader_logo', s.value); }
+          if (s.key === 'loader_logo') { 
+            setLoaderLogo(s.value); 
+            localStorage.setItem('cached_loader_logo', s.value); 
+          }
         });
       }
 
       const products = (prodRes.data as Product[]) || [];
       const videos = (vidRes.data as YoutubeVideo[]) || [];
-
-      const criticalImages = [currentLogo];
-      if (products.length > 0) criticalImages.push(products[0].image);
-      
-      await Promise.all(criticalImages.map(img => preloadImage(img)));
 
       setDbProducts(products);
       localStorage.setItem('cached_products', JSON.stringify(products));
@@ -139,11 +139,6 @@ const App: React.FC = () => {
   };
 
   useEffect(() => { 
-    if (dbProducts.length > 0) {
-      const cachedImages = [siteLogo];
-      if (dbProducts.length > 0) cachedImages.push(dbProducts[0].image);
-      Promise.all(cachedImages.map(img => preloadImage(img))).then(() => hideSplashSmoothly());
-    }
     refreshData(); 
   }, []);
 
@@ -151,7 +146,6 @@ const App: React.FC = () => {
     const fetchTitle = async () => {
       const videoId = getYouTubeId(videoUrlInput);
       if (!videoId) return;
-
       setIsFetchingVideo(true);
       try {
         const response = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`);
@@ -170,7 +164,7 @@ const App: React.FC = () => {
   }, [videoUrlInput]);
 
   const handleAuth = () => {
-    if (passwordInput === adminPassword || passwordInput === '1234') {
+    if (passwordInput === adminPassword) {
       setIsAdminMode(true);
       setIsAuthModalOpen(false);
       setPasswordInput('');
@@ -246,11 +240,7 @@ const App: React.FC = () => {
     const currentGallery = editProduct.gallery || [];
     const remainingSlots = 20 - currentGallery.length;
     const filesToProcess = Array.from(files).slice(0, remainingSlots);
-
-    if (files.length > remainingSlots) {
-      showNotify("Maximum 20 images allowed", "error");
-    }
-
+    if (files.length > remainingSlots) showNotify("Maximum 20 images allowed", "error");
     const base64Images = await Promise.all(filesToProcess.map(file => fileToBase64(file)));
     setEditProduct({ ...editProduct, gallery: [...currentGallery, ...base64Images] });
   };
@@ -276,13 +266,12 @@ const App: React.FC = () => {
     finally { setIsPublishing(false); }
   };
 
-  const saveConfig = async () => {
+  const saveAdminConfig = async () => {
     setIsPublishing(true);
     try {
-      const updates = [{ key: 'admin_password', value: adminPassword }];
-      const { error } = await supabase.from('settings').upsert(updates);
+      const { error } = await supabase.from('settings').upsert({ key: 'admin_password', value: adminPassword });
       if (error) throw error;
-      showNotify("Password Updated");
+      showNotify("Admin Password Updated");
       refreshData();
     } catch (err: any) { showNotify(err.message, "error"); }
     finally { setIsPublishing(false); }
@@ -475,13 +464,13 @@ const App: React.FC = () => {
         )}
 
         {activeSection === 'Admin' && isAdminMode && (
-          <div className="max-w-5xl mx-auto space-y-10 animate-in fade-in">
+          <div className="max-w-5xl mx-auto space-y-10 animate-in fade-in pb-24">
             <div className="flex p-2 bg-zinc-200/50 rounded-[2.5rem] max-w-lg mx-auto shadow-xl">
               {['Inventory', 'Videos', 'Settings'].map(tab => <button key={tab} onClick={() => setAdminTab(tab as any)} className={`flex-1 py-4 rounded-3xl transition-all text-[10px] uppercase font-black ${adminTab === tab ? 'bg-white text-[#007AFF] shadow-lg' : 'text-zinc-400'}`}>{tab}</button>)}
             </div>
 
             {adminTab === 'Inventory' && (
-              <div className="space-y-8 pb-20">
+              <div className="space-y-8">
                 <button onClick={() => { setEditProduct({ title: '', price: 0, category: 'Themes', image: '', description: '', gallery: [], android_version: '' }); setIsEditingProduct(true); }} className="w-full py-6 bg-[#007AFF] text-white rounded-3xl font-black uppercase text-[10px] tracking-widest shadow-lg hover:bg-blue-600 transition-colors">Publish New Digital Asset</button>
                 {isEditingProduct && (
                   <div className="glass-panel p-8 rounded-[3rem] space-y-8 border-4 border-[#007AFF]/10">
@@ -581,42 +570,91 @@ const App: React.FC = () => {
             )}
 
             {adminTab === 'Settings' && (
-              <div className="space-y-10 pb-20">
-                 <div className="glass-panel p-10 rounded-[3rem] space-y-10">
+              <div className="space-y-10 animate-in fade-in">
+                 <div className="glass-panel p-10 rounded-[3rem] space-y-10 border-white/40">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-2xl font-black uppercase tracking-tighter text-zinc-900">System Information</h3>
+                      <h3 className="text-2xl font-black uppercase tracking-tighter text-zinc-900">General Settings</h3>
                       <div className="flex items-center gap-2 px-3 py-1 bg-zinc-100 rounded-full border border-zinc-200">
                         <i className="fa-solid fa-lock text-[8px] text-zinc-400"></i>
-                        <span className="text-[8px] font-black uppercase text-zinc-400 tracking-widest">Read Only Mode</span>
+                        <span className="text-[8px] font-black uppercase text-zinc-400 tracking-widest">Locked Fields</span>
                       </div>
                     </div>
+                    
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                       <section className="space-y-6 text-[10px] font-black uppercase text-zinc-400">
-                         <div className="space-y-2"><span>Site Name</span><div className="w-full p-4 rounded-xl bg-zinc-50 text-zinc-400">{siteName}</div></div>
-                         <div className="space-y-2"><span>Site Slogan</span><div className="w-full p-4 rounded-xl bg-zinc-50 text-zinc-400">{siteSlogan}</div></div>
-                         <div className="space-y-2"><span>Vodafone Cash</span><div className="w-full p-4 rounded-xl bg-zinc-50 text-zinc-400">{paymentNumber}</div></div>
-                         <div className="space-y-2"><span>Telegram</span><div className="w-full p-4 rounded-xl bg-zinc-50 text-zinc-400">{telegramUser}</div></div>
-                       </section>
-                       <section className="space-y-8">
-                         <div className="space-y-4 p-6 bg-white rounded-3xl border border-zinc-100 shadow-sm">
-                            <label className="text-[10px] font-black uppercase text-[#007AFF] block">Admin Password</label>
-                            <input className="w-full p-4 rounded-xl bg-zinc-100 font-black text-center text-lg outline-none border-2 border-transparent focus:border-[#007AFF]" value={adminPassword} onChange={e => setAdminPassword(e.target.value)} />
-                            <button onClick={saveConfig} className="w-full py-4 bg-[#007AFF] text-white rounded-2xl font-black uppercase text-[10px]">Update Password</button>
-                         </div>
-                         <div className="flex gap-8 justify-center">
-                            <div className="space-y-3 text-center">
-                              <label className="text-[8px] font-black uppercase text-zinc-400">Main Logo</label>
-                              <div className="w-24 h-24 mx-auto rounded-full overflow-hidden relative border-4 border-[#007AFF]/10 bg-zinc-50 shadow-inner group">
-                                <img src={siteLogo} className="w-full h-full object-cover" />
-                                <input type="file" accept="image/*" onChange={async e => { if(e.target.files?.[0]) { const b64 = await fileToBase64(e.target.files[0]); await supabase.from('settings').upsert({key: 'site_logo', value: b64}); refreshData(); showNotify("Logo Updated"); } }} className="absolute inset-0 opacity-0 cursor-pointer" />
-                              </div>
+                       <section className="space-y-6">
+                         <div className="space-y-2 group">
+                            <label className="text-[10px] font-black uppercase text-zinc-400 block tracking-widest px-2">Site Name</label>
+                            <div className="w-full p-4 rounded-xl bg-zinc-100/50 border border-zinc-200 font-black text-zinc-400 cursor-not-allowed flex items-center justify-between">
+                              {siteName}
+                              <i className="fa-solid fa-lock text-[10px] opacity-20"></i>
                             </div>
-                            <div className="space-y-3 text-center">
-                              <label className="text-[8px] font-black uppercase text-zinc-400">Splash Logo</label>
-                              <div className="w-24 h-24 mx-auto rounded-full overflow-hidden relative border-4 border-zinc-200 bg-zinc-50 shadow-inner group">
-                                <img src={loaderLogo} className="w-full h-full object-cover" />
-                                <input type="file" accept="image/*" onChange={async e => { if(e.target.files?.[0]) { const b64 = await fileToBase64(e.target.files[0]); await supabase.from('settings').upsert({key: 'loader_logo', value: b64}); refreshData(); showNotify("Splash Updated"); } }} className="absolute inset-0 opacity-0 cursor-pointer" />
-                              </div>
+                         </div>
+                         <div className="space-y-2 group">
+                            <label className="text-[10px] font-black uppercase text-zinc-400 block tracking-widest px-2">Site Slogan</label>
+                            <div className="w-full p-4 rounded-xl bg-zinc-100/50 border border-zinc-200 font-black text-zinc-400 cursor-not-allowed flex items-center justify-between">
+                              {siteSlogan}
+                              <i className="fa-solid fa-lock text-[10px] opacity-20"></i>
+                            </div>
+                         </div>
+                         <div className="space-y-2 group">
+                            <label className="text-[10px] font-black uppercase text-zinc-400 block tracking-widest px-2">Vodafone Cash</label>
+                            <div className="w-full p-4 rounded-xl bg-zinc-100/50 border border-zinc-200 font-black text-zinc-400 cursor-not-allowed flex items-center justify-between tracking-widest">
+                              {paymentNumber}
+                              <i className="fa-solid fa-lock text-[10px] opacity-20"></i>
+                            </div>
+                         </div>
+                         <div className="space-y-2 group">
+                            <label className="text-[10px] font-black uppercase text-zinc-400 block tracking-widest px-2">Telegram</label>
+                            <div className="w-full p-4 rounded-xl bg-zinc-100/50 border border-zinc-200 font-black text-zinc-400 cursor-not-allowed flex items-center justify-between">
+                              @{telegramUser}
+                              <i className="fa-solid fa-lock text-[10px] opacity-20"></i>
+                            </div>
+                         </div>
+                       </section>
+
+                       <section className="space-y-8">
+                         <div className="space-y-4 p-8 bg-white rounded-[2.5rem] border border-zinc-100 shadow-sm">
+                            <h4 className="text-[10px] font-black uppercase text-[#007AFF] tracking-widest">Admin Security</h4>
+                            <div className="space-y-2">
+                               <label className="text-[8px] font-black uppercase text-zinc-400 block tracking-widest px-2">Access Password</label>
+                               <input 
+                                 type="text"
+                                 className="w-full p-4 rounded-xl bg-zinc-100 font-black text-center text-lg outline-none border-2 border-transparent focus:border-[#007AFF] transition-all" 
+                                 value={adminPassword} 
+                                 onChange={e => setAdminPassword(e.target.value)} 
+                               />
+                            </div>
+                            <button 
+                              onClick={saveAdminConfig} 
+                              disabled={isPublishing}
+                              className="w-full py-4 bg-[#007AFF] text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg shadow-blue-500/20 hover:scale-[1.02] active:scale-95 transition-all"
+                            >
+                              {isPublishing ? 'Updating...' : 'Save New Password'}
+                            </button>
+                         </div>
+
+                         <div className="space-y-6">
+                            <div className="flex gap-8 justify-center">
+                               <div className="space-y-3 text-center flex-1">
+                                 <label className="text-[8px] font-black uppercase text-zinc-400">Site Logo</label>
+                                 <div className="w-20 h-20 mx-auto rounded-full overflow-hidden relative border-4 border-[#007AFF]/10 bg-zinc-50 shadow-inner group cursor-pointer">
+                                   <img src={siteLogo} className="w-full h-full object-cover" />
+                                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                      <i className="fa-solid fa-camera text-white text-xs"></i>
+                                   </div>
+                                   <input type="file" accept="image/*" onChange={async e => { if(e.target.files?.[0]) { const b64 = await fileToBase64(e.target.files[0]); await supabase.from('settings').upsert({key: 'site_logo', value: b64}); refreshData(); showNotify("Logo Updated"); } }} className="absolute inset-0 opacity-0 cursor-pointer" />
+                                 </div>
+                               </div>
+                               <div className="space-y-3 text-center flex-1">
+                                 <label className="text-[8px] font-black uppercase text-zinc-400">Splash Logo</label>
+                                 <div className="w-20 h-20 mx-auto rounded-full overflow-hidden relative border-4 border-zinc-200 bg-zinc-50 shadow-inner group cursor-pointer">
+                                   <img src={loaderLogo} className="w-full h-full object-cover" />
+                                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                      <i className="fa-solid fa-camera text-white text-xs"></i>
+                                   </div>
+                                   <input type="file" accept="image/*" onChange={async e => { if(e.target.files?.[0]) { const b64 = await fileToBase64(e.target.files[0]); await supabase.from('settings').upsert({key: 'loader_logo', value: b64}); refreshData(); showNotify("Splash Updated"); } }} className="absolute inset-0 opacity-0 cursor-pointer" />
+                                 </div>
+                               </div>
                             </div>
                          </div>
                        </section>
