@@ -128,7 +128,7 @@ const App: React.FC = () => {
       setIsAuthModalOpen(false);
       setPasswordInput('');
       window.location.hash = '#/admin';
-      showNotify("Authorized access granted");
+      showNotify("Cloud Access Granted");
     } else {
       showNotify("Incorrect Password", "error");
     }
@@ -233,15 +233,54 @@ const App: React.FC = () => {
       />
 
       {isAuthModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-xl animate-in fade-in">
-          <div className="w-full max-w-[340px] glass-panel p-8 rounded-[2.5rem] space-y-6 text-center shadow-3xl">
-            <i className="fa-solid fa-shield-halved text-[#007AFF] text-4xl mb-2"></i>
-            <h3 className="font-black uppercase text-[10px] tracking-widest text-zinc-900">Admin Authentication</h3>
-            <input type="password" value={passwordInput} onChange={e => setPasswordInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAuth()} className="w-full p-4 rounded-2xl bg-zinc-100 text-center text-2xl font-black outline-none border-2 border-transparent focus:border-[#007AFF] text-zinc-900" placeholder="••••" autoFocus />
-            <div className="grid grid-cols-2 gap-3">
-              <button onClick={() => { setIsAuthModalOpen(false); window.location.hash = '#/'; }} className="py-4 font-bold text-zinc-400">Cancel</button>
-              <button onClick={handleAuth} className="py-4 bg-[#007AFF] text-white rounded-2xl font-black">Login</button>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-white/40 backdrop-blur-3xl animate-in fade-in duration-500">
+          <div className="w-full max-w-[380px] bg-white/90 rounded-[3rem] p-10 space-y-10 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.15)] border border-white/50 text-center relative overflow-hidden">
+            {/* Background Decorative Element */}
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#007AFF] to-transparent opacity-50"></div>
+            
+            <div className="space-y-4">
+              <div className="w-20 h-20 bg-[#007AFF] text-white rounded-3xl flex items-center justify-center mx-auto shadow-2xl shadow-blue-500/30 rotate-3 hover:rotate-0 transition-transform duration-500">
+                <i className="fa-solid fa-shield-halved text-3xl"></i>
+              </div>
+              <div className="space-y-1">
+                <h3 className="font-black text-2xl tracking-tighter text-zinc-900">Admin Console</h3>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#007AFF]">System Authentication</p>
+              </div>
             </div>
+
+            <div className="space-y-6">
+              <div className="relative group">
+                <input 
+                  type="password" 
+                  value={passwordInput} 
+                  onChange={e => setPasswordInput(e.target.value)} 
+                  onKeyDown={e => e.key === 'Enter' && handleAuth()} 
+                  className="w-full p-6 rounded-2xl bg-zinc-100/50 text-center text-3xl font-black outline-none border-2 border-transparent focus:border-[#007AFF] focus:bg-white transition-all duration-300 text-zinc-900 tracking-[0.5em] placeholder:tracking-normal placeholder:text-zinc-300" 
+                  placeholder="••••" 
+                  autoFocus 
+                />
+                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 opacity-0 group-focus-within:opacity-100 transition-opacity">
+                   <div className="w-12 h-1 bg-[#007AFF] rounded-full"></div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <button 
+                  onClick={() => { setIsAuthModalOpen(false); window.location.hash = '#/'; }} 
+                  className="py-5 rounded-2xl font-black text-[11px] uppercase tracking-widest text-zinc-400 hover:text-zinc-600 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={handleAuth} 
+                  className="py-5 bg-[#007AFF] text-white rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-xl shadow-blue-500/20 active:scale-95 transition-all"
+                >
+                  Authorize
+                </button>
+              </div>
+            </div>
+
+            <p className="text-[9px] font-bold text-zinc-300 uppercase tracking-widest">Secure Cloud Database v2.5</p>
           </div>
         </div>
       )}
