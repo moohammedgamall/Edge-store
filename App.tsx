@@ -267,7 +267,6 @@ const App: React.FC = () => {
     finally { setIsPublishing(false); }
   };
 
-  // Fixed handleTelegramOrder function to resolve the "Cannot find name" error.
   const handleTelegramOrder = () => {
     const product = dbProducts.find(p => p.id === orderProductId);
     if (!product) {
@@ -698,20 +697,6 @@ const App: React.FC = () => {
                            <div className="space-y-4 p-6 bg-zinc-50 rounded-[2rem] border border-zinc-200/50">
                               <input className="w-full p-4 rounded-xl bg-white font-black text-zinc-900 border-2 border-transparent focus:border-[#007AFF] shadow-sm" placeholder="Store Name" value={siteName} onChange={e => setSiteName(e.target.value)} />
                               <input className="w-full p-4 rounded-xl bg-white font-black text-zinc-900 border-2 border-transparent focus:border-[#007AFF] shadow-sm" placeholder="Tagline" value={siteSlogan} onChange={e => setSiteSlogan(e.target.value)} />
-                           </div>
-                         </div>
-                         
-                         <div className="space-y-2">
-                           <label className="text-[10px] font-black uppercase text-zinc-400 block px-2 tracking-widest">Payment & Social</label>
-                           <div className="space-y-4 p-6 bg-zinc-50 rounded-[2rem] border border-zinc-200/50">
-                              <div className="flex items-center gap-3 bg-white p-4 rounded-xl border-2 border-transparent focus-within:border-[#007AFF] shadow-sm">
-                                <i className="fa-solid fa-wallet text-[#D0021B]"></i>
-                                <input className="flex-1 font-black text-zinc-900 outline-none" placeholder="Vodafone Number" value={paymentNumber} onChange={e => setPaymentNumber(e.target.value)} />
-                              </div>
-                              <div className="flex items-center gap-3 bg-white p-4 rounded-xl border-2 border-transparent focus-within:border-[#007AFF] shadow-sm">
-                                <i className="fa-brands fa-telegram text-[#0088CC]"></i>
-                                <input className="flex-1 font-black text-zinc-900 outline-none" placeholder="Telegram Username" value={telegramUser} onChange={e => setTelegramUser(e.target.value)} />
-                              </div>
                            </div>
                          </div>
                        </section>
