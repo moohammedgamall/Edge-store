@@ -460,7 +460,7 @@ const App: React.FC = () => {
                         <div className="space-y-6">
                            <div className="p-8 bg-zinc-50 rounded-[2.5rem] border border-zinc-200 space-y-6">
                               <h3 className="text-xl font-black tracking-tight text-zinc-900 flex items-center gap-2">
-                                👛 Vodafone Cash
+                                <i className="fa-solid fa-wallet text-[#D0021B]"></i> Vodafone Cash
                               </h3>
                               <div className="space-y-4">
                                  <div className="p-4 bg-white rounded-2xl border-2 border-dashed border-zinc-200 flex items-center justify-between">
@@ -470,7 +470,9 @@ const App: React.FC = () => {
                                  <div className="space-y-2">
                                    <p className="text-[11px] text-zinc-500 font-bold leading-relaxed">⚠️ Please transfer the amount to this number <span className="text-zinc-900 font-black">{paymentNumber}</span>.</p>
                                    <p className="text-[11px] text-zinc-500 font-bold leading-relaxed">📸 Please attach a screenshot of the transfer to confirm the transaction.</p>
-                                   <p className="text-[11px] text-[#D0021B] font-black uppercase tracking-tight mt-2 flex items-center gap-1">✅ Payment via 👛 Vodafone Cash.</p>
+                                   <p className="text-[11px] text-[#D0021B] font-black uppercase tracking-tight mt-2 flex items-center gap-1">
+                                     ✅ Payment via <i className="fa-solid fa-wallet text-[#D0021B] text-[10px] mx-0.5 translate-y-[-1px]"></i> Vodafone Cash.
+                                   </p>
                                  </div>
                               </div>
                            </div>
@@ -584,7 +586,7 @@ const App: React.FC = () => {
                        <section className="space-y-6">
                          <div className="space-y-2"><label className="text-[10px] font-black uppercase text-zinc-400 block px-2">Store Name</label><input className="w-full p-4 rounded-xl bg-zinc-100 font-black text-zinc-900 border-2 border-transparent focus:border-[#007AFF]" value={siteName} onChange={e => setSiteName(e.target.value)} /></div>
                          <div className="space-y-2"><label className="text-[10px] font-black uppercase text-zinc-400 block px-2">Tagline</label><input className="w-full p-4 rounded-xl bg-zinc-100 font-black text-zinc-900 border-2 border-transparent focus:border-[#007AFF]" value={siteSlogan} onChange={e => setSiteSlogan(e.target.value)} /></div>
-                         <div className="space-y-2"><label className="text-[10px] font-black uppercase text-zinc-400 block px-2 flex items-center gap-1">👛 Vodafone Cash</label><input className="w-full p-4 rounded-xl bg-zinc-100 font-black text-zinc-900 border-2 border-transparent focus:border-[#007AFF]" value={paymentNumber} onChange={e => setPaymentNumber(e.target.value)} /></div>
+                         <div className="space-y-2"><label className="text-[10px] font-black uppercase text-zinc-400 block px-2 flex items-center gap-1"><i className="fa-solid fa-wallet text-[#D0021B]"></i> Vodafone Cash</label><input className="w-full p-4 rounded-xl bg-zinc-100 font-black text-zinc-900 border-2 border-transparent focus:border-[#007AFF]" value={paymentNumber} onChange={e => setPaymentNumber(e.target.value)} /></div>
                        </section>
                        <section className="space-y-8">
                          <div className="space-y-4 p-8 bg-zinc-50 rounded-[2.5rem] border border-zinc-200 shadow-sm">
