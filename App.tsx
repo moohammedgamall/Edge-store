@@ -191,10 +191,7 @@ const App: React.FC = () => {
     if (!editProduct.title || !editProduct.image) return showNotify("Required fields missing", "error");
     setIsPublishing(true);
     try {
-      // Compress main image
       const compressedMain = await compressImage(editProduct.image);
-      
-      // Compress gallery images
       const compressedGallery = editProduct.gallery 
         ? await Promise.all(editProduct.gallery.map(img => compressImage(img)))
         : [];
@@ -268,10 +265,17 @@ const App: React.FC = () => {
     const selectedProd = dbProducts.find(p => p.id === orderProductId);
     if (!selectedProd) return;
 
-    const message = `Hello, I would like to order:
-📱 Device: ${orderDevice}
-🏷 Asset: ${selectedProd.title}
-💰 Price: ${selectedProd.price.toLocaleString()} EGP`;
+    const message = `Hello, I would like to order a digital product:
+
+📱 Phone Type: ${orderDevice}
+📦 Category: ${selectedProd.category}
+🏷 Product: ${selectedProd.title}
+💰 Price: ${selectedProd.price.toLocaleString()} EGP
+
+⚠️ Please transfer the amount to the number in the 👛 Vodafone Cash field.
+📸 Please attach a screenshot of the transfer to confirm the transaction.
+
+✅ Payment has been sent via 👛 Vodafone Cash.`;
 
     window.open(`https://t.me/${telegramUser}?text=${encodeURIComponent(message)}`, '_blank');
   };
@@ -349,7 +353,7 @@ const App: React.FC = () => {
 
         {activeSection === 'Preview' && selectedProduct && (
           <div className="animate-in slide-in-from-bottom-8 duration-700 space-y-12 pb-24 relative">
-            {/* Professional Back Button */}
+            {/* Round Back Button */}
             <button 
               onClick={() => window.location.hash = '#/'}
               className="absolute top-0 left-0 z-50 w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg border border-zinc-200/50 hover:scale-110 active:scale-95 transition-all"
@@ -384,7 +388,7 @@ const App: React.FC = () => {
                 )}
               </div>
 
-              {/* Product Info - Simplified UI */}
+              {/* Product Info */}
               <div className="flex-1 p-8 md:p-20 flex flex-col justify-between space-y-12">
                 <div className="space-y-10">
                   <div className="space-y-6">
@@ -397,7 +401,6 @@ const App: React.FC = () => {
                     <h2 className="text-4xl md:text-6xl font-black tracking-tighter text-zinc-900 leading-[1.1] max-w-2xl">
                       {renderTitleWithIcons(selectedProduct.title)}
                     </h2>
-                    {/* Simplified Description without box */}
                     <p className="text-zinc-500 font-semibold text-xl leading-relaxed max-w-2xl whitespace-pre-wrap">
                       {selectedProduct.description}
                     </p>
@@ -459,12 +462,15 @@ const App: React.FC = () => {
                       {dbProducts.find(p => p.id === orderProductId) ? (
                         <div className="space-y-6">
                            <div className="p-8 bg-zinc-50 rounded-[2.5rem] border border-zinc-200 space-y-6">
-                              <h3 className="text-xl font-black tracking-tight text-zinc-900">Vodafone Cash</h3>
+                              <h3 className="text-xl font-black tracking-tight text-zinc-900 flex items-center gap-2">
+                                👛 Vodafone Cash
+                              </h3>
                               <div className="space-y-4">
                                  <div className="p-4 bg-white rounded-2xl border-2 border-dashed border-zinc-200 flex items-center justify-between">
                                     <span className="text-lg font-black tracking-widest font-mono text-zinc-900">{paymentNumber}</span>
                                     <button onClick={() => { navigator.clipboard.writeText(paymentNumber); showNotify('Number Copied'); }} className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-400 hover:text-[#007AFF]"><i className="fa-solid fa-copy text-xs"></i></button>
                                  </div>
+                                 <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">⚠️ Please copy the number and send the exact amount.</p>
                               </div>
                            </div>
                            <button onClick={handleTelegramOrder} className="w-full py-5 bg-[#0088CC] text-white rounded-[2.5rem] font-black shadow-xl flex items-center justify-center gap-3 hover:scale-105 transition-transform">
@@ -577,7 +583,7 @@ const App: React.FC = () => {
                        <section className="space-y-6">
                          <div className="space-y-2"><label className="text-[10px] font-black uppercase text-zinc-400 block px-2">Store Name</label><input className="w-full p-4 rounded-xl bg-zinc-100 font-black text-zinc-900 border-2 border-transparent focus:border-[#007AFF]" value={siteName} onChange={e => setSiteName(e.target.value)} /></div>
                          <div className="space-y-2"><label className="text-[10px] font-black uppercase text-zinc-400 block px-2">Tagline</label><input className="w-full p-4 rounded-xl bg-zinc-100 font-black text-zinc-900 border-2 border-transparent focus:border-[#007AFF]" value={siteSlogan} onChange={e => setSiteSlogan(e.target.value)} /></div>
-                         <div className="space-y-2"><label className="text-[10px] font-black uppercase text-zinc-400 block px-2">Vodafone Cash</label><input className="w-full p-4 rounded-xl bg-zinc-100 font-black text-zinc-900 border-2 border-transparent focus:border-[#007AFF]" value={paymentNumber} onChange={e => setPaymentNumber(e.target.value)} /></div>
+                         <div className="space-y-2"><label className="text-[10px] font-black uppercase text-zinc-400 block px-2 flex items-center gap-1">👛 Vodafone Cash</label><input className="w-full p-4 rounded-xl bg-zinc-100 font-black text-zinc-900 border-2 border-transparent focus:border-[#007AFF]" value={paymentNumber} onChange={e => setPaymentNumber(e.target.value)} /></div>
                        </section>
                        <section className="space-y-8">
                          <div className="space-y-4 p-8 bg-zinc-50 rounded-[2.5rem] border border-zinc-200 shadow-sm">
