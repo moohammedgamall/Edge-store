@@ -435,7 +435,7 @@ const App: React.FC = () => {
         {activeSection === 'Order' && (
           <div className="animate-in fade-in duration-700 space-y-12 pb-24">
             <div className="text-center space-y-4">
-               <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter text-zinc-900">Checkout Asset</h2>
+               <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter text-zinc-900">Checkout</h2>
                <p className="text-zinc-500 font-semibold text-sm md:text-lg max-w-xl mx-auto">Follow the steps below to finalize your purchase securely.</p>
             </div>
 
