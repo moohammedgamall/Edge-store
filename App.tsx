@@ -355,9 +355,10 @@ const App: React.FC = () => {
                    <div className="relative">
                       {currentOrderedProduct ? (
                         <div className="space-y-6">
-                           <div className="p-6 bg-white dark:bg-zinc-900 rounded-[2rem] border border-zinc-100 dark:border-white/5 shadow-xl">
-                              <h3 className="text-xl font-black tracking-tight mb-4 text-zinc-900 dark:text-zinc-100">{currentOrderedProduct.price > 0 ? 'Payment Method' : 'Free Download'}</h3>
-                              {currentOrderedProduct.price > 0 ? (
+                           <div className="p-8 bg-white dark:bg-zinc-900 rounded-[2.5rem] border border-zinc-100 dark:border-white/5 shadow-xl space-y-6">
+                              <h3 className="text-xl font-black tracking-tight text-zinc-900 dark:text-zinc-100">{currentOrderedProduct.price > 0 ? 'Payment Method' : 'Free Download'}</h3>
+                              
+                              {currentOrderedProduct.price > 0 && (
                                 <div className="space-y-4">
                                    <div className="flex items-center gap-2 text-amber-600 bg-amber-500/10 p-2 rounded-lg text-[10px] font-black uppercase"><i className="fa-solid fa-circle-info"></i> Use Vodafone Cash</div>
                                    <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Send to number:</p>
@@ -366,18 +367,20 @@ const App: React.FC = () => {
                                       <button onClick={() => { navigator.clipboard.writeText('01091931466'); showNotify('Number Copied!'); }} className="w-8 h-8 rounded-full bg-white dark:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-[#007AFF] transition-all"><i className="fa-solid fa-copy text-xs"></i></button>
                                    </div>
                                 </div>
-                              ) : (
+                              )}
+
+                              {/* رسالة التنبيه الجديدة مدمجة داخل الصندوق */}
+                              <div className="p-5 bg-red-500/10 border-2 border-red-500/20 rounded-3xl">
+                                 <p className="text-right font-black text-red-600 dark:text-red-400 text-xs leading-relaxed" dir="rtl">
+                                   ⚠️ يرجى تأكيد دفع المبلغ بالكامل على الرقم الموجود في هذه الصفحة قبل المتابعة للتواصل عبر التليجرام.
+                                 </p>
+                              </div>
+
+                              {!currentOrderedProduct.price && (
                                 <p className="text-sm text-zinc-500 font-medium">This asset is free. Request the link from Mohamed Edge via Telegram.</p>
                               )}
                            </div>
                            
-                           {/* رسالة التنبيه الجديدة باللغة العربية */}
-                           <div className="p-5 bg-red-500/10 border-2 border-red-500/20 rounded-3xl animate-pulse">
-                              <p className="text-right font-black text-red-600 dark:text-red-400 text-sm leading-relaxed" dir="rtl">
-                                ⚠️ يرجى تأكيد دفع المبلغ بالكامل على الرقم الموجود في هذه الصفحة قبل المتابعة للتواصل عبر التليجرام.
-                              </p>
-                           </div>
-
                            <button onClick={() => window.open(`https://t.me/Mohamed_edge?text=I want to order: ${currentOrderedProduct.title} for ${orderDevice}`, '_blank')} className="w-full py-5 bg-[#0088CC] text-white rounded-[2rem] font-black shadow-xl flex items-center justify-center gap-3 hover:scale-[1.02] transition-all">
                              <i className="fa-brands fa-telegram text-2xl"></i> Chat on Telegram
                            </button>
