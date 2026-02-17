@@ -33,7 +33,6 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [notification, setNotification] = useState<{message: string, type: 'success' | 'error'} | null>(null);
   
-  // فرض الوضع الفاتح دائماً
   const isDarkMode = false;
 
   const [dbProducts, setDbProducts] = useState<Product[]>([]);
@@ -63,17 +62,11 @@ const App: React.FC = () => {
   }, []);
 
   const refreshData = async () => {
+    // 1. أولاً نقوم بتحميل الإعدادات لإخفاء شاشة التحميل بسرعة
     try {
-      const [prodRes, vidRes, settRes] = await Promise.all([
-        supabase.from('products').select('*').order('created_at', { ascending: false }),
-        supabase.from('videos').select('*').order('created_at', { ascending: false }),
-        supabase.from('settings').select('*')
-      ]);
-
-      if (prodRes.data) setDbProducts(prodRes.data as Product[]);
-      if (vidRes.data) setDbVideos(vidRes.data as YoutubeVideo[]);
-      if (settRes.data) {
-        settRes.data.forEach(s => {
+      const { data: settingsData } = await supabase.from('settings').select('*');
+      if (settingsData) {
+        settingsData.forEach(s => {
           if (s.key === 'admin_password') setAdminPassword(s.value);
           if (s.key === 'site_logo') setSiteLogo(s.value);
           if (s.key === 'loader_logo') {
@@ -82,13 +75,27 @@ const App: React.FC = () => {
           }
         });
       }
-    } catch (err) {
-      console.error("Data fetch error", err);
-    } finally {
-      setIsLoading(false);
+      
+      // إخفاء الـ Splash بمجرد تحميل الإعدادات أو فوراً لتحسين "سرعة الظهور"
       if (typeof (window as any).hideSplash === 'function') {
         (window as any).hideSplash();
       }
+
+      // 2. تحميل المنتجات والفيديوهات في الخلفية
+      const [prodRes, vidRes] = await Promise.all([
+        supabase.from('products').select('*').order('created_at', { ascending: false }),
+        supabase.from('videos').select('*').order('created_at', { ascending: false })
+      ]);
+
+      if (prodRes.data) setDbProducts(prodRes.data as Product[]);
+      if (vidRes.data) setDbVideos(vidRes.data as YoutubeVideo[]);
+    } catch (err) {
+      console.error("Data fetch error", err);
+      if (typeof (window as any).hideSplash === 'function') {
+        (window as any).hideSplash();
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -96,11 +103,11 @@ const App: React.FC = () => {
     refreshData(); 
   }, []);
 
+  // ... (نفس باقي الدوال السابقة)
   const handleUrlBlur = async () => {
     if (!videoUrlInput) return;
     const vidId = getYouTubeId(videoUrlInput);
     if (!vidId) return;
-    
     setIsFetchingVideo(true);
     try {
       const response = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(videoUrlInput)}&format=json`);
@@ -108,11 +115,7 @@ const App: React.FC = () => {
         const data = await response.json();
         setVideoTitleInput(data.title);
       }
-    } catch (e) {
-      console.error("Failed to fetch title");
-    } finally {
-      setIsFetchingVideo(false);
-    }
+    } catch (e) { console.error(e); } finally { setIsFetchingVideo(false); }
   };
 
   const handleAuth = () => {
@@ -193,35 +196,20 @@ const App: React.FC = () => {
     const vidId = getYouTubeId(videoUrlInput);
     if (!vidId) return showNotify("Invalid YouTube URL", "error");
     if (!videoTitleInput) return showNotify("Please provide a title", "error");
-    
     try {
-      const { error } = await supabase.from('videos').upsert({
-        id: vidId,
-        title: videoTitleInput,
-        url: videoUrlInput
-      });
+      const { error } = await supabase.from('videos').upsert({ id: vidId, title: videoTitleInput, url: videoUrlInput });
       if (error) throw error;
-      setVideoUrlInput('');
-      setVideoTitleInput('');
-      refreshData();
-      showNotify("Video Added");
+      setVideoUrlInput(''); setVideoTitleInput(''); refreshData(); showNotify("Video Added");
     } catch (err: any) { showNotify(err.message, "error"); }
   };
 
   return (
     <div className="min-h-screen pb-32 bg-[#F2F2F7] transition-colors duration-500">
-      <Header 
-        isAdmin={isAdminMode} 
-        onAdminTrigger={() => setIsAuthModalOpen(true)} 
-        onLogout={() => { setIsAdminMode(false); window.location.hash = '#/'; }} 
-        onThemeToggle={() => {}} // معطلة
-        isDarkMode={false} 
-        logoUrl={siteLogo} 
-      />
+      <Header isAdmin={isAdminMode} onAdminTrigger={() => setIsAuthModalOpen(true)} onLogout={() => { setIsAdminMode(false); window.location.hash = '#/'; }} onThemeToggle={() => {}} isDarkMode={false} logoUrl={siteLogo} />
 
       {isAuthModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-xl">
-          <div className="w-full max-w-[340px] glass-panel p-8 rounded-[2.5rem] space-y-6 text-center">
+          <div className="w-full max-w-[340px] glass-panel p-8 rounded-[2.5rem] space-y-6 text-center shadow-3xl">
             <i className="fa-solid fa-lock text-[#007AFF] text-3xl mb-2"></i>
             <h3 className="font-black uppercase text-xs tracking-widest text-zinc-900">Admin Access</h3>
             <input type="password" value={passwordInput} onChange={e => setPasswordInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAuth()} className="w-full p-4 rounded-2xl bg-zinc-100 text-center text-2xl font-black outline-none border-2 border-transparent focus:border-[#007AFF] text-zinc-900" placeholder="••••" autoFocus />
@@ -235,23 +223,26 @@ const App: React.FC = () => {
 
       <main className="max-w-7xl mx-auto px-4 py-8">
         {isLoading && dbProducts.length === 0 ? (
-          <div className="py-20 text-center">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="glass-panel rounded-[2.5rem] aspect-[4/6] animate-pulse bg-zinc-200"></div>
-              ))}
-            </div>
+          <div className="space-y-16 animate-pulse">
+            <section className="space-y-8">
+                <div className="w-48 h-8 bg-zinc-200 rounded-lg"></div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="glass-panel rounded-[2.5rem] aspect-[4/6] bg-zinc-200"></div>
+                  ))}
+                </div>
+            </section>
           </div>
         ) : (
           (['Home', 'Themes', 'Widgets', 'Walls'].includes(activeSection)) && (
-            <div className="space-y-16">
+            <div className="space-y-16 animate-in fade-in duration-700">
               <section className="space-y-8">
                 <h2 className="text-2xl font-black tracking-tighter uppercase flex items-center gap-3">
                   <div className="w-1.5 h-6 bg-[#007AFF] rounded-full"></div> {activeSection === 'Home' ? 'New Release' : activeSection}
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                   {filteredProducts.map(p => <ProductCard key={p.id} product={p} onPreview={id => window.location.hash = `#/preview/${id}`} onBuy={id => { setOrderProductId(id); window.location.hash = '#/order'; }} />)}
-                  {filteredProducts.length === 0 && (
+                  {filteredProducts.length === 0 && !isLoading && (
                     <div className="col-span-full py-20 text-center glass-panel rounded-[2rem] border-dashed border-2 border-zinc-200 text-zinc-400 font-bold uppercase text-[10px] flex flex-col items-center gap-4">
                        <i className="fa-solid fa-box-open text-4xl opacity-20"></i>
                        <span>No assets found in database.</span>
@@ -267,9 +258,9 @@ const App: React.FC = () => {
                   </h2>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                     {dbVideos.map(vid => (
-                      <div key={vid.id} onClick={() => window.open(vid.url, '_blank')} className="glass-panel group overflow-hidden rounded-[2.5rem] cursor-pointer transition-all border border-white/20 relative">
+                      <div key={vid.id} onClick={() => window.open(vid.url, '_blank')} className="glass-panel group overflow-hidden rounded-[2.5rem] cursor-pointer transition-all border border-white/20 relative shadow-lg">
                         <div className="aspect-video relative overflow-hidden bg-zinc-900">
-                           <img loading="lazy" src={`https://img.youtube.com/vi/${vid.id}/maxresdefault.jpg`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 opacity-80" alt="" />
+                           <img loading="lazy" src={`https://img.youtube.com/vi/${vid.id}/mqdefault.jpg`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 opacity-80" alt="" />
                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
                            <div className="absolute inset-0 flex items-center justify-center">
                               <div className="w-14 h-14 bg-red-600 text-white rounded-full flex items-center justify-center shadow-2xl scale-90 group-hover:scale-110 transition-all">
@@ -288,15 +279,16 @@ const App: React.FC = () => {
             </div>
           )
         )}
-
+        
+        {/* ... (نفس باقي الأقسام Order و Preview و Admin دون تغيير) ... */}
         {activeSection === 'Preview' && selectedProduct && (
           <div className="max-w-6xl mx-auto pb-20 px-4 animate-in fade-in duration-500">
-             <button onClick={() => window.history.back()} className="w-10 h-10 mb-8 flex items-center justify-center bg-white rounded-full shadow-lg border border-zinc-200"><i className="fa-solid fa-chevron-left"></i></button>
+             <button onClick={() => window.history.back()} className="w-10 h-10 mb-8 flex items-center justify-center bg-white rounded-full shadow-lg border border-zinc-200 hover:scale-110 transition-transform"><i className="fa-solid fa-chevron-left"></i></button>
              <div className="flex flex-col lg:flex-row items-center lg:items-start gap-12">
                 <div className="w-full lg:w-auto shrink-0 flex flex-col items-center gap-8">
                    <div className="relative aspect-[1290/2796] w-full max-w-[320px] rounded-[40px] bg-black p-3 shadow-3xl">
                       <div className="relative w-full h-full rounded-[30px] overflow-hidden bg-zinc-900">
-                        <img loading="eager" src={selectedProduct.gallery && selectedProduct.gallery.length > 0 ? selectedProduct.gallery[previewImageIndex] : selectedProduct.image} className="w-full h-full object-cover" alt="" />
+                        <img loading="eager" src={selectedProduct.gallery && selectedProduct.gallery.length > 0 ? selectedProduct.gallery[previewImageIndex] : selectedProduct.image} className="w-full h-full object-cover animate-in fade-in duration-300" alt="" />
                       </div>
                    </div>
                    <div className="flex flex-wrap gap-2 justify-center">

@@ -66,7 +66,13 @@
             align-items: center;
             justify-content: center;
             background-color: #F2F2F7;
-            transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.6s;
+            transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s ease;
+        }
+
+        #static-loader.fade-out {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(1.05);
         }
 
         #loader-text {
@@ -88,13 +94,13 @@
 <body class="bg-[#F2F2F7] text-zinc-900 selection:bg-blue-500/30">
     <div id="static-loader">
         <div style="position: relative;">
-            <div style="width: 100px; height: 100px; border-radius: 50%; overflow: hidden; border: 4px solid white; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15); background: white;">
+            <div style="width: 80px; height: 80px; border-radius: 50%; overflow: hidden; border: 4px solid white; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15); background: white;">
                 <img id="loader-img" fetchpriority="high" style="width: 100%; height: 100%; object-fit: cover; opacity: 0;" alt="Edge">
             </div>
-            <div class="spinner-ring" style="position: absolute; top: -12px; left: -12px; right: -12px; bottom: -12px; border-radius: 50%; border: 2px dashed #007AFF;"></div>
+            <div class="spinner-ring" style="position: absolute; top: -10px; left: -10px; right: -10px; bottom: -10px; border-radius: 50%; border: 2px dashed #007AFF;"></div>
         </div>
         <div style="margin-top: 24px; text-align: center;">
-            <h3 id="loader-text" style="font-size: 1.1rem; font-weight: 900; letter-spacing: -0.02em; text-transform: uppercase;">MOHAMED EDGE</h3>
+            <h3 id="loader-text" style="font-size: 1rem; font-weight: 900; letter-spacing: 0.1em; text-transform: uppercase;">LOADING</h3>
         </div>
     </div>
 
@@ -105,8 +111,6 @@
             const defaultLogo = "https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa";
             const cachedLoaderLogo = localStorage.getItem('cached_loader_logo') || defaultLogo;
             
-            // تم إزالة منطق تفعيل الوضع الداكن هنا
-
             const loaderImg = document.getElementById('loader-img');
             if (loaderImg) {
                 loaderImg.src = cachedLoaderLogo;
@@ -116,8 +120,15 @@
 
             window.hideSplash = function() {
               const splash = document.getElementById('static-loader');
-              if (splash) splash.classList.add('fade-out');
+              if (splash) {
+                  splash.classList.add('fade-out');
+                  // Remove from DOM after transition
+                  setTimeout(() => splash.remove(), 500);
+              }
             };
+            
+            // Fallback: إخفاء تلقائي بعد 3 ثوانٍ إذا حدث أي تأخير في التطبيق
+            setTimeout(window.hideSplash, 3500);
         })();
     </script>
     <script type="module" src="index.tsx"></script>
