@@ -296,6 +296,19 @@ const App: React.FC = () => {
     showNotify("Image removed");
   };
 
+  // Function to generate the Telegram message URL
+  const getTelegramLink = (product: Product, device: string, isPaid: boolean) => {
+    const priceText = product.price === 0 ? 'FREE' : `${product.price} EGP`;
+    const message = `Hello, I would like to order a digital product:
+
+📱 Phone Type: ${device}
+📦 Category: ${product.category}
+🏷️ Product: ${product.title}
+💰 Price: ${priceText}${isPaid ? '\n\n✅ Payment has been sent via Vodafone Cash.' : ''}`;
+    
+    return `https://t.me/Mohamed_edge?text=${encodeURIComponent(message)}`;
+  };
+
   if (isLoading && dbProducts.length === 0) return null;
 
   return (
@@ -456,7 +469,7 @@ const App: React.FC = () => {
                                    </div>
                                  </div>
                               </div>
-                              <button onClick={() => window.open(`https://t.me/Mohamed_edge?text=Order: ${currentOrderedProduct.title} (${orderDevice}). Payment Confirmed.`, '_blank')} className="w-full py-5 md:py-7 bg-[#0088CC] text-white rounded-[2rem] font-black text-base shadow-xl flex items-center justify-center gap-3 hover:scale-[1.02] transition-all">
+                              <button onClick={() => window.open(getTelegramLink(currentOrderedProduct, orderDevice, true), '_blank')} className="w-full py-5 md:py-7 bg-[#0088CC] text-white rounded-[2rem] font-black text-base shadow-xl flex items-center justify-center gap-3 hover:scale-[1.02] transition-all">
                                 <i className="fa-brands fa-telegram text-2xl"></i> Verify on Telegram
                               </button>
                             </>
@@ -467,7 +480,7 @@ const App: React.FC = () => {
                                   <h3 className="text-xl font-black uppercase text-[#007AFF]">Complementary Item</h3>
                                   <p className="text-[10px] md:text-xs font-bold text-zinc-500">This asset is available for free. You can request the direct link instantly via Telegram.</p>
                                </div>
-                               <button onClick={() => window.open(`https://t.me/Mohamed_edge?text=Hello, I would like to receive the link for ${currentOrderedProduct.title} (${orderDevice}).`, '_blank')} className="w-full py-5 md:py-7 bg-[#0088CC] text-white rounded-[2rem] font-black text-base shadow-xl flex items-center justify-center gap-3 hover:scale-[1.02] transition-all">
+                               <button onClick={() => window.open(getTelegramLink(currentOrderedProduct, orderDevice, false), '_blank')} className="w-full py-5 md:py-7 bg-[#0088CC] text-white rounded-[2rem] font-black text-base shadow-xl flex items-center justify-center gap-3 hover:scale-[1.02] transition-all">
                                  <i className="fa-brands fa-telegram text-2xl"></i> Get via Telegram
                                </button>
                             </div>
