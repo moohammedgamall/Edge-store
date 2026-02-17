@@ -235,7 +235,6 @@ const App: React.FC = () => {
       {isAuthModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-white/40 backdrop-blur-3xl animate-in fade-in duration-500">
           <div className="w-full max-w-[380px] bg-white/90 rounded-[3rem] p-10 space-y-10 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.15)] border border-white/50 text-center relative overflow-hidden">
-            {/* Background Decorative Element */}
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#007AFF] to-transparent opacity-50"></div>
             
             <div className="space-y-4">
@@ -335,40 +334,111 @@ const App: React.FC = () => {
         )}
 
         {activeSection === 'Preview' && selectedProduct && (
-          <div className="animate-in slide-in-from-bottom-8 duration-700 space-y-12 pb-20">
-            <div className="max-w-5xl mx-auto glass-panel p-6 md:p-12 rounded-[3rem] shadow-2xl overflow-hidden flex flex-col md:flex-row gap-12 border-white/40">
-              <div className="flex-1 space-y-6">
-                <div className="aspect-[4/5] bg-zinc-100 rounded-[2.5rem] overflow-hidden shadow-inner border border-zinc-200">
-                  <img src={previewImageIndex === -1 ? selectedProduct.image : (selectedProduct.gallery ? selectedProduct.gallery[previewImageIndex] : selectedProduct.image)} className="w-full h-full object-contain" />
+          <div className="animate-in slide-in-from-bottom-8 duration-700 space-y-12 pb-24">
+            <div className="max-w-6xl mx-auto glass-panel overflow-hidden rounded-[3rem] shadow-3xl border border-white/40 flex flex-col md:flex-row min-h-[600px]">
+              {/* Left Side: Image Showcase */}
+              <div className="w-full md:w-[45%] bg-zinc-100/50 dark:bg-zinc-900/20 p-6 md:p-12 flex flex-col gap-6 items-center justify-center border-r border-zinc-200/50">
+                <div className="w-full aspect-[4/5] rounded-[2rem] overflow-hidden shadow-2xl bg-white dark:bg-zinc-800 flex items-center justify-center group relative">
+                  <img 
+                    src={previewImageIndex === -1 ? selectedProduct.image : (selectedProduct.gallery ? selectedProduct.gallery[previewImageIndex] : selectedProduct.image)} 
+                    className="h-full w-full object-contain animate-in fade-in zoom-in-95 duration-500" 
+                    alt={selectedProduct.title}
+                  />
+                  {/* Zoom Overlay on Hover (Visual only) */}
+                  <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
                 </div>
+                
                 {selectedProduct.gallery && selectedProduct.gallery.length > 0 && (
-                  <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide">
-                    <div onClick={() => setPreviewImageIndex(-1)} className={`w-16 h-16 rounded-xl overflow-hidden shrink-0 border-2 transition-all cursor-pointer ${previewImageIndex === -1 ? 'border-[#007AFF]' : 'border-transparent'}`}><img src={selectedProduct.image} className="w-full h-full object-cover" /></div>
+                  <div className="w-full flex gap-3 overflow-x-auto py-2 scrollbar-hide snap-x">
+                    <div 
+                      onClick={() => setPreviewImageIndex(-1)} 
+                      className={`snap-start w-20 h-24 rounded-2xl overflow-hidden shrink-0 border-4 transition-all cursor-pointer ${previewImageIndex === -1 ? 'border-[#007AFF] scale-110' : 'border-transparent opacity-60'}`}
+                    >
+                      <img src={selectedProduct.image} className="w-full h-full object-cover" />
+                    </div>
                     {selectedProduct.gallery.map((img, idx) => (
-                      <div key={idx} onClick={() => setPreviewImageIndex(idx)} className={`w-16 h-16 rounded-xl overflow-hidden shrink-0 border-2 transition-all cursor-pointer ${previewImageIndex === idx ? 'border-[#007AFF]' : 'border-transparent'}`}><img src={img} className="w-full h-full object-cover" /></div>
+                      <div 
+                        key={idx} 
+                        onClick={() => setPreviewImageIndex(idx)} 
+                        className={`snap-start w-20 h-24 rounded-2xl overflow-hidden shrink-0 border-4 transition-all cursor-pointer ${previewImageIndex === idx ? 'border-[#007AFF] scale-110' : 'border-transparent opacity-60'}`}
+                      >
+                        <img src={img} className="w-full h-full object-cover" />
+                      </div>
                     ))}
                   </div>
                 )}
               </div>
-              <div className="flex-1 space-y-8 py-4">
-                <div className="space-y-2">
-                  <div className="text-[10px] font-black text-[#007AFF] uppercase tracking-[0.3em]">{selectedProduct.category}</div>
-                  <h2 className="text-4xl font-black tracking-tighter text-zinc-900 leading-tight">{selectedProduct.title}</h2>
-                  <div className="flex items-center gap-3 pt-2">
-                    <div className="px-3 py-1 bg-zinc-100 rounded-full text-[9px] font-black text-zinc-500 uppercase tracking-widest">Realme / Oppo Compatible</div>
-                    {selectedProduct.android_version && <div className="px-3 py-1 bg-green-500/10 rounded-full text-[9px] font-black text-green-600 uppercase tracking-widest">{selectedProduct.android_version}</div>}
+
+              {/* Right Side: Product Details */}
+              <div className="flex-1 p-8 md:p-16 flex flex-col justify-between space-y-10">
+                <div className="space-y-8">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <span className="px-3 py-1 bg-[#007AFF]/10 text-[#007AFF] rounded-full text-[10px] font-black uppercase tracking-widest border border-[#007AFF]/20">
+                        {selectedProduct.category}
+                      </span>
+                      {selectedProduct.android_version && (
+                        <span className="px-3 py-1 bg-green-500/10 text-green-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-green-500/20">
+                          Android {selectedProduct.android_version}
+                        </span>
+                      )}
+                    </div>
+                    <h2 className="text-4xl md:text-5xl font-black tracking-tighter text-zinc-900 leading-tight">
+                      {selectedProduct.title}
+                    </h2>
+                  </div>
+
+                  <div className="p-6 bg-zinc-50 dark:bg-zinc-800/40 rounded-[2rem] border border-zinc-200/50">
+                    <p className="text-zinc-500 dark:text-zinc-400 font-medium text-lg leading-relaxed">
+                      {selectedProduct.description}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-zinc-100 rounded-2xl flex items-center justify-center text-[#007AFF] shadow-sm">
+                        <i className="fa-solid fa-mobile-screen-button text-lg"></i>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Compatibility</span>
+                        <span className="text-sm font-bold text-zinc-800">Realme / Oppo</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-zinc-100 rounded-2xl flex items-center justify-center text-[#007AFF] shadow-sm">
+                        <i className="fa-solid fa-shield-check text-lg"></i>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Status</span>
+                        <span className="text-sm font-bold text-zinc-800">Verified Asset</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <p className="text-zinc-500 font-medium text-lg leading-relaxed">{selectedProduct.description}</p>
-                <div className="pt-8 border-t border-zinc-100 flex items-center justify-between">
-                   <div className="space-y-1">
-                     <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Pricing</span>
-                     <div className="text-3xl font-black text-zinc-900">{selectedProduct.price === 0 ? 'FREE' : `${selectedProduct.price} EGP`}</div>
+
+                <div className="pt-10 border-t border-zinc-100 flex flex-col sm:flex-row items-center justify-between gap-6">
+                   <div className="flex flex-col items-center sm:items-start">
+                     <span className="text-[11px] font-black text-zinc-400 uppercase tracking-widest mb-1">Asset Value</span>
+                     <div className="text-4xl font-black text-zinc-900 tracking-tighter">
+                       {selectedProduct.price === 0 ? 'FREE' : `${selectedProduct.price.toLocaleString()} EGP`}
+                     </div>
                    </div>
-                   <button onClick={() => { setOrderProductId(selectedProduct.id); window.location.hash = '#/order'; }} className="px-10 py-5 bg-[#007AFF] text-white rounded-[2rem] font-black shadow-xl hover:scale-105 transition-transform flex items-center gap-3">
-                     {selectedProduct.price === 0 ? 'Download' : 'Buy Now'}
-                     <i className="fa-solid fa-arrow-right"></i>
-                   </button>
+                   
+                   <div className="flex items-center gap-4 w-full sm:w-auto">
+                     <button 
+                       onClick={() => window.location.hash = '#/'} 
+                       className="flex-1 sm:flex-none px-8 py-5 rounded-[2rem] font-black text-[11px] uppercase tracking-widest text-zinc-400 hover:text-zinc-900 transition-colors"
+                     >
+                       Close
+                     </button>
+                     <button 
+                       onClick={() => { setOrderProductId(selectedProduct.id); window.location.hash = '#/order'; }} 
+                       className="flex-1 sm:flex-none px-12 py-5 bg-[#007AFF] text-white rounded-[2rem] font-black text-[11px] uppercase tracking-[0.2em] shadow-2xl shadow-blue-500/30 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3"
+                     >
+                       {selectedProduct.price === 0 ? 'Download' : 'Order Asset'}
+                       <i className="fa-solid fa-chevron-right text-[10px]"></i>
+                     </button>
+                   </div>
                 </div>
               </div>
             </div>
