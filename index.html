@@ -54,14 +54,12 @@
         *::-webkit-scrollbar { display: none; }
         * { -ms-overflow-style: none; scrollbar-width: none; }
 
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-
         @keyframes spin-custom {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
         }
         .spinner-ring {
-          animation: spin-custom 8s linear infinite;
+          animation: spin-custom 6s linear infinite;
         }
 
         #static-loader {
@@ -73,7 +71,7 @@
             align-items: center;
             justify-content: center;
             background-color: #F2F2F7;
-            transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.6s;
+            transition: opacity 0.5s ease, visibility 0.5s;
         }
         .dark #static-loader {
             background-color: #1C1C1E;
@@ -98,13 +96,13 @@
 <body class="bg-[#F2F2F7] dark:bg-[#1C1C1E] text-zinc-900 dark:text-zinc-100 selection:bg-blue-500/30">
     <div id="static-loader">
         <div style="position: relative;">
-            <div style="width: 100px; height: 100px; border-radius: 50%; overflow: hidden; border: 4px solid white; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); background: white;">
-                <img id="loader-img" fetchpriority="high" style="width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.3s ease;" alt="Mohamed Edge">
+            <div style="width: 100px; height: 100px; border-radius: 50%; overflow: hidden; border: 4px solid white; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15); background: white;">
+                <img id="loader-img" fetchpriority="high" style="width: 100%; height: 100%; object-fit: cover; opacity: 0;" alt="Edge">
             </div>
-            <div class="spinner-ring" style="position: absolute; top: -16px; left: -16px; right: -16px; bottom: -16px; border-radius: 50%; border: 2px dashed #007AFF;"></div>
+            <div class="spinner-ring" style="position: absolute; top: -12px; left: -12px; right: -12px; bottom: -12px; border-radius: 50%; border: 2px dashed #007AFF;"></div>
         </div>
-        <div style="margin-top: 32px; text-align: center;">
-            <h3 id="loader-text" style="font-size: 1.25rem; font-weight: 900; letter-spacing: -0.05em; color: #18181b; text-transform: uppercase;">MOHAMED EDGE</h3>
+        <div style="margin-top: 24px; text-align: center;">
+            <h3 id="loader-text" style="font-size: 1.1rem; font-weight: 900; letter-spacing: -0.02em; color: #18181b; text-transform: uppercase;">MOHAMED EDGE</h3>
         </div>
     </div>
 
@@ -113,37 +111,16 @@
     <script>
         (function() {
             const defaultLogo = "https://lh3.googleusercontent.com/d/1tCXZx_OsKg2STjhUY6l_h6wuRPNjQ5oa";
-            let cachedLoaderLogo = localStorage.getItem('cached_loader_logo');
-            
-            if (!cachedLoaderLogo || cachedLoaderLogo.length < 30) {
-              cachedLoaderLogo = defaultLogo;
-            }
-
+            const cachedLogo = localStorage.getItem('cached_loader_logo') || defaultLogo;
             const isDark = localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
             
+            if (isDark) document.documentElement.classList.add('dark');
+
             const loaderImg = document.getElementById('loader-img');
-            const loaderText = document.getElementById('loader-text');
-
-            if (isDark) {
-                document.documentElement.classList.add('dark');
-                if (loaderText) loaderText.style.color = '#f4f4f5';
-            }
-
             if (loaderImg) {
-                loaderImg.onerror = function() {
-                  this.src = defaultLogo;
-                  this.style.opacity = '1';
-                };
-                
-                // Set the src
-                loaderImg.src = cachedLoaderLogo;
-                
-                // Immediate check if already loaded (cached)
-                if (loaderImg.complete) {
-                  loaderImg.style.opacity = '1';
-                } else {
-                  loaderImg.onload = () => { loaderImg.style.opacity = '1'; };
-                }
+                loaderImg.src = cachedLogo;
+                loaderImg.onload = () => { loaderImg.style.opacity = '1'; };
+                loaderImg.onerror = () => { loaderImg.src = defaultLogo; loaderImg.style.opacity = '1'; };
             }
         })();
     </script>
