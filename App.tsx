@@ -40,6 +40,39 @@ const App: React.FC = () => {
     return stored ? stored === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
   });
 
+  // التحكم في شريط حالة الأندرويد ومراقب التغييرات (MutationObserver)
+  useEffect(() => {
+    function sendThemeToApp(): void {
+      const isDark = document.documentElement.classList.contains('dark');
+      const theme = isDark ? 'dark' : 'light';
+      if (window.Android?.setStatusBarTheme) {
+        window.Android.setStatusBarTheme(theme);
+      }
+    }
+
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (mutation.attributeName === 'class') {
+          sendThemeToApp();
+          break;
+        }
+      }
+    });
+
+    observer.observe(document.documentElement, { attributes: true });
+    
+    // إرسال الحالة الأولية
+    sendThemeToApp();
+    window.addEventListener('load', sendThemeToApp);
+    document.addEventListener('DOMContentLoaded', sendThemeToApp);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('load', sendThemeToApp);
+      document.removeEventListener('DOMContentLoaded', sendThemeToApp);
+    };
+  }, []);
+
   const [dbProducts, setDbProducts] = useState<Product[]>([]);
   const [dbVideos, setDbVideos] = useState<YoutubeVideo[]>([]); 
   
@@ -62,7 +95,6 @@ const App: React.FC = () => {
 
   const [videoUrlInput, setVideoUrlInput] = useState('');
   const [videoTitleInput, setVideoTitleInput] = useState('');
-  const [isFetchingVideo, setIsFetchingVideo] = useState(false);
 
   const showNotify = useCallback((message: string, type: 'success' | 'error' = 'success') => {
     setNotification({ message, type });
@@ -73,7 +105,6 @@ const App: React.FC = () => {
     setIsLoading(true);
     setDbError(null);
     try {
-      // 1. جلب المنتجات
       const { data: products, error: prodErr } = await supabase
         .from('products')
         .select('*')
@@ -82,14 +113,11 @@ const App: React.FC = () => {
       if (prodErr) throw new Error(`Products Load Error: ${prodErr.message}`);
       if (products) setDbProducts(products as Product[]);
 
-      // 2. جلب الفيديوهات
       const { data: videos, error: vidErr } = await supabase.from('videos').select('*').order('created_at', { ascending: false });
-      if (vidErr) console.warn("Videos not found or error:", vidErr.message);
+      if (vidErr) console.warn("Videos error:", vidErr.message);
       if (videos) setDbVideos(videos as YoutubeVideo[]);
 
-      // 3. جلب الإعدادات
       const { data: settings, error: settErr } = await supabase.from('settings').select('*');
-      if (settErr) console.warn("Settings error:", settErr.message);
       if (settings) {
         settings.forEach(s => {
           if (s.key === 'admin_password') {
@@ -107,9 +135,9 @@ const App: React.FC = () => {
         });
       }
     } catch (err: any) {
-      console.error("Supabase Connection Error:", err);
+      console.error("Supabase Error:", err);
       setDbError(err.message);
-      showNotify("Connection to database failed. Please check your Supabase credentials.", "error");
+      showNotify("Connection to database failed.", "error");
     } finally {
       setIsLoading(false);
     }
@@ -216,20 +244,6 @@ const App: React.FC = () => {
     } catch (err: any) { 
       showNotify(err.message, "error"); 
     } finally { setIsPublishing(false); }
-  };
-
-  const addVideo = async () => {
-    const id = getYouTubeId(videoUrlInput);
-    if (!id || !videoTitleInput) return showNotify("Valid link and title required", "error");
-    setIsPublishing(true);
-    try {
-      const { error } = await supabase.from('videos').upsert({ id, title: videoTitleInput, url: `https://www.youtube.com/watch?v=${id}` });
-      if (error) throw error;
-      setVideoUrlInput(''); setVideoTitleInput('');
-      refreshData();
-      showNotify("Video added");
-    } catch (err: any) { showNotify(err.message, "error"); }
-    finally { setIsPublishing(false); }
   };
 
   // Helper to render title with icon

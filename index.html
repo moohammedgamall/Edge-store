@@ -81,6 +81,14 @@
             visibility: hidden;
             pointer-events: none;
         }
+
+        #loader-text {
+            color: #18181b;
+            transition: color 0.3s ease;
+        }
+        .dark #loader-text {
+            color: #ffffff;
+        }
     </style>
 <script type="importmap">
 {
@@ -102,7 +110,7 @@
             <div class="spinner-ring" style="position: absolute; top: -12px; left: -12px; right: -12px; bottom: -12px; border-radius: 50%; border: 2px dashed #007AFF;"></div>
         </div>
         <div style="margin-top: 24px; text-align: center;">
-            <h3 id="loader-text" style="font-size: 1.1rem; font-weight: 900; letter-spacing: -0.02em; color: #18181b; text-transform: uppercase;">MOHAMED EDGE</h3>
+            <h3 id="loader-text" style="font-size: 1.1rem; font-weight: 900; letter-spacing: -0.02em; text-transform: uppercase;">MOHAMED EDGE</h3>
         </div>
     </div>
 
