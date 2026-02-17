@@ -352,30 +352,28 @@ const App: React.FC = () => {
         {activeSection === 'Preview' && selectedProduct && (
           <div className="animate-in slide-in-from-bottom-8 duration-700 space-y-12 pb-24">
             <div className="max-w-6xl mx-auto glass-panel overflow-hidden rounded-[3rem] shadow-3xl border border-white/40 flex flex-col md:flex-row min-h-[600px]">
-              {/* Left Side: Image Showcase */}
+              {/* Left Side: Image Showcase inside iPhone Mockup */}
               <div className="w-full md:w-[45%] bg-zinc-100/50 dark:bg-zinc-900/20 p-6 md:p-12 flex flex-col gap-6 items-center justify-center border-r border-zinc-200/50">
-                <div className="w-full aspect-[4/5] rounded-[2rem] overflow-hidden shadow-2xl bg-white dark:bg-zinc-800 flex items-center justify-center group relative">
-                  <img 
-                    src={previewImageIndex === -1 ? selectedProduct.image : (selectedProduct.gallery ? selectedProduct.gallery[previewImageIndex] : selectedProduct.image)} 
-                    className="h-full w-full object-contain animate-in fade-in zoom-in-95 duration-500" 
+                
+                {/* iPhone Mockup - 50px Corner Radius, No Dynamic Island */}
+                <div className="relative mx-auto w-full max-w-[300px] border-[10px] border-zinc-900 rounded-[50px] overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)] aspect-[9/19.5] bg-black">
+                   <img 
+                    src={(selectedProduct.gallery && selectedProduct.gallery.length > 0) 
+                      ? (previewImageIndex === -1 ? selectedProduct.gallery[0] : selectedProduct.gallery[previewImageIndex])
+                      : selectedProduct.image} 
+                    className="w-full h-full object-cover animate-in fade-in zoom-in-95 duration-500" 
                     alt={selectedProduct.title}
                   />
-                  <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
                 </div>
                 
+                {/* Gallery List (Excluding Cover) */}
                 {selectedProduct.gallery && selectedProduct.gallery.length > 0 && (
                   <div className="w-full flex gap-3 overflow-x-auto py-2 scrollbar-hide snap-x">
-                    <div 
-                      onClick={() => setPreviewImageIndex(-1)} 
-                      className={`snap-start w-20 h-24 rounded-2xl overflow-hidden shrink-0 border-4 transition-all cursor-pointer ${previewImageIndex === -1 ? 'border-[#007AFF] scale-110' : 'border-transparent opacity-60'}`}
-                    >
-                      <img src={selectedProduct.image} className="w-full h-full object-cover" />
-                    </div>
                     {selectedProduct.gallery.map((img, idx) => (
                       <div 
                         key={idx} 
                         onClick={() => setPreviewImageIndex(idx)} 
-                        className={`snap-start w-20 h-24 rounded-2xl overflow-hidden shrink-0 border-4 transition-all cursor-pointer ${previewImageIndex === idx ? 'border-[#007AFF] scale-110' : 'border-transparent opacity-60'}`}
+                        className={`snap-start w-16 h-20 rounded-xl overflow-hidden shrink-0 border-4 transition-all cursor-pointer ${ (previewImageIndex === idx || (previewImageIndex === -1 && idx === 0)) ? 'border-[#007AFF] scale-105' : 'border-transparent opacity-60'}`}
                       >
                         <img src={img} className="w-full h-full object-cover" />
                       </div>
