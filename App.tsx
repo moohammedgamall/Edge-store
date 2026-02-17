@@ -87,7 +87,6 @@ const App: React.FC = () => {
       console.error("Data fetch error", err);
     } finally {
       setIsLoading(false);
-      // إخفاء شاشة التحميل الساكنة فور توفر البيانات أو انتهاء المحاولة
       if (typeof (window as any).hideSplash === 'function') {
         (window as any).hideSplash();
       }
@@ -331,7 +330,7 @@ const App: React.FC = () => {
           <div className="max-w-4xl mx-auto py-8 px-4 animate-in slide-in-from-bottom-8 duration-700">
             <div className="glass-panel p-6 md:p-12 rounded-[2.5rem] md:rounded-[4rem] space-y-10 shadow-2xl relative border-white/20">
                 <div className="text-center space-y-3">
-                  <div className="w-16 h-16 bg-[#007AFF]/10 text-[#007AFF] rounded-2xl flex items-center justify-center mx-auto mb-4"><i className="fa-solid fa-cart-check text-2xl"></i></div>
+                  <div className="w-16 h-16 bg-[#007AFF]/10 text-[#007AFF] rounded-2xl flex items-center justify-center mx-auto mb-4 border border-[#007AFF]/20 shadow-lg"><i className="fa-solid fa-file-invoice-dollar text-2xl"></i></div>
                   <h2 className="text-2xl md:text-5xl font-black uppercase tracking-tighter text-zinc-900 dark:text-zinc-100">Order Process</h2>
                   <p className="text-zinc-500 dark:text-zinc-400 font-medium">Select your asset and contact via Telegram.</p>
                 </div>
@@ -371,6 +370,14 @@ const App: React.FC = () => {
                                 <p className="text-sm text-zinc-500 font-medium">This asset is free. Request the link from Mohamed Edge via Telegram.</p>
                               )}
                            </div>
+                           
+                           {/* رسالة التنبيه الجديدة باللغة العربية */}
+                           <div className="p-5 bg-red-500/10 border-2 border-red-500/20 rounded-3xl animate-pulse">
+                              <p className="text-right font-black text-red-600 dark:text-red-400 text-sm leading-relaxed" dir="rtl">
+                                ⚠️ يرجى تأكيد دفع المبلغ بالكامل على الرقم الموجود في هذه الصفحة قبل المتابعة للتواصل عبر التليجرام.
+                              </p>
+                           </div>
+
                            <button onClick={() => window.open(`https://t.me/Mohamed_edge?text=I want to order: ${currentOrderedProduct.title} for ${orderDevice}`, '_blank')} className="w-full py-5 bg-[#0088CC] text-white rounded-[2rem] font-black shadow-xl flex items-center justify-center gap-3 hover:scale-[1.02] transition-all">
                              <i className="fa-brands fa-telegram text-2xl"></i> Chat on Telegram
                            </button>
@@ -411,7 +418,7 @@ const App: React.FC = () => {
                        <div className="space-y-4">
                           <label className="text-[10px] font-black uppercase text-zinc-400 px-2 tracking-widest">Cover Image</label>
                           <div className="aspect-video bg-zinc-100 dark:bg-zinc-800 rounded-[2rem] overflow-hidden relative border-2 border-dashed border-zinc-300 dark:border-zinc-700 hover:border-[#007AFF] transition-colors group">
-                             {editProduct.image ? <img loading="lazy" src={editProduct.image} className="w-full h-full object-cover" /> : <div className="w-full h-full flex flex-col items-center justify-center opacity-30"><i className="fa-solid fa-cloud-arrow-up text-3xl mb-2"></i><span className="text-[10px] font-black uppercase">Click to upload</span></div>}
+                             {editProduct.image ? <img src={editProduct.image} className="w-full h-full object-cover" /> : <div className="w-full h-full flex flex-col items-center justify-center opacity-30"><i className="fa-solid fa-cloud-arrow-up text-3xl mb-2"></i><span className="text-[10px] font-black uppercase">Click to upload</span></div>}
                              <input type="file" accept="image/*" onChange={async e => { if(e.target.files?.[0]) setEditProduct({...editProduct, image: await fileToBase64(e.target.files[0])}); }} className="absolute inset-0 opacity-0 cursor-pointer" />
                           </div>
                           <div className="space-y-2">
@@ -419,7 +426,7 @@ const App: React.FC = () => {
                              <div className="grid grid-cols-4 gap-2">
                                {editProduct.gallery?.map((g, i) => (
                                  <div key={i} className="aspect-square rounded-lg bg-zinc-200 dark:bg-zinc-900 relative group overflow-hidden">
-                                   <img loading="lazy" src={g} className="w-full h-full object-cover" />
+                                   <img src={g} className="w-full h-full object-cover" />
                                    <button onClick={() => setEditProduct({...editProduct, gallery: editProduct.gallery?.filter((_, idx) => idx !== i)})} className="absolute inset-0 bg-red-600/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white"><i className="fa-solid fa-trash"></i></button>
                                  </div>
                                ))}
@@ -441,7 +448,7 @@ const App: React.FC = () => {
                    {dbProducts.map(p => (
                      <div key={p.id} className="p-4 glass-panel rounded-3xl flex items-center justify-between group hover:border-[#007AFF]/30 transition-all">
                         <div className="flex items-center gap-4">
-                           <img loading="lazy" src={p.image} className="w-14 h-14 rounded-2xl object-cover shadow-sm" />
+                           <img src={p.image} className="w-14 h-14 rounded-2xl object-cover shadow-sm" />
                            <div>
                              <p className="font-black text-sm text-zinc-900 dark:text-zinc-100">{p.title}</p>
                              <p className="text-[9px] text-[#007AFF] font-black uppercase tracking-widest">{p.category} • {p.price} EGP</p>
@@ -486,7 +493,7 @@ const App: React.FC = () => {
                     {dbVideos.map(v => (
                        <div key={v.id} className="p-4 glass-panel rounded-2xl flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                             <div className="w-16 h-10 bg-black rounded overflow-hidden"><img loading="lazy" src={`https://img.youtube.com/vi/${v.id}/default.jpg`} className="w-full h-full object-cover" /></div>
+                             <div className="w-16 h-10 bg-black rounded overflow-hidden"><img src={`https://img.youtube.com/vi/${v.id}/default.jpg`} className="w-full h-full object-cover" /></div>
                              <p className="font-bold text-xs truncate max-w-[150px] text-zinc-900 dark:text-zinc-100">{v.title}</p>
                           </div>
                           <button onClick={async () => { if(confirm('Delete video?')) { await supabase.from('videos').delete().eq('id', v.id); refreshData(); } }} className="text-red-500 hover:scale-110 transition-transform"><i className="fa-solid fa-trash-can"></i></button>
@@ -505,14 +512,14 @@ const App: React.FC = () => {
                          <div className="space-y-4 text-center">
                            <label className="text-[10px] font-black uppercase text-zinc-400 block tracking-widest">Main Header Logo</label>
                            <div className="w-24 h-24 mx-auto rounded-full overflow-hidden relative border-4 border-[#007AFF]/20 bg-zinc-100 shadow-xl group">
-                             <img loading="lazy" src={siteLogo} className="w-full h-full object-cover" />
+                             <img src={siteLogo} className="w-full h-full object-cover" />
                              <input type="file" accept="image/*" onChange={async e => { if(e.target.files?.[0]) { const b64 = await fileToBase64(e.target.files[0]); await supabase.from('settings').upsert({key: 'site_logo', value: b64}); refreshData(); showNotify("Header logo updated"); } }} className="absolute inset-0 opacity-0 cursor-pointer" />
                            </div>
                          </div>
                          <div className="space-y-4 text-center">
                            <label className="text-[10px] font-black uppercase text-zinc-400 block tracking-widest">Loading Screen Logo</label>
                            <div className="w-24 h-24 mx-auto rounded-full overflow-hidden relative border-4 border-amber-500/20 bg-zinc-100 shadow-xl group">
-                             <img loading="lazy" src={loaderLogo} className="w-full h-full object-cover" />
+                             <img src={loaderLogo} className="w-full h-full object-cover" />
                              <input type="file" accept="image/*" onChange={async e => { if(e.target.files?.[0]) { const b64 = await fileToBase64(e.target.files[0]); await supabase.from('settings').upsert({key: 'loader_logo', value: b64}); refreshData(); showNotify("Loading logo updated"); } }} className="absolute inset-0 opacity-0 cursor-pointer" />
                            </div>
                            <p className="text-[9px] text-zinc-400 font-bold italic">Changes splash logo on next reload.</p>
