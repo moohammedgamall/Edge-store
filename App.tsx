@@ -427,84 +427,141 @@ const App: React.FC = () => {
         )}
         
         {activeSection === 'Order' && (
-          <div className="max-w-4xl mx-auto py-8 animate-in slide-in-from-bottom-8">
-            <div className="glass-panel p-10 rounded-[4rem] space-y-10 shadow-3xl border-white/20">
-                <div className="text-center space-y-3">
-                  <div className="w-16 h-16 bg-[#007AFF]/10 text-[#007AFF] rounded-2xl flex items-center justify-center mx-auto mb-4 border border-[#007AFF]/20 shadow-lg"><i className="fa-solid fa-cart-shopping text-2xl"></i></div>
-                  <h2 className="text-4xl font-black uppercase tracking-tighter text-zinc-900">Checkout</h2>
-                  <p className="text-zinc-500 font-medium">Finalize your purchase via Telegram.</p>
+          <div className="max-w-5xl mx-auto py-4 md:py-8 lg:py-12 animate-in slide-in-from-bottom-8">
+            <div className="glass-panel p-6 sm:p-8 md:p-12 lg:p-16 rounded-[2.5rem] md:rounded-[4rem] space-y-8 md:space-y-12 shadow-3xl border-white/20">
+                <div className="text-center space-y-4">
+                  <div className="w-14 h-14 md:w-20 md:h-20 bg-[#007AFF]/10 text-[#007AFF] rounded-2xl md:rounded-3xl flex items-center justify-center mx-auto mb-2 border border-[#007AFF]/20 shadow-xl">
+                    <i className="fa-solid fa-cart-shopping text-2xl md:text-3xl"></i>
+                  </div>
+                  <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter text-zinc-900">Checkout</h2>
+                  <p className="text-zinc-500 font-semibold text-sm md:text-lg">Finalize your purchase via Telegram.</p>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                   <div className="space-y-8">
-                      <div className="space-y-4">
-                        <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest px-2">Your Device</label>
-                        <div className="grid grid-cols-2 gap-3">
+
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16">
+                   {/* Left Column: Form Controls */}
+                   <div className="lg:col-span-5 space-y-10">
+                      <div className="space-y-5">
+                        <label className="text-[10px] md:text-[11px] font-black text-zinc-400 uppercase tracking-widest px-2 block">Your Device</label>
+                        <div className="grid grid-cols-2 gap-4">
                           {['Realme', 'Oppo'].map(d => (
-                            <button key={d} onClick={() => setOrderDevice(d as any)} className={`py-4 rounded-2xl font-black text-sm transition-all border-2 ${orderDevice === d ? 'bg-[#007AFF] text-white border-[#007AFF] shadow-lg' : 'bg-zinc-100 border-transparent text-zinc-500'}`}>{d}</button>
+                            <button 
+                              key={d} 
+                              onClick={() => setOrderDevice(d as any)} 
+                              className={`py-5 rounded-2xl font-black text-sm md:text-base transition-all border-2 flex items-center justify-center gap-3 ${orderDevice === d ? 'bg-[#007AFF] text-white border-[#007AFF] shadow-2xl shadow-blue-500/30' : 'bg-zinc-100 border-transparent text-zinc-500 hover:bg-zinc-200'}`}
+                            >
+                              <i className={`fa-solid ${d === 'Realme' ? 'fa-mobile' : 'fa-mobile-screen'} text-sm`}></i>
+                              {d}
+                            </button>
                           ))}
                         </div>
                       </div>
-                      <div className="space-y-4">
-                        <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest px-2">Selected Asset</label>
-                        <select className="w-full p-4 rounded-2xl bg-zinc-100 font-black outline-none text-zinc-900 border-2 border-transparent focus:border-[#007AFF]" value={orderProductId} onChange={e => setOrderProductId(e.target.value)}>
-                          <option value="">Select an asset...</option>
-                          {dbProducts.map(p => <option key={p.id} value={p.id}>{p.title} ({p.price} EGP)</option>)}
-                        </select>
+                      
+                      <div className="space-y-5">
+                        <label className="text-[10px] md:text-[11px] font-black text-zinc-400 uppercase tracking-widest px-2 block">Selected Asset</label>
+                        <div className="relative">
+                          <select 
+                            className="w-full p-5 md:p-6 rounded-2xl bg-zinc-100 font-black outline-none text-zinc-900 border-2 border-transparent focus:border-[#007AFF] appearance-none cursor-pointer transition-all text-sm md:text-base" 
+                            value={orderProductId} 
+                            onChange={e => setOrderProductId(e.target.value)}
+                          >
+                            <option value="">Select an asset...</option>
+                            {dbProducts.map(p => <option key={p.id} value={p.id}>{p.title} ({p.price} EGP)</option>)}
+                          </select>
+                          <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-400">
+                            <i className="fa-solid fa-chevron-down text-xs"></i>
+                          </div>
+                        </div>
                       </div>
+
+                      {/* Summary Section for Desktop/Tablet */}
+                      {orderProductId && (
+                        <div className="hidden lg:block p-8 bg-[#007AFF]/5 rounded-[2.5rem] border border-[#007AFF]/10 space-y-4">
+                          <span className="text-[10px] font-black text-[#007AFF] uppercase tracking-[0.2em]">Order Summary</span>
+                          <div className="flex justify-between items-end">
+                             <div className="flex flex-col">
+                               <span className="text-lg font-black text-zinc-900">{dbProducts.find(p => p.id === orderProductId)?.title}</span>
+                               <span className="text-zinc-500 font-bold text-sm">Digital Asset • for {orderDevice}</span>
+                             </div>
+                             <span className="text-2xl font-black text-[#007AFF]">{dbProducts.find(p => p.id === orderProductId)?.price} EGP</span>
+                          </div>
+                        </div>
+                      )}
                    </div>
-                   <div className="relative">
-                      {dbProducts.find(p => p.id === orderProductId) ? (
-                        <div className="space-y-8">
-                           <div className="p-8 bg-zinc-50/80 rounded-[2.5rem] border border-zinc-200/60 shadow-inner space-y-8">
+
+                   {/* Right Column: Payment Details */}
+                   <div className="lg:col-span-7 relative">
+                      {orderProductId ? (
+                        <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500">
+                           <div className="p-6 md:p-10 bg-zinc-50/80 rounded-[2.5rem] md:rounded-[3rem] border border-zinc-200/60 shadow-inner space-y-8 md:space-y-12">
                               <div className="flex items-center justify-between">
-                                <h3 className="text-xl font-black tracking-tight text-zinc-900 flex items-center gap-2.5">
-                                  <i className="fa-solid fa-wallet text-[#D0021B] text-2xl"></i> 
+                                <h3 className="text-xl md:text-2xl font-black tracking-tight text-zinc-900 flex items-center gap-3">
+                                  <i className="fa-solid fa-wallet text-[#D0021B] text-2xl md:text-3xl"></i> 
                                   <span>Vodafone Cash</span>
                                 </h3>
-                                <div className="px-3 py-1 bg-red-50 text-[#D0021B] rounded-full text-[10px] font-black uppercase tracking-widest border border-red-100">Official</div>
+                                <div className="px-4 py-1.5 bg-red-50 text-[#D0021B] rounded-full text-[10px] md:text-[11px] font-black uppercase tracking-widest border border-red-100 shadow-sm">Verified Number</div>
                               </div>
 
-                              <div className="space-y-6">
-                                 <div className="space-y-2">
-                                    <label className="text-[8px] font-black text-zinc-400 uppercase tracking-widest px-1">Wallet Number</label>
-                                    <div className="p-5 bg-white rounded-2xl border-2 border-zinc-100 shadow-sm flex items-center justify-between group transition-all hover:border-[#007AFF]/20">
-                                       <span className="text-xl font-black tracking-[0.2em] font-mono text-zinc-900">{paymentNumber}</span>
-                                       <button onClick={() => { navigator.clipboard.writeText(paymentNumber); showNotify('Number Copied'); }} className="w-10 h-10 rounded-xl bg-[#007AFF]/10 text-[#007AFF] flex items-center justify-center hover:bg-[#007AFF] hover:text-white transition-all shadow-sm">
-                                         <i className="fa-solid fa-copy text-sm"></i>
+                              <div className="space-y-8 md:space-y-10">
+                                 <div className="space-y-3">
+                                    <label className="text-[9px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest px-2">Wallet Account Number</label>
+                                    <div className="p-5 md:p-7 bg-white rounded-3xl border-2 border-zinc-100 shadow-sm flex items-center justify-between group transition-all hover:border-[#007AFF]/30 hover:shadow-xl hover:shadow-zinc-200/50">
+                                       <span className="text-2xl md:text-3xl font-black tracking-[0.25em] font-mono text-zinc-900 truncate pr-4">{paymentNumber}</span>
+                                       <button 
+                                         onClick={() => { navigator.clipboard.writeText(paymentNumber); showNotify('Number Copied'); }} 
+                                         className="shrink-0 w-12 h-12 md:w-16 md:h-16 rounded-2xl bg-[#007AFF] text-white flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-xl shadow-blue-500/30"
+                                       >
+                                         <i className="fa-solid fa-copy text-lg md:text-xl"></i>
                                        </button>
                                     </div>
                                  </div>
 
-                                 <div className="space-y-4 pt-4 border-t border-zinc-200/50">
-                                   <div className="flex items-start gap-3">
-                                     <div className="mt-1 w-5 h-5 bg-zinc-900 text-white rounded-full flex items-center justify-center text-[10px] font-black shrink-0">1</div>
-                                     <p className="text-[12px] text-zinc-600 font-bold leading-relaxed">
-                                       Please transfer the exact amount to <span className="text-zinc-900 font-black decoration-[#007AFF]/30 underline decoration-2 underline-offset-4">{paymentNumber}</span>
+                                 <div className="space-y-6 pt-6 md:pt-10 border-t border-zinc-200/60">
+                                   <div className="flex items-start gap-4 md:gap-6 group">
+                                     <div className="mt-0.5 w-6 h-6 md:w-8 md:h-8 bg-zinc-900 text-white rounded-xl flex items-center justify-center text-[12px] md:text-sm font-black shrink-0 shadow-lg group-hover:bg-[#007AFF] transition-colors">1</div>
+                                     <p className="text-[14px] md:text-[16px] text-zinc-600 font-bold leading-relaxed">
+                                       Please transfer the exact amount of <span className="text-zinc-900 font-black bg-zinc-100 px-2 py-0.5 rounded-lg">{dbProducts.find(p => p.id === orderProductId)?.price} EGP</span> to the number above.
                                      </p>
                                    </div>
-                                   <div className="flex items-start gap-3">
-                                     <div className="mt-1 w-5 h-5 bg-zinc-900 text-white rounded-full flex items-center justify-center text-[10px] font-black shrink-0">2</div>
-                                     <p className="text-[12px] text-zinc-600 font-bold leading-relaxed">
-                                       Take a screenshot of the transfer confirmation receipt
+                                   <div className="flex items-start gap-4 md:gap-6 group">
+                                     <div className="mt-0.5 w-6 h-6 md:w-8 md:h-8 bg-zinc-900 text-white rounded-xl flex items-center justify-center text-[12px] md:text-sm font-black shrink-0 shadow-lg group-hover:bg-[#007AFF] transition-colors">2</div>
+                                     <p className="text-[14px] md:text-[16px] text-zinc-600 font-bold leading-relaxed">
+                                       Take a clear screenshot of the successful transfer confirmation.
                                      </p>
                                    </div>
-                                   <div className="mt-6 p-4 bg-green-50 rounded-2xl border border-green-100 flex items-center gap-3">
-                                      <div className="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center shadow-lg shadow-green-200 shrink-0"><i className="fa-solid fa-check text-[10px]"></i></div>
-                                      <p className="text-[11px] text-green-700 font-black uppercase tracking-tight">
-                                        Payment via <i className="fa-solid fa-wallet text-[#D0021B] text-[10px] mx-0.5"></i> Vodafone Cash confirmed.
-                                      </p>
+                                   
+                                   <div className="mt-10 p-5 md:p-6 bg-green-50 rounded-3xl border border-green-100 flex items-center gap-4 md:gap-5 shadow-sm">
+                                      <div className="w-10 h-10 md:w-12 md:h-12 bg-green-500 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-green-200 shrink-0">
+                                        <i className="fa-solid fa-check text-sm md:text-lg"></i>
+                                      </div>
+                                      <div className="flex flex-col">
+                                        <p className="text-[12px] md:text-[14px] text-green-800 font-black uppercase tracking-tight leading-none mb-1">Payment Method</p>
+                                        <p className="text-[11px] md:text-[12px] text-green-700 font-bold opacity-80">
+                                          Supported via <i className="fa-solid fa-wallet text-[#D0021B] text-[10px] mx-0.5"></i> Vodafone Cash Global.
+                                        </p>
+                                      </div>
                                    </div>
                                  </div>
                               </div>
                            </div>
-                           <button onClick={handleTelegramOrder} className="w-full py-6 bg-[#0088CC] text-white rounded-[2.5rem] font-black shadow-2xl shadow-sky-500/20 flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-95 transition-all text-xs uppercase tracking-widest">
-                             <i className="fa-brands fa-telegram text-2xl"></i> Complete on Telegram
-                           </button>
+                           
+                           <div className="pt-4">
+                             <button 
+                               onClick={handleTelegramOrder} 
+                               className="w-full py-6 md:py-8 bg-[#0088CC] text-white rounded-[2rem] md:rounded-[3rem] font-black shadow-2xl shadow-sky-500/30 flex items-center justify-center gap-4 hover:scale-[1.02] active:scale-95 transition-all text-sm md:text-lg uppercase tracking-[0.15em]"
+                             >
+                               <i className="fa-brands fa-telegram text-3xl md:text-4xl"></i> 
+                               <span>Send Message on Telegram</span>
+                             </button>
+                             <p className="text-center mt-6 text-zinc-400 font-black text-[9px] md:text-[10px] uppercase tracking-widest">A chat window will open automatically</p>
+                           </div>
                         </div>
                       ) : (
-                        <div className="h-full flex flex-col items-center justify-center text-center p-8 bg-zinc-50 rounded-[2.5rem] border-2 border-dashed border-zinc-200 opacity-50">
-                           <i className="fa-solid fa-shopping-bag text-4xl mb-4 text-zinc-300"></i>
-                           <p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">Select an asset to proceed</p>
+                        <div className="h-full min-h-[400px] flex flex-col items-center justify-center text-center p-12 bg-zinc-50 rounded-[3rem] md:rounded-[4rem] border-2 border-dashed border-zinc-200 opacity-60">
+                           <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-inner mb-8">
+                             <i className="fa-solid fa-shopping-bag text-5xl text-zinc-200"></i>
+                           </div>
+                           <p className="text-lg md:text-xl font-black text-zinc-400 uppercase tracking-widest">Select an asset to continue</p>
+                           <p className="text-zinc-400 font-medium mt-3 text-sm max-w-xs">Please pick a digital product from the list to see payment details.</p>
                         </div>
                       )}
                    </div>
