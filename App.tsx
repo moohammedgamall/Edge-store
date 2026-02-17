@@ -433,169 +433,121 @@ const App: React.FC = () => {
         )}
         
         {activeSection === 'Order' && (
-          <div className="max-w-6xl mx-auto py-4 md:py-8 lg:py-12 animate-in slide-in-from-bottom-12 duration-700">
-            <div className="glass-panel p-5 sm:p-8 md:p-12 lg:p-16 rounded-[2rem] sm:rounded-[3rem] md:rounded-[4rem] space-y-8 md:space-y-12 shadow-3xl border-white/20">
-                <div className="text-center space-y-4">
-                  <div className="w-14 h-14 md:w-24 md:h-24 bg-[#007AFF]/10 text-[#007AFF] rounded-2xl md:rounded-[2rem] flex items-center justify-center mx-auto mb-2 border border-[#007AFF]/20 shadow-xl transition-transform hover:scale-110">
-                    <i className="fa-solid fa-cart-shopping text-2xl md:text-4xl"></i>
+          <div className="animate-in fade-in duration-700 space-y-12 pb-24">
+            <div className="text-center space-y-4">
+               <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter text-zinc-900">Checkout Asset</h2>
+               <p className="text-zinc-500 font-semibold text-sm md:text-lg max-w-xl mx-auto">Follow the steps below to finalize your purchase securely.</p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+               {/* Step 1: Configuration Card */}
+               <div className="glass-panel p-8 md:p-12 rounded-[2.5rem] space-y-10 shadow-xl border-white/20">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-[#007AFF] text-white rounded-2xl flex items-center justify-center font-black text-xl shadow-lg shadow-blue-500/30">1</div>
+                    <h3 className="text-2xl font-black text-zinc-900 uppercase tracking-tight">Configuration</h3>
                   </div>
-                  <h2 className="text-3xl sm:text-4xl md:text-6xl font-black uppercase tracking-tighter text-zinc-900 leading-tight">Checkout</h2>
-                  <p className="text-zinc-500 font-semibold text-sm sm:text-base md:text-xl max-w-2xl mx-auto">Complete your order details and payment to receive your digital assets.</p>
-                </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16">
-                   {/* Left Column: Form Controls */}
-                   <div className="lg:col-span-5 space-y-10 lg:sticky lg:top-32 h-fit">
-                      <div className="space-y-6">
-                        <label className="text-[11px] md:text-[13px] font-black text-zinc-400 uppercase tracking-[0.2em] px-3 block">1. Device selection</label>
-                        <div className="grid grid-cols-2 gap-4">
-                          {['Realme', 'Oppo'].map(d => (
-                            <button 
-                              key={d} 
-                              onClick={() => setOrderDevice(d as any)} 
-                              className={`py-6 rounded-3xl font-black text-base sm:text-lg transition-all border-2 flex flex-col items-center justify-center gap-3 ${orderDevice === d ? 'bg-[#007AFF] text-white border-[#007AFF] shadow-2xl shadow-blue-500/40 scale-[1.03]' : 'bg-zinc-100/50 border-transparent text-zinc-400 hover:bg-zinc-200/50'}`}
-                            >
-                              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${orderDevice === d ? 'bg-white/20' : 'bg-zinc-200/50'}`}>
-                                <i className={`fa-solid ${d === 'Realme' ? 'fa-mobile-screen' : 'fa-mobile'} text-xl`}></i>
-                              </div>
-                              {d}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-6">
-                        <label className="text-[11px] md:text-[13px] font-black text-zinc-400 uppercase tracking-[0.2em] px-3 block">2. Select Digital Asset</label>
-                        <div className="relative group">
-                          <select 
-                            className="w-full p-6 md:p-8 rounded-[2rem] bg-zinc-100/50 font-black outline-none text-zinc-900 border-2 border-transparent focus:border-[#007AFF] focus:bg-white appearance-none cursor-pointer transition-all text-base md:text-xl shadow-inner group-hover:bg-zinc-100" 
-                            value={orderProductId} 
-                            onChange={e => setOrderProductId(e.target.value)}
+                  <div className="space-y-8">
+                    <div className="space-y-4">
+                      <label className="text-[11px] font-black text-zinc-400 uppercase tracking-[0.2em] px-2 block">Choose Device</label>
+                      <div className="grid grid-cols-2 gap-4">
+                        {['Realme', 'Oppo'].map(d => (
+                          <button 
+                            key={d} 
+                            onClick={() => setOrderDevice(d as any)} 
+                            className={`py-5 rounded-2xl font-black text-base transition-all border-2 flex items-center justify-center gap-3 ${orderDevice === d ? 'bg-[#007AFF] text-white border-[#007AFF] shadow-xl' : 'bg-zinc-100 border-transparent text-zinc-400 hover:bg-zinc-200'}`}
                           >
-                            <option value="">Pick an item...</option>
-                            {dbProducts.map(p => <option key={p.id} value={p.id}>{p.title} — {p.price} EGP</option>)}
-                          </select>
-                          <div className="absolute right-8 top-1/2 -translate-y-1/2 pointer-events-none text-[#007AFF] group-hover:scale-125 transition-transform">
-                            <i className="fa-solid fa-chevron-down text-sm"></i>
-                          </div>
-                        </div>
+                            <i className={`fa-solid ${d === 'Realme' ? 'fa-mobile' : 'fa-mobile-screen'} text-sm`}></i>
+                            {d}
+                          </button>
+                        ))}
                       </div>
+                    </div>
 
-                      {/* Order Summary Summary */}
-                      {orderProductId && (
-                        <div className="p-8 bg-zinc-900 rounded-[2.5rem] text-white space-y-5 shadow-2xl animate-in slide-in-from-left-4 duration-500">
-                          <div className="flex items-center gap-3">
-                            <div className="w-1.5 h-4 bg-[#007AFF] rounded-full"></div>
-                            <span className="text-[10px] font-black uppercase tracking-[0.25em] text-[#007AFF]">Order Summary</span>
-                          </div>
-                          <div className="space-y-1">
-                            <h4 className="text-xl font-black tracking-tight">{dbProducts.find(p => p.id === orderProductId)?.title}</h4>
-                            <p className="text-zinc-500 font-bold text-sm uppercase tracking-widest">{dbProducts.find(p => p.id === orderProductId)?.category} • {orderDevice}</p>
-                          </div>
-                          <div className="pt-4 border-t border-white/10 flex justify-between items-center">
-                            <span className="text-zinc-400 font-bold text-sm">Total Value</span>
-                            <span className="text-3xl font-black text-white tracking-tighter">{dbProducts.find(p => p.id === orderProductId)?.price} <span className="text-xs text-[#007AFF]">EGP</span></span>
-                          </div>
+                    <div className="space-y-4">
+                      <label className="text-[11px] font-black text-zinc-400 uppercase tracking-[0.2em] px-2 block">Select Digital Asset</label>
+                      <div className="relative">
+                        <select 
+                          className="w-full p-6 rounded-2xl bg-zinc-100 font-black outline-none text-zinc-900 border-2 border-transparent focus:border-[#007AFF] appearance-none cursor-pointer transition-all" 
+                          value={orderProductId} 
+                          onChange={e => setOrderProductId(e.target.value)}
+                        >
+                          <option value="">Select asset...</option>
+                          {dbProducts.map(p => <option key={p.id} value={p.id}>{p.title} ({p.price} EGP)</option>)}
+                        </select>
+                        <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-400"><i className="fa-solid fa-chevron-down text-xs"></i></div>
+                      </div>
+                    </div>
+
+                    {orderProductId && (
+                      <div className="p-6 bg-[#007AFF]/5 rounded-[2rem] border border-[#007AFF]/10 flex items-center justify-between animate-in slide-in-from-top-2">
+                        <div className="flex flex-col">
+                           <span className="text-[9px] font-black text-[#007AFF] uppercase tracking-widest">Selected Item Value</span>
+                           <span className="text-2xl font-black text-zinc-900 tracking-tighter">{dbProducts.find(p => p.id === orderProductId)?.price} EGP</span>
                         </div>
-                      )}
-                   </div>
+                        <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm"><i className="fa-solid fa-tag text-[#007AFF]"></i></div>
+                      </div>
+                    )}
+                  </div>
+               </div>
 
-                   {/* Right Column: Payment Details */}
-                   <div className="lg:col-span-7">
-                      {orderProductId ? (
-                        <div className="space-y-8 animate-in fade-in zoom-in-95 duration-700">
-                           <div className="p-6 sm:p-10 md:p-14 bg-zinc-50/80 rounded-[2.5rem] md:rounded-[3.5rem] border border-zinc-200/60 shadow-inner space-y-10 md:space-y-14">
-                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-                                <div className="flex items-center gap-4">
-                                  <div className="w-16 h-16 bg-[#D0021B]/10 rounded-[1.5rem] flex items-center justify-center text-[#D0021B] shadow-lg shadow-red-500/5">
-                                    <i className="fa-solid fa-wallet text-3xl"></i>
-                                  </div>
-                                  <div className="flex flex-col">
-                                    <h3 className="text-2xl md:text-3xl font-black tracking-tighter text-zinc-900">Vodafone Cash</h3>
-                                    <span className="text-[10px] font-black text-red-600 uppercase tracking-widest">Global Wallet Support</span>
-                                  </div>
-                                </div>
-                                <div className="px-5 py-2 bg-white text-[#D0021B] rounded-full text-[11px] font-black uppercase tracking-[0.15em] border border-zinc-100 shadow-sm flex items-center gap-2 w-fit">
-                                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
-                                  Official Account
-                                </div>
-                              </div>
+               {/* Step 2: Payment Details Card */}
+               <div className="glass-panel p-8 md:p-12 rounded-[2.5rem] space-y-10 shadow-xl border-white/20">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-red-600 text-white rounded-2xl flex items-center justify-center font-black text-xl shadow-lg shadow-red-500/30">2</div>
+                    <h3 className="text-2xl font-black text-zinc-900 uppercase tracking-tight">Payment</h3>
+                  </div>
 
-                              <div className="space-y-10">
-                                 <div className="space-y-4">
-                                    <label className="text-[11px] md:text-[12px] font-black text-zinc-400 uppercase tracking-[0.2em] px-4">Account Number</label>
-                                    <div className="p-6 sm:p-8 bg-white rounded-[2.5rem] border-2 border-zinc-100 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-6 group transition-all hover:border-[#007AFF]/40 hover:shadow-2xl hover:shadow-zinc-200/50">
-                                       <span className="text-3xl sm:text-4xl md:text-5xl font-black tracking-[0.3em] font-mono text-zinc-900">{paymentNumber}</span>
-                                       <button 
-                                         onClick={() => { navigator.clipboard.writeText(paymentNumber); showNotify('Number Copied'); }} 
-                                         className="w-full sm:w-20 sm:h-20 py-4 sm:py-0 rounded-3xl bg-[#007AFF] text-white flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-2xl shadow-blue-500/40 group-hover:rotate-2"
-                                       >
-                                         <i className="fa-solid fa-copy text-2xl"></i>
-                                       </button>
-                                    </div>
-                                 </div>
+                  <div className="space-y-10">
+                    <div className="space-y-4">
+                       <div className="flex items-center justify-between px-2">
+                          <label className="text-[11px] font-black text-zinc-400 uppercase tracking-[0.2em]">Vodafone Cash Wallet</label>
+                          <span className="text-[9px] font-black text-red-600 uppercase bg-red-50 px-2 py-0.5 rounded-full border border-red-100">Verified</span>
+                       </div>
+                       <div className="p-6 bg-zinc-900 rounded-[2rem] flex items-center justify-between group transition-all hover:bg-black">
+                          <span className="text-2xl md:text-3xl font-black tracking-[0.2em] font-mono text-white">{paymentNumber}</span>
+                          <button 
+                            onClick={() => { navigator.clipboard.writeText(paymentNumber); showNotify('Number Copied'); }} 
+                            className="w-12 h-12 rounded-xl bg-white/10 text-white flex items-center justify-center hover:bg-[#007AFF] transition-all active:scale-90"
+                          >
+                            <i className="fa-solid fa-copy"></i>
+                          </button>
+                       </div>
+                    </div>
 
-                                 <div className="space-y-8 pt-10 border-t border-zinc-200/60">
-                                   <div className="flex items-start gap-5 md:gap-8 group">
-                                     <div className="w-10 h-10 md:w-12 md:h-12 bg-zinc-900 text-white rounded-2xl flex items-center justify-center text-base md:text-xl font-black shrink-0 shadow-xl group-hover:bg-[#007AFF] transition-all group-hover:scale-110">1</div>
-                                     <div className="space-y-1">
-                                        <p className="text-base md:text-xl text-zinc-800 font-black leading-tight">Transfer Funds</p>
-                                        <p className="text-sm md:text-lg text-zinc-500 font-bold leading-relaxed">
-                                          Send <span className="text-[#007AFF] font-black underline decoration-2 underline-offset-4">{dbProducts.find(p => p.id === orderProductId)?.price} EGP</span> to our wallet.
-                                        </p>
-                                     </div>
-                                   </div>
-                                   <div className="flex items-start gap-5 md:gap-8 group">
-                                     <div className="w-10 h-10 md:w-12 md:h-12 bg-zinc-900 text-white rounded-2xl flex items-center justify-center text-base md:text-xl font-black shrink-0 shadow-xl group-hover:bg-[#007AFF] transition-all group-hover:scale-110">2</div>
-                                     <div className="space-y-1">
-                                        <p className="text-base md:text-xl text-zinc-800 font-black leading-tight">Save Confirmation</p>
-                                        <p className="text-sm md:text-lg text-zinc-500 font-bold leading-relaxed">
-                                          Keep a clear screenshot of the successful transfer receipt.
-                                        </p>
-                                     </div>
-                                   </div>
-                                   
-                                   <div className="mt-12 p-6 md:p-10 bg-green-50/80 rounded-[2.5rem] border border-green-100 flex items-center gap-6 shadow-sm animate-in fade-in duration-1000">
-                                      <div className="w-14 h-14 md:w-20 md:h-20 bg-green-500 text-white rounded-[1.5rem] md:rounded-[2rem] flex items-center justify-center shadow-xl shadow-green-500/30 shrink-0">
-                                        <i className="fa-solid fa-check text-2xl md:text-4xl"></i>
-                                      </div>
-                                      <div className="flex flex-col gap-1">
-                                        <p className="text-[13px] md:text-[16px] text-green-900 font-black uppercase tracking-widest leading-none">Security Guaranteed</p>
-                                        <p className="text-xs md:text-base text-green-700 font-bold opacity-70">
-                                          Secure transactions via <i className="fa-solid fa-wallet text-[#D0021B] mx-0.5"></i> Vodafone Cash infrastructure.
-                                        </p>
-                                      </div>
-                                   </div>
-                                 </div>
-                              </div>
-                           </div>
-                           
-                           <div className="pt-8 md:pt-12">
-                             <button 
-                               onClick={handleTelegramOrder} 
-                               className="group w-full py-8 md:py-10 bg-[#0088CC] text-white rounded-[2.5rem] md:rounded-[4rem] font-black shadow-3xl shadow-sky-500/40 flex items-center justify-center gap-6 hover:scale-[1.03] active:scale-[0.98] transition-all text-base md:text-2xl uppercase tracking-[0.2em]"
-                             >
-                               <i className="fa-brands fa-telegram text-4xl md:text-6xl group-hover:rotate-12 transition-transform"></i> 
-                               <span>Confirm on Telegram</span>
-                             </button>
-                             <div className="flex items-center justify-center gap-4 mt-8 opacity-40">
-                                <div className="h-px w-8 bg-zinc-400"></div>
-                                <p className="text-[10px] md:text-[12px] font-black uppercase tracking-[0.3em] text-zinc-500">Fast delivery within minutes</p>
-                                <div className="h-px w-8 bg-zinc-400"></div>
-                             </div>
-                           </div>
-                        </div>
-                      ) : (
-                        <div className="h-full min-h-[500px] flex flex-col items-center justify-center text-center p-12 bg-zinc-100/50 rounded-[3rem] md:rounded-[4.5rem] border-4 border-dashed border-zinc-200/50 opacity-80 animate-pulse">
-                           <div className="w-32 h-32 bg-white rounded-full flex items-center justify-center shadow-inner mb-10 border border-zinc-200/50">
-                             <i className="fa-solid fa-bag-shopping text-6xl text-zinc-100"></i>
-                           </div>
-                           <p className="text-2xl md:text-3xl font-black text-zinc-400 uppercase tracking-widest">Awaiting Selection</p>
-                           <p className="text-zinc-400 font-bold mt-5 text-base md:text-xl max-w-sm leading-relaxed">Please pick a digital product from the left menu to unlock the payment vault.</p>
-                        </div>
-                      )}
-                   </div>
-                </div>
+                    <div className="space-y-6">
+                       <div className="flex items-start gap-4">
+                          <div className="w-8 h-8 bg-zinc-100 rounded-lg flex items-center justify-center text-zinc-900 font-black shrink-0">1</div>
+                          <p className="text-sm font-bold text-zinc-600 leading-relaxed">Transfer the amount to the number above and save the confirmation screenshot.</p>
+                       </div>
+                       <div className="flex items-start gap-4">
+                          <div className="w-8 h-8 bg-zinc-100 rounded-lg flex items-center justify-center text-zinc-900 font-black shrink-0">2</div>
+                          <p className="text-sm font-bold text-zinc-600 leading-relaxed">Click the button below to send the confirmation to us on Telegram.</p>
+                       </div>
+                    </div>
+                  </div>
+               </div>
+            </div>
+
+            {/* Telegram Action Section - Full Width Card */}
+            <div className="glass-panel p-8 md:p-14 rounded-[3rem] border border-[#0088CC]/20 shadow-2xl shadow-[#0088CC]/5">
+               <div className="max-w-3xl mx-auto text-center space-y-10">
+                  <div className="inline-flex p-6 bg-[#0088CC]/10 text-[#0088CC] rounded-[2rem] mb-2 animate-bounce">
+                     <i className="fa-brands fa-telegram text-5xl"></i>
+                  </div>
+                  <div className="space-y-4">
+                    <h3 className="text-3xl font-black text-zinc-900 tracking-tighter">Confirm Your Order</h3>
+                    <p className="text-zinc-500 font-bold text-base md:text-lg">Our team will verify your payment and send the digital asset directly to your Telegram chat within minutes.</p>
+                  </div>
+                  <button 
+                    onClick={handleTelegramOrder} 
+                    disabled={!orderProductId}
+                    className="w-full py-8 bg-[#0088CC] text-white rounded-[2.5rem] font-black text-lg md:text-xl uppercase tracking-[0.2em] shadow-2xl shadow-sky-500/40 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-4 disabled:opacity-50 disabled:grayscale disabled:hover:scale-100"
+                  >
+                    Send Confirmation <i className="fa-solid fa-paper-plane text-sm"></i>
+                  </button>
+                  {!orderProductId && <p className="text-red-500 font-black text-[10px] uppercase tracking-widest animate-pulse">Please select a product above to unlock confirmation</p>}
+               </div>
             </div>
           </div>
         )}
