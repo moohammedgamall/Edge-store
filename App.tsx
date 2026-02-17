@@ -32,10 +32,9 @@ const App: React.FC = () => {
   const [activeSection, setActiveSection] = useState<Section>('Home');
   const [isLoading, setIsLoading] = useState(true);
   const [notification, setNotification] = useState<{message: string, type: 'success' | 'error'} | null>(null);
-  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
-    const stored = localStorage.getItem('theme');
-    return stored ? stored === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
-  });
+  
+  // فرض الوضع الفاتح دائماً
+  const isDarkMode = false;
 
   const [dbProducts, setDbProducts] = useState<Product[]>([]);
   const [dbVideos, setDbVideos] = useState<YoutubeVideo[]>([]); 
@@ -210,15 +209,22 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen pb-32 bg-[#F2F2F7] dark:bg-[#1C1C1E] transition-colors duration-500">
-      <Header isAdmin={isAdminMode} onAdminTrigger={() => setIsAuthModalOpen(true)} onLogout={() => { setIsAdminMode(false); window.location.hash = '#/'; }} onThemeToggle={() => setIsDarkMode(!isDarkMode)} isDarkMode={isDarkMode} logoUrl={siteLogo} />
+    <div className="min-h-screen pb-32 bg-[#F2F2F7] transition-colors duration-500">
+      <Header 
+        isAdmin={isAdminMode} 
+        onAdminTrigger={() => setIsAuthModalOpen(true)} 
+        onLogout={() => { setIsAdminMode(false); window.location.hash = '#/'; }} 
+        onThemeToggle={() => {}} // معطلة
+        isDarkMode={false} 
+        logoUrl={siteLogo} 
+      />
 
       {isAuthModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-xl">
           <div className="w-full max-w-[340px] glass-panel p-8 rounded-[2.5rem] space-y-6 text-center">
             <i className="fa-solid fa-lock text-[#007AFF] text-3xl mb-2"></i>
-            <h3 className="font-black uppercase text-xs tracking-widest text-zinc-900 dark:text-zinc-100">Admin Access</h3>
-            <input type="password" value={passwordInput} onChange={e => setPasswordInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAuth()} className="w-full p-4 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-center text-2xl font-black outline-none border-2 border-transparent focus:border-[#007AFF] text-zinc-900 dark:text-zinc-100" placeholder="••••" autoFocus />
+            <h3 className="font-black uppercase text-xs tracking-widest text-zinc-900">Admin Access</h3>
+            <input type="password" value={passwordInput} onChange={e => setPasswordInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAuth()} className="w-full p-4 rounded-2xl bg-zinc-100 text-center text-2xl font-black outline-none border-2 border-transparent focus:border-[#007AFF] text-zinc-900" placeholder="••••" autoFocus />
             <div className="grid grid-cols-2 gap-3">
               <button onClick={() => { setIsAuthModalOpen(false); window.location.hash = '#/'; }} className="py-4 font-bold text-zinc-400">Cancel</button>
               <button onClick={handleAuth} className="py-4 bg-[#007AFF] text-white rounded-2xl font-black">Verify</button>
@@ -232,7 +238,7 @@ const App: React.FC = () => {
           <div className="py-20 text-center">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
               {[1, 2, 3].map(i => (
-                <div key={i} className="glass-panel rounded-[2.5rem] aspect-[4/6] animate-pulse bg-zinc-200 dark:bg-zinc-800/50"></div>
+                <div key={i} className="glass-panel rounded-[2.5rem] aspect-[4/6] animate-pulse bg-zinc-200"></div>
               ))}
             </div>
           </div>
@@ -246,7 +252,7 @@ const App: React.FC = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                   {filteredProducts.map(p => <ProductCard key={p.id} product={p} onPreview={id => window.location.hash = `#/preview/${id}`} onBuy={id => { setOrderProductId(id); window.location.hash = '#/order'; }} />)}
                   {filteredProducts.length === 0 && (
-                    <div className="col-span-full py-20 text-center glass-panel rounded-[2rem] border-dashed border-2 border-zinc-200 dark:border-zinc-800 text-zinc-400 font-bold uppercase text-[10px] flex flex-col items-center gap-4">
+                    <div className="col-span-full py-20 text-center glass-panel rounded-[2rem] border-dashed border-2 border-zinc-200 text-zinc-400 font-bold uppercase text-[10px] flex flex-col items-center gap-4">
                        <i className="fa-solid fa-box-open text-4xl opacity-20"></i>
                        <span>No assets found in database.</span>
                     </div>
@@ -285,7 +291,7 @@ const App: React.FC = () => {
 
         {activeSection === 'Preview' && selectedProduct && (
           <div className="max-w-6xl mx-auto pb-20 px-4 animate-in fade-in duration-500">
-             <button onClick={() => window.history.back()} className="w-10 h-10 mb-8 flex items-center justify-center bg-white dark:bg-zinc-800 rounded-full shadow-lg border border-zinc-200"><i className="fa-solid fa-chevron-left"></i></button>
+             <button onClick={() => window.history.back()} className="w-10 h-10 mb-8 flex items-center justify-center bg-white rounded-full shadow-lg border border-zinc-200"><i className="fa-solid fa-chevron-left"></i></button>
              <div className="flex flex-col lg:flex-row items-center lg:items-start gap-12">
                 <div className="w-full lg:w-auto shrink-0 flex flex-col items-center gap-8">
                    <div className="relative aspect-[1290/2796] w-full max-w-[320px] rounded-[40px] bg-black p-3 shadow-3xl">
@@ -312,7 +318,7 @@ const App: React.FC = () => {
                       </div>
                       <p className="text-zinc-500 text-lg leading-relaxed pt-4">{selectedProduct.description}</p>
                    </div>
-                   <div className="p-8 bg-white dark:bg-zinc-900/50 rounded-[2.5rem] border border-zinc-100 dark:border-white/5 shadow-xl">
+                   <div className="p-8 bg-white rounded-[2.5rem] border border-zinc-100 shadow-xl">
                       <div className="flex items-center justify-between mb-8">
                         <div>
                           <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1">Price</p>
@@ -331,8 +337,8 @@ const App: React.FC = () => {
             <div className="glass-panel p-6 md:p-12 rounded-[2.5rem] md:rounded-[4rem] space-y-10 shadow-2xl relative border-white/20">
                 <div className="text-center space-y-3">
                   <div className="w-16 h-16 bg-[#007AFF]/10 text-[#007AFF] rounded-2xl flex items-center justify-center mx-auto mb-4 border border-[#007AFF]/20 shadow-lg"><i className="fa-solid fa-file-invoice-dollar text-2xl"></i></div>
-                  <h2 className="text-2xl md:text-5xl font-black uppercase tracking-tighter text-zinc-900 dark:text-zinc-100">Order Process</h2>
-                  <p className="text-zinc-500 dark:text-zinc-400 font-medium">Select your asset and contact via Telegram.</p>
+                  <h2 className="text-2xl md:text-5xl font-black uppercase tracking-tighter text-zinc-900">Order Process</h2>
+                  <p className="text-zinc-500 font-medium">Select your asset and contact via Telegram.</p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                    <div className="space-y-8">
@@ -340,13 +346,13 @@ const App: React.FC = () => {
                         <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest block">Device</label>
                         <div className="grid grid-cols-2 gap-3">
                           {['Realme', 'Oppo'].map(d => (
-                            <button key={d} onClick={() => setOrderDevice(d as any)} className={`py-4 rounded-2xl font-black text-sm transition-all border-2 ${orderDevice === d ? 'bg-[#007AFF] text-white border-[#007AFF] shadow-lg' : 'bg-zinc-100 dark:bg-zinc-800 border-transparent text-zinc-500'}`}>{d}</button>
+                            <button key={d} onClick={() => setOrderDevice(d as any)} className={`py-4 rounded-2xl font-black text-sm transition-all border-2 ${orderDevice === d ? 'bg-[#007AFF] text-white border-[#007AFF] shadow-lg' : 'bg-zinc-100 border-transparent text-zinc-500'}`}>{d}</button>
                           ))}
                         </div>
                       </div>
                       <div className="space-y-4">
                         <label className="text-[9px] font-black text-zinc-400 uppercase tracking-widest block text-zinc-400">Product</label>
-                        <select className="w-full p-4 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black text-sm outline-none border-2 border-transparent focus:border-[#007AFF] text-zinc-900 dark:text-zinc-100" value={orderProductId} onChange={e => setOrderProductId(e.target.value)}>
+                        <select className="w-full p-4 rounded-2xl bg-zinc-100 font-black text-sm outline-none border-2 border-transparent focus:border-[#007AFF] text-zinc-900" value={orderProductId} onChange={e => setOrderProductId(e.target.value)}>
                           <option value="">Select an asset...</option>
                           {dbProducts.map(p => <option key={p.id} value={p.id}>{p.title} ({p.price} EGP)</option>)}
                         </select>
@@ -355,20 +361,20 @@ const App: React.FC = () => {
                    <div className="relative">
                       {currentOrderedProduct ? (
                         <div className="space-y-6">
-                           <div className="p-8 bg-white dark:bg-zinc-900 rounded-[2.5rem] border border-zinc-100 dark:border-white/5 shadow-xl space-y-6">
-                              <h3 className="text-xl font-black tracking-tight text-zinc-900 dark:text-zinc-100">{currentOrderedProduct.price > 0 ? 'Payment Method' : 'Free Download'}</h3>
+                           <div className="p-8 bg-white rounded-[2.5rem] border border-zinc-100 shadow-xl space-y-6">
+                              <h3 className="text-xl font-black tracking-tight text-zinc-900">{currentOrderedProduct.price > 0 ? 'Payment Method' : 'Free Download'}</h3>
                               
                               {currentOrderedProduct.price > 0 && (
                                 <div className="space-y-4">
                                    <div className="flex items-center gap-2 text-amber-600 bg-amber-500/10 p-2 rounded-lg text-[10px] font-black uppercase"><i className="fa-solid fa-circle-info"></i> Use Vodafone Cash</div>
                                    <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Send to number:</p>
-                                   <div className="p-4 bg-zinc-50 dark:bg-black/40 rounded-2xl border-2 border-dashed border-zinc-200 dark:border-zinc-800 flex items-center justify-between group">
-                                      <span className="text-lg font-black tracking-widest font-mono text-zinc-900 dark:text-zinc-100">01091931466</span>
-                                      <button onClick={() => { navigator.clipboard.writeText('01091931466'); showNotify('Number Copied!'); }} className="w-8 h-8 rounded-full bg-white dark:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-[#007AFF] transition-all"><i className="fa-solid fa-copy text-xs"></i></button>
+                                   <div className="p-4 bg-zinc-50 rounded-2xl border-2 border-dashed border-zinc-200 flex items-center justify-between group">
+                                      <span className="text-lg font-black tracking-widest font-mono text-zinc-900">01091931466</span>
+                                      <button onClick={() => { navigator.clipboard.writeText('01091931466'); showNotify('Number Copied!'); }} className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-zinc-400 hover:text-[#007AFF] transition-all"><i className="fa-solid fa-copy text-xs"></i></button>
                                    </div>
                                    
                                    <div className="mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl">
-                                     <p className="text-zinc-900 dark:text-zinc-100 font-bold text-[11px] leading-relaxed">
+                                     <p className="text-zinc-900 font-bold text-[11px] leading-relaxed">
                                        <i className="fa-solid fa-triangle-exclamation text-red-500 mr-2"></i>
                                        Please confirm full payment to the number shown on this page before proceeding to contact us via Telegram.
                                      </p>
@@ -386,7 +392,7 @@ const App: React.FC = () => {
                            </button>
                         </div>
                       ) : (
-                        <div className="h-full min-h-[250px] flex flex-col items-center justify-center text-center p-8 bg-zinc-50 dark:bg-zinc-900/30 rounded-[2.5rem] border-2 border-dashed border-zinc-200 opacity-50">
+                        <div className="h-full min-h-[250px] flex flex-col items-center justify-center text-center p-8 bg-zinc-50 rounded-[2.5rem] border-2 border-dashed border-zinc-200 opacity-50">
                            <i className="fa-solid fa-bag-shopping text-4xl mb-4 text-zinc-300"></i>
                            <h3 className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">Pick your asset to proceed</h3>
                         </div>
@@ -399,8 +405,8 @@ const App: React.FC = () => {
 
         {activeSection === 'Admin' && isAdminMode && (
           <div className="max-w-5xl mx-auto space-y-10 animate-in fade-in">
-            <div className="flex p-2 bg-zinc-200/50 dark:bg-zinc-900/50 rounded-[2.5rem] max-w-lg mx-auto shadow-xl">
-              {['Inventory', 'Videos', 'Settings'].map(tab => <button key={tab} onClick={() => setAdminTab(tab as any)} className={`flex-1 py-4 rounded-3xl transition-all text-[10px] uppercase font-black ${adminTab === tab ? 'bg-white dark:bg-zinc-800 text-[#007AFF] shadow-lg' : 'text-zinc-400'}`}>{tab}</button>)}
+            <div className="flex p-2 bg-zinc-200/50 rounded-[2.5rem] max-w-lg mx-auto shadow-xl">
+              {['Inventory', 'Videos', 'Settings'].map(tab => <button key={tab} onClick={() => setAdminTab(tab as any)} className={`flex-1 py-4 rounded-3xl transition-all text-[10px] uppercase font-black ${adminTab === tab ? 'bg-white text-[#007AFF] shadow-lg' : 'text-zinc-400'}`}>{tab}</button>)}
             </div>
 
             {adminTab === 'Inventory' && (
@@ -410,17 +416,17 @@ const App: React.FC = () => {
                   <div className="glass-panel p-8 rounded-[3rem] space-y-8 border-4 border-[#007AFF]/10">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
                        <div className="space-y-4">
-                          <input className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none border-2 border-transparent focus:border-[#007AFF] text-zinc-900 dark:text-zinc-100" value={editProduct.title} onChange={e => setEditProduct({...editProduct, title: e.target.value})} placeholder="Asset Title" />
-                          <textarea className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none border-2 border-transparent focus:border-[#007AFF] text-zinc-900 dark:text-zinc-100" value={editProduct.description} onChange={e => setEditProduct({...editProduct, description: e.target.value})} placeholder="Detailed Description" rows={4} />
+                          <input className="w-full p-5 rounded-2xl bg-zinc-100 font-black outline-none border-2 border-transparent focus:border-[#007AFF] text-zinc-900" value={editProduct.title} onChange={e => setEditProduct({...editProduct, title: e.target.value})} placeholder="Asset Title" />
+                          <textarea className="w-full p-5 rounded-2xl bg-zinc-100 font-black outline-none border-2 border-transparent focus:border-[#007AFF] text-zinc-900" value={editProduct.description} onChange={e => setEditProduct({...editProduct, description: e.target.value})} placeholder="Detailed Description" rows={4} />
                           <div className="grid grid-cols-2 gap-4">
-                             <input type="number" className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none border-2 border-transparent focus:border-[#007AFF] text-zinc-900 dark:text-zinc-100" value={editProduct.price} onChange={e => setEditProduct({...editProduct, price: Number(e.target.value)})} placeholder="Price (EGP)" />
-                             <input className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none border-2 border-transparent focus:border-[#007AFF] text-zinc-900 dark:text-zinc-100" value={editProduct.android_version} onChange={e => setEditProduct({...editProduct, android_version: e.target.value})} placeholder="Android Version (e.g. A15)" />
+                             <input type="number" className="w-full p-5 rounded-2xl bg-zinc-100 font-black outline-none border-2 border-transparent focus:border-[#007AFF] text-zinc-900" value={editProduct.price} onChange={e => setEditProduct({...editProduct, price: Number(e.target.value)})} placeholder="Price (EGP)" />
+                             <input className="w-full p-5 rounded-2xl bg-zinc-100 font-black outline-none border-2 border-transparent focus:border-[#007AFF] text-zinc-900" value={editProduct.android_version} onChange={e => setEditProduct({...editProduct, android_version: e.target.value})} placeholder="Android Version (e.g. A15)" />
                           </div>
-                          <select className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black outline-none border-2 border-transparent focus:border-[#007AFF] text-zinc-900 dark:text-zinc-100" value={editProduct.category} onChange={e => setEditProduct({...editProduct, category: e.target.value as any})}><option value="Themes">Themes</option><option value="Widgets">Widgets</option><option value="Walls">Wallpapers</option></select>
+                          <select className="w-full p-5 rounded-2xl bg-zinc-100 font-black outline-none border-2 border-transparent focus:border-[#007AFF] text-zinc-900" value={editProduct.category} onChange={e => setEditProduct({...editProduct, category: e.target.value as any})}><option value="Themes">Themes</option><option value="Widgets">Widgets</option><option value="Walls">Wallpapers</option></select>
                        </div>
                        <div className="space-y-4">
                           <label className="text-[10px] font-black uppercase text-zinc-400 px-2 tracking-widest">Cover Image</label>
-                          <div className="aspect-video bg-zinc-100 dark:bg-zinc-800 rounded-[2rem] overflow-hidden relative border-2 border-dashed border-zinc-300 dark:border-zinc-700 hover:border-[#007AFF] transition-colors group">
+                          <div className="aspect-video bg-zinc-100 rounded-[2rem] overflow-hidden relative border-2 border-dashed border-zinc-300 hover:border-[#007AFF] transition-colors group">
                              {editProduct.image ? <img src={editProduct.image} className="w-full h-full object-cover" /> : <div className="w-full h-full flex flex-col items-center justify-center opacity-30"><i className="fa-solid fa-cloud-arrow-up text-3xl mb-2"></i><span className="text-[10px] font-black uppercase">Click to upload</span></div>}
                              <input type="file" accept="image/*" onChange={async e => { if(e.target.files?.[0]) setEditProduct({...editProduct, image: await fileToBase64(e.target.files[0])}); }} className="absolute inset-0 opacity-0 cursor-pointer" />
                           </div>
@@ -428,7 +434,7 @@ const App: React.FC = () => {
                              <label className="text-[10px] font-black uppercase text-zinc-400 px-2 tracking-widest">Gallery Preview (Base64/Links Array)</label>
                              <div className="grid grid-cols-4 gap-2">
                                {editProduct.gallery?.map((g, i) => (
-                                 <div key={i} className="aspect-square rounded-lg bg-zinc-200 dark:bg-zinc-900 relative group overflow-hidden">
+                                 <div key={i} className="aspect-square rounded-lg bg-zinc-200 relative group overflow-hidden">
                                    <img src={g} className="w-full h-full object-cover" />
                                    <button onClick={() => setEditProduct({...editProduct, gallery: editProduct.gallery?.filter((_, idx) => idx !== i)})} className="absolute inset-0 bg-red-600/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white"><i className="fa-solid fa-trash"></i></button>
                                  </div>
@@ -442,7 +448,7 @@ const App: React.FC = () => {
                        </div>
                     </div>
                     <div className="flex gap-4">
-                       <button onClick={() => setIsEditingProduct(false)} className="flex-1 py-5 bg-zinc-100 dark:bg-zinc-800 text-zinc-500 rounded-2xl font-black uppercase text-[10px]">Discard</button>
+                       <button onClick={() => setIsEditingProduct(false)} className="flex-1 py-5 bg-zinc-100 text-zinc-500 rounded-2xl font-black uppercase text-[10px]">Discard</button>
                        <button onClick={saveProduct} disabled={isPublishing} className="flex-[2] py-5 bg-[#007AFF] text-white rounded-2xl font-black uppercase text-[10px] shadow-lg disabled:opacity-50">{isPublishing ? 'Publishing...' : 'Sync to Cloud'}</button>
                     </div>
                   </div>
@@ -453,7 +459,7 @@ const App: React.FC = () => {
                         <div className="flex items-center gap-4">
                            <img src={p.image} className="w-14 h-14 rounded-2xl object-cover shadow-sm" />
                            <div>
-                             <p className="font-black text-sm text-zinc-900 dark:text-zinc-100">{p.title}</p>
+                             <p className="font-black text-sm text-zinc-900">{p.title}</p>
                              <p className="text-[9px] text-[#007AFF] font-black uppercase tracking-widest">{p.category} • {p.price} EGP</p>
                            </div>
                         </div>
@@ -474,7 +480,7 @@ const App: React.FC = () => {
                     <div className="space-y-4">
                        <div className="relative">
                           <input 
-                            className="w-full p-4 pr-12 rounded-xl bg-zinc-100 dark:bg-zinc-800 font-bold text-zinc-900 dark:text-zinc-100 outline-none border-2 border-transparent focus:border-[#007AFF]" 
+                            className="w-full p-4 pr-12 rounded-xl bg-zinc-100 font-bold text-zinc-900 outline-none border-2 border-transparent focus:border-[#007AFF]" 
                             placeholder="YouTube URL" 
                             value={videoUrlInput} 
                             onChange={e => setVideoUrlInput(e.target.value)}
@@ -488,7 +494,7 @@ const App: React.FC = () => {
                             )}
                           </div>
                        </div>
-                       <input className="w-full p-4 rounded-xl bg-zinc-100 dark:bg-zinc-800 font-bold text-zinc-900 dark:text-zinc-100 outline-none border-2 border-transparent focus:border-[#007AFF]" placeholder="Video Title (Auto-fetched)" value={videoTitleInput} onChange={e => setVideoTitleInput(e.target.value)} />
+                       <input className="w-full p-4 rounded-xl bg-zinc-100 font-bold text-zinc-900 outline-none border-2 border-transparent focus:border-[#007AFF]" placeholder="Video Title (Auto-fetched)" value={videoTitleInput} onChange={e => setVideoTitleInput(e.target.value)} />
                     </div>
                     <button onClick={addVideo} className="w-full py-4 bg-red-600 text-white rounded-xl font-black uppercase text-[10px] tracking-widest shadow-lg">Publish Video</button>
                  </div>
@@ -497,7 +503,7 @@ const App: React.FC = () => {
                        <div key={v.id} className="p-4 glass-panel rounded-2xl flex items-center justify-between">
                           <div className="flex items-center gap-3">
                              <div className="w-16 h-10 bg-black rounded overflow-hidden"><img src={`https://img.youtube.com/vi/${v.id}/default.jpg`} className="w-full h-full object-cover" /></div>
-                             <p className="font-bold text-xs truncate max-w-[150px] text-zinc-900 dark:text-zinc-100">{v.title}</p>
+                             <p className="font-bold text-xs truncate max-w-[150px] text-zinc-900">{v.title}</p>
                           </div>
                           <button onClick={async () => { if(confirm('Delete video?')) { await supabase.from('videos').delete().eq('id', v.id); refreshData(); } }} className="text-red-500 hover:scale-110 transition-transform"><i className="fa-solid fa-trash-can"></i></button>
                        </div>
@@ -509,7 +515,7 @@ const App: React.FC = () => {
             {adminTab === 'Settings' && (
               <div className="space-y-10">
                  <div className="glass-panel p-10 rounded-[3rem] space-y-10">
-                    <h3 className="text-2xl font-black uppercase tracking-tighter text-zinc-900 dark:text-zinc-100">Store Branding</h3>
+                    <h3 className="text-2xl font-black uppercase tracking-tighter text-zinc-900">Store Branding</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                        <section className="space-y-10">
                          <div className="space-y-4 text-center">
@@ -531,7 +537,7 @@ const App: React.FC = () => {
                        <section className="space-y-6">
                          <div className="space-y-2">
                             <label className="text-[10px] font-black uppercase text-zinc-400 block tracking-widest px-2">Master Password</label>
-                            <input type="text" className="w-full p-5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 font-black text-center text-lg text-zinc-900 dark:text-zinc-100 outline-none" value={adminPassword} onChange={e => setAdminPassword(e.target.value)} />
+                            <input type="text" className="w-full p-5 rounded-2xl bg-zinc-100 font-black text-center text-lg text-zinc-900 outline-none" value={adminPassword} onChange={e => setAdminPassword(e.target.value)} />
                          </div>
                          <button onClick={async () => { await supabase.from('settings').upsert({key: 'admin_password', value: adminPassword}); showNotify("Password updated"); }} className="w-full py-5 bg-amber-500 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg hover:bg-amber-600 transition-colors">Lock Changes</button>
                        </section>
