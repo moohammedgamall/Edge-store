@@ -127,9 +127,10 @@ const App: React.FC = () => {
       }
       setDbProducts(prodRes.data || []);
       setDbVideos(vidRes.data || []);
-      if (typeof (window as any).hideSplash === 'function') (window as any).hideSplash();
     } catch (err) {
       console.error("Database Sync Error:", err);
+    } finally {
+      if (typeof (window as any).hideSplash === 'function') (window as any).hideSplash();
     }
   };
 
