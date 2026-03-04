@@ -7,8 +7,8 @@ import BottomNav from './components/BottomNav';
 import Header from './components/Header';
 import ProductCard from './components/ProductCard';
 
-const SUPABASE_URL = 'https://nlqnbfvsghlomuugixlk.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5scW5iZnZzZ2hsb211dWdpeGxrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA0Mjk4NzUsImV4cCI6MjA4NjAwNTg3NX0.KXLd6ISgf31DBNaU33fp0ZYLlxyrr62RfrxwYPIMk34';
+const SUPABASE_URL = 'https://cexpqhootaqkvqqzciof.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNleHBxaG9vdGFxa3ZxcXpjaW9mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1ODMyNzEsImV4cCI6MjA4ODE1OTI3MX0.J0AlZ54lcY15J_nfLekFV3mzXylOKRj0zaVtnqSHsT4';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
