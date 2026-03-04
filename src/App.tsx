@@ -111,6 +111,16 @@ const App: React.FC = () => {
         supabase.from('videos').select('*').order('created_at', { ascending: false })
       ]);
 
+      if (settRes.error || prodRes.error || vidRes.error) {
+        const errorMsg = settRes.error?.message || prodRes.error?.message || vidRes.error?.message;
+        console.error("Database Error:", errorMsg);
+        if (errorMsg?.includes("relation") && errorMsg?.includes("does not exist")) {
+          showNotify("تنبيه: الجداول غير موجودة في قاعدة البيانات. يرجى تشغيل كود SQL.", "error");
+        } else {
+          showNotify("خطأ في الاتصال بقاعدة البيانات: " + errorMsg, "error");
+        }
+      }
+
       if (settRes.data) {
         settRes.data.forEach(s => {
           if (s.key === 'admin_password') setAdminPassword(s.value);
