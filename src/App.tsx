@@ -13,7 +13,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // Utility to compress image before upload to prevent DB timeout
-const compressImage = (base64: string, maxWidth = 1080, quality = 0.7): Promise<string> => {
+const compressImage = (base64: string, maxWidth = 800, quality = 0.5): Promise<string> => {
   return new Promise((resolve) => {
     const img = new Image();
     img.src = base64;
@@ -33,6 +33,7 @@ const compressImage = (base64: string, maxWidth = 1080, quality = 0.7): Promise<
       ctx?.drawImage(img, 0, 0, width, height);
       resolve(canvas.toDataURL('image/jpeg', quality));
     };
+    img.onerror = () => resolve(base64); // Fallback if compression fails
   });
 };
 
@@ -202,9 +203,12 @@ const App: React.FC = () => {
     if (!editProduct.title || !editProduct.image) return showNotify("Required fields missing", "error");
     setIsPublishing(true);
     try {
-      const compressedMain = await compressImage(editProduct.image);
+      // Compress main image
+      const compressedMain = await compressImage(editProduct.image, 800, 0.5);
+      
+      // Compress gallery images (limit to 10 to save space if needed, but keeping 20 for now with higher compression)
       const compressedGallery = editProduct.gallery 
-        ? await Promise.all(editProduct.gallery.map(img => compressImage(img)))
+        ? await Promise.all(editProduct.gallery.slice(0, 15).map(img => compressImage(img, 700, 0.4)))
         : [];
 
       const payload = {
@@ -218,6 +222,12 @@ const App: React.FC = () => {
         android_version: editProduct.android_version || ''
       };
 
+      // Check payload size (approximate)
+      const payloadSize = JSON.stringify(payload).length;
+      if (payloadSize > 5 * 1024 * 1024) { // 5MB limit to be safe
+        throw new Error("حجم البيانات كبير جداً، يرجى تقليل عدد الصور في المعرض.");
+      }
+
       const { error } = await supabase.from('products').upsert(payload);
       if (error) throw error;
       
@@ -225,8 +235,11 @@ const App: React.FC = () => {
       setIsEditingProduct(false);
       showNotify("Cloud Sync Completed");
     } catch (err: any) { 
-      console.error(err);
-      showNotify(err.message === 'statement timeout' ? "Payload too large, try smaller images" : err.message, "error"); 
+      console.error("Save Error:", err);
+      let msg = err.message;
+      if (msg === 'Failed to fetch') msg = "خطأ في الاتصال: حجم الصور قد يكون كبيراً جداً أو الإنترنت ضعيف.";
+      if (msg === 'statement timeout') msg = "انتهى وقت المحاولة: حجم البيانات كبير جداً.";
+      showNotify(msg, "error"); 
     }
     finally { setIsPublishing(false); }
   };
